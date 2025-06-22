@@ -2,8 +2,8 @@ import pandas as pd
 import json
 import time
 from pathlib import Path
-import vertexai
-from vertexai.generative_models import GenerativeModel
+import requests
+import os
 
 PROMPT_TEMPLATE = """
 [페르소나]
@@ -40,7 +40,7 @@ PROMPT_TEMPLATE = """
 - JSON 출력:
 {{"refined_text": "담당자의 일 처리가 다소 아쉽고, 소통 방식의 개선이 필요해 보입니다.", "is_anonymized": true, "sentiment": "부정", "labels": ["전문성 부족", "직원간 소통"]}}
 
-- 원본 텍스트: "선생님들이 업무 처리가 너무 느려서 답답합니다"
+- 원본 텍스트: "선생님들이 업무 처리가 너무 느려서 답답습니다"
 - JSON 출력:
 {{"refined_text": "선생님들의 업무 처리 속도가 다소 아쉽습니다.", "is_anonymized": false, "sentiment": "부정", "labels": ["전문성 부족"]}}
 
@@ -59,17 +59,21 @@ PROMPT_TEMPLATE = """
 원본 텍스트: "{original_text}"
 """
 
-class ReviewAnalyzer:
-    def __init__(self, project_id: str, location: str = "us-central1"):
+class ClaudeReviewAnalyzer:
+    def __init__(self, api_key: str):
         """
-        Vertex AI를 사용한 리뷰 분석기 초기화
+        Claude API를 사용한 리뷰 분석기 초기화
         
         Args:
-            project_id: Google Cloud 프로젝트 ID
-            location: Vertex AI 리전 (기본값: us-central1)
+            api_key: Anthropic API 키
         """
-        vertexai.init(project=project_id, location=location)
-        self.model = GenerativeModel("gemini-2.0-flash")
+        self.api_key = api_key
+        self.api_url = "https://api.anthropic.com/v1/messages"
+        self.headers = {
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json"
+        }
     
     def analyze_review(self, original_text: str) -> dict:
         """
@@ -92,9 +96,33 @@ class ReviewAnalyzer:
         
         prompt = PROMPT_TEMPLATE.format(original_text=original_text)
         
+        payload = {
+            "model": "claude-3-5-sonnet-20241022",
+            "max_tokens": 1000,
+            "temperature": 0.3,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        }
+        
         try:
-            response = self.model.generate_content(prompt)
-            response_text = response.text.strip()
+            response = requests.post(self.api_url, headers=self.headers, json=payload)
+            
+            if response.status_code != 200:
+                print(f"API 호출 실패 (상태코드: {response.status_code}): {response.text}")
+                return {
+                    "original_text": original_text,
+                    "refined_text": original_text,
+                    "is_anonymized": False,
+                    "sentiment": "중립",
+                    "labels": []
+                }
+            
+            response_data = response.json()
+            response_text = response_data["content"][0]["text"].strip()
             
             # JSON 파싱 시도
             try:
@@ -108,7 +136,7 @@ class ReviewAnalyzer:
                     return result
                 else:
                     raise json.JSONDecodeError("No JSON found", response_text, 0)
-            except json.JSONDecodeError as je:
+            except json.JSONDecodeError:
                 print(f"JSON 파싱 실패: {original_text[:50]}...")
                 return {
                     "original_text": original_text,
@@ -128,13 +156,13 @@ class ReviewAnalyzer:
                 "labels": []
             }
     
-    def process_csv(self, input_file: str, output_file: str = None, delay: float = 0.1, max_rows: int = None):
+    def process_csv(self, input_file: str, output_file: str = None, delay: float = 1.0, max_rows: int = None):
         """
         CSV 파일의 모든 리뷰를 처리하여 결과를 저장
         
         Args:
             input_file: 입력 CSV 파일 경로
-            output_file: 출력 CSV 파일 경로 (기본값: input_file에 _processed 추가)
+            output_file: 출력 CSV 파일 경로 (기본값: input_file에 _claude_processed 추가)
             delay: API 호출 간 지연 시간 (초)
             max_rows: 처리할 최대 행 수 (테스트용)
         """
@@ -145,12 +173,12 @@ class ReviewAnalyzer:
             df = df.head(max_rows)
         
         if output_file is None:
-            output_file = str(Path(input_file).stem) + "_processed.csv"
+            output_file = str(Path(input_file).stem) + "_claude_processed.csv"
         
         results = []
         total_rows = len(df)
         
-        print(f"총 {total_rows}개의 리뷰를 처리합니다...")
+        print(f"총 {total_rows}개의 리뷰를 Claude Sonnet으로 처리합니다...")
         
         for idx, row in df.iterrows():
             original_text = str(row['original_review']) if 'original_review' in row else str(row.iloc[0])
@@ -178,14 +206,28 @@ class ReviewAnalyzer:
             print(f"  {sentiment}: {count}개")
 
 def main():
+    # API 키 설정 - 환경변수에서 읽어오거나 직접 입력
+    API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+    
+    if not API_KEY:
+        print("ANTHROPIC_API_KEY 환경변수가 설정되지 않았습니다.")
+        print("다음 중 하나의 방법으로 API 키를 설정하세요:")
+        print("1. 환경변수 설정: export ANTHROPIC_API_KEY='your-api-key'")
+        print("2. 또는 아래 코드에서 직접 설정")
+        print()
+        API_KEY = input("Anthropic API 키를 입력하세요: ").strip()
+        
+        if not API_KEY:
+            print("API 키가 필요합니다.")
+            return
+    
     # 설정값들
-    PROJECT_ID = "mindmap-462708"  # Google Cloud 프로젝트 ID
     INPUT_FILE = "reviews_original.csv"
-    OUTPUT_FILE = "reviews_processed.csv"
+    OUTPUT_FILE = "reviews_claude_processed.csv"
     
     try:
         # 리뷰 분석기 생성
-        analyzer = ReviewAnalyzer(project_id=PROJECT_ID)
+        analyzer = ClaudeReviewAnalyzer(api_key=API_KEY)
         
         # CSV 파일 처리
         analyzer.process_csv(INPUT_FILE, OUTPUT_FILE)
@@ -194,10 +236,6 @@ def main():
         import traceback
         print(f"오류 발생: {e}")
         print(f"상세 오류: {traceback.format_exc()}")
-        print("\n설정 확인 사항:")
-        print("1. Google Cloud 프로젝트 ID가 올바른지 확인")
-        print("2. Vertex AI API가 활성화되어 있는지 확인")
-        print("3. 인증 정보가 설정되어 있는지 확인 (gcloud auth application-default login)")
 
 if __name__ == "__main__":
-    main() 
+    main()
