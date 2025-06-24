@@ -2,24 +2,24 @@
 
 직원 만족도 및 협업 피드백을 분석하는 AI 기반 시스템입니다.
 
-## 기능
+## 주요 기능
 
 - **텍스트 정제**: 오타 및 문법 교정
 - **감정 분석**: 긍정/부정/중립 분류
 - **익명화 처리**: 부정적 피드백의 개인정보 보호
 - **카테고리 분류**: 5가지 협업 이슈 카테고리 자동 태깅
 - **CSV 일괄 처리**: 대용량 리뷰 데이터 처리
+- **고급 분석/클러스터링**: 리뷰 데이터의 통계 분석, 상위 200개 추출, 클러스터링, 결과 설명 등 다양한 분석 기능 제공
 
-## 지원 모델
+## 지원 모델 및 주요 실행 파일
 
 1. **Google Vertex AI** (main.py)
    - Gemini 2.0 Flash
    - 프로젝트 ID: mindmap-462708
    - 리전: us-central1
 
-2. **Claude API** (process_with_claude.py)
-   - Claude 3.5 Sonnet
-   - API 키 기반 접근
+2. **백업/추가 분석** (main_backup.py, main_advanced.py 등)
+   - 다양한 분석 및 예비 실행 파일
 
 ## 설치
 
@@ -77,10 +77,14 @@ export ANTHROPIC_API_KEY='your-api-key-here'
 python main.py
 ```
 
-### Claude API로 처리
+### 백업/고급 분석 실행
 
 ```bash
-python process_with_claude.py
+python main_backup.py
+python main_advanced.py
+python analyze_columns.py
+python improved_clustering.py
+# 등 다양한 분석/클러스터링 파일 실행 가능
 ```
 
 ## 입력 형식
@@ -120,13 +124,24 @@ CSV 파일 (`reviews_original.csv`)에 다음 열이 필요합니다:
 ## 파일 구조
 
 ```
-python-project/
+team-review-project/
 ├── main.py                     # Vertex AI 기반 처리
-├── process_with_claude.py      # Claude API 기반 처리
+├── main_backup.py              # 백업/예비 실행 파일
+├── main_advanced.py            # 고급 분석 실행 파일
+├── analyze_columns.py          # 컬럼별 분석
+├── analyze_top_200.py          # 상위 200개 리뷰 분석
+├── improved_clustering.py      # 개선된 클러스터링
+├── apply_clustering.py         # 클러스터링 적용
+├── clustering_demo.py          # 클러스터링 데모
+├── explain_clustering_results.py # 클러스터링 결과 설명
+├── fix_clustering_results.py   # 클러스터링 결과 보정
+├── check_progress.py           # 진행 상황 체크
+├── quick_analyze.py            # 빠른 분석
+├── upload_to_notion.py         # 노션 업로드
 ├── requirements.txt            # Python 의존성
 ├── reviews_original.csv        # 입력 데이터
-├── intro_gemini_2_0_flash.ipynb # Gemini 2.0 참조 문서
-└── README.md                   # 프로젝트 설명
+├── README.md                   # 프로젝트 설명
+└── 기타 분석/로그/설명 파일
 ```
 
 ## 예시
