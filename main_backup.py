@@ -2,8 +2,8 @@ import pandas as pd
 import json
 import time
 from pathlib import Path
-import requests
-import os
+import vertexai
+from vertexai.generative_models import GenerativeModel
 
 PROMPT_TEMPLATE = """
 [페르소나]
@@ -40,7 +40,7 @@ PROMPT_TEMPLATE = """
 - JSON 출력:
 {{"refined_text": "담당자의 일 처리가 다소 아쉽고, 소통 방식의 개선이 필요해 보입니다.", "is_anonymized": true, "sentiment": "부정", "labels": ["전문성 부족", "직원간 소통"]}}
 
-- 원본 텍스트: "선생님들이 업무 처리가 너무 느려서 답답습니다"
+- 원본 텍스트: "선생님들이 업무 처리가 너무 느려서 답답합니다"
 - JSON 출력:
 {{"refined_text": "선생님들의 업무 처리 속도가 다소 아쉽습니다.", "is_anonymized": false, "sentiment": "부정", "labels": ["전문성 부족"]}}
 
@@ -59,21 +59,17 @@ PROMPT_TEMPLATE = """
 원본 텍스트: "{original_text}"
 """
 
-class ClaudeReviewAnalyzer:
-    def __init__(self, api_key: str):
+class ReviewAnalyzer:
+    def __init__(self, project_id: str, location: str = "us-central1"):
         """
-        Claude API를 사용한 리뷰 분석기 초기화
+        Vertex AI를 사용한 리뷰 분석기 초기화
         
         Args:
-            api_key: Anthropic API 키
+            project_id: Google Cloud 프로젝트 ID
+            location: Vertex AI 리전 (기본값: us-central1)
         """
-        self.api_key = api_key
-        self.api_url = "https://api.anthropic.com/v1/messages"
-        self.headers = {
-            "x-api-key": api_key,
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json"
-        }
+        vertexai.init(project=project_id, location=location)
+        self.model = GenerativeModel("gemini-2.0-flash")
     
     def analyze_review(self, original_text: str) -> dict:
         """
@@ -96,33 +92,9 @@ class ClaudeReviewAnalyzer:
         
         prompt = PROMPT_TEMPLATE.format(original_text=original_text)
         
-        payload = {
-            "model": "claude-3-5-sonnet-20241022",
-            "max_tokens": 1000,
-            "temperature": 0.3,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        }
-        
         try:
-            response = requests.post(self.api_url, headers=self.headers, json=payload)
-            
-            if response.status_code != 200:
-                print(f"API 호출 실패 (상태코드: {response.status_code}): {response.text}")
-                return {
-                    "original_text": original_text,
-                    "refined_text": original_text,
-                    "is_anonymized": False,
-                    "sentiment": "중립",
-                    "labels": []
-                }
-            
-            response_data = response.json()
-            response_text = response_data["content"][0]["text"].strip()
+            response = self.model.generate_content(prompt)
+            response_text = response.text.strip()
             
             # JSON 파싱 시도
             try:
@@ -136,7 +108,7 @@ class ClaudeReviewAnalyzer:
                     return result
                 else:
                     raise json.JSONDecodeError("No JSON found", response_text, 0)
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as je:
                 print(f"JSON 파싱 실패: {original_text[:50]}...")
                 return {
                     "original_text": original_text,
@@ -156,13 +128,13 @@ class ClaudeReviewAnalyzer:
                 "labels": []
             }
     
-    def process_csv(self, input_file: str, output_file: str = None, delay: float = 1.0, max_rows: int = None):
+    def process_csv(self, input_file: str, output_file: str = None, delay: float = 0.1, max_rows: int = None):
         """
         CSV 파일의 모든 리뷰를 처리하여 결과를 저장
         
         Args:
             input_file: 입력 CSV 파일 경로
-            output_file: 출력 CSV 파일 경로 (기본값: input_file에 _claude_processed 추가)
+            output_file: 출력 CSV 파일 경로 (기본값: input_file에 _processed 추가)
             delay: API 호출 간 지연 시간 (초)
             max_rows: 처리할 최대 행 수 (테스트용)
         """
@@ -173,12 +145,12 @@ class ClaudeReviewAnalyzer:
             df = df.head(max_rows)
         
         if output_file is None:
-            output_file = str(Path(input_file).stem) + "_claude_processed.csv"
+            output_file = str(Path(input_file).stem) + "_processed.csv"
         
         results = []
         total_rows = len(df)
         
-        print(f"총 {total_rows}개의 리뷰를 Claude Sonnet으로 처리합니다...")
+        print(f"총 {total_rows}개의 리뷰를 처리합니다...")
         
         for idx, row in df.iterrows():
             original_text = str(row['original_review']) if 'original_review' in row else str(row.iloc[0])
@@ -205,37 +177,112 @@ class ClaudeReviewAnalyzer:
         for sentiment, count in sentiment_counts.items():
             print(f"  {sentiment}: {count}개")
 
-def main():
-    # API 키 설정 - 환경변수에서 읽어오거나 직접 입력
-    API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-    
-    if not API_KEY:
-        print("ANTHROPIC_API_KEY 환경변수가 설정되지 않았습니다.")
-        print("다음 중 하나의 방법으로 API 키를 설정하세요:")
-        print("1. 환경변수 설정: export ANTHROPIC_API_KEY='your-api-key'")
-        print("2. 또는 아래 코드에서 직접 설정")
-        print()
-        API_KEY = input("Anthropic API 키를 입력하세요: ").strip()
+    def process_csv_with_column(self, input_file: str, column_name: str, output_file: str = None, delay: float = 0.1, max_rows: int = None):
+        """
+        CSV 파일의 특정 컬럼의 모든 리뷰를 처리하여 결과를 저장
         
-        if not API_KEY:
-            print("API 키가 필요합니다.")
-            return
-    
+        Args:
+            input_file: 입력 CSV 파일 경로
+            column_name: 리뷰가 포함된 컬럼명
+            output_file: 출력 CSV 파일 경로 (기본값: input_file에 _processed 추가)
+            delay: API 호출 간 지연 시간 (초)
+            max_rows: 처리할 최대 행 수 (테스트용)
+        """
+        # CSV 파일 읽기 (인코딩 처리)
+        try:
+            df = pd.read_csv(input_file, encoding='utf-8')
+        except UnicodeDecodeError:
+            try:
+                df = pd.read_csv(input_file, encoding='cp949')
+            except UnicodeDecodeError:
+                df = pd.read_csv(input_file, encoding='euc-kr')
+        
+        # 컬럼 존재 확인
+        if column_name not in df.columns:
+            available_columns = list(df.columns)
+            raise ValueError(f"'{column_name}' 컬럼을 찾을 수 없습니다. 사용 가능한 컬럼: {available_columns}")
+        
+        # 전체 데이터 처리 (max_rows 무시)
+        total_rows = len(df)
+        
+        if output_file is None:
+            output_file = str(Path(input_file).stem) + "_processed.csv"
+        
+        results = []
+        import math
+        import datetime
+        
+        print(f"총 {total_rows}개의 '{column_name}' 리뷰를 처리합니다...")
+        
+        # 예상 소요시간 계산
+        est_sec = total_rows * delay
+        est_time = str(datetime.timedelta(seconds=math.ceil(est_sec)))
+        print(f"예상 소요시간: {est_time} (지연 {delay}초/건 기준)")
+        
+        for idx, row in df.iterrows():
+            original_text = str(row[column_name]) if pd.notna(row[column_name]) else ""
+            
+            print(f"처리 중... ({idx + 1}/{total_rows})")
+            
+            # 리뷰 분석
+            result = self.analyze_review(original_text)
+            # 원본 텍스트 컬럼 제거
+            if "original_text" in result:
+                del result["original_text"]
+            results.append(result)
+            
+            # API 호출 제한을 위한 지연
+            if delay > 0:
+                time.sleep(delay)
+        
+        # 결과를 DataFrame으로 변환
+        result_df = pd.DataFrame(results)
+        
+        # 원본 데이터와 결과를 합친 새로운 DataFrame 생성 (원본 텍스트 컬럼 없이)
+        processed_df = df.copy()
+        for col in result_df.columns:
+            processed_df[f"{column_name}_{col}"] = result_df[col]
+        
+        # 원본 텍스트 컬럼 제거
+        drop_col = f"{column_name}_original_text"
+        if drop_col in processed_df.columns:
+            processed_df = processed_df.drop(columns=[drop_col])
+        
+        # CSV 파일로 저장
+        processed_df.to_csv(output_file, index=False, encoding='utf-8-sig')
+        
+        print(f"처리 완료! 결과가 '{output_file}'에 저장되었습니다.")
+        
+        # 통계 출력
+        sentiment_counts = result_df['sentiment'].value_counts()
+        print(f"\n'{column_name}' 감정 분석 결과:")
+        for sentiment, count in sentiment_counts.items():
+            print(f"  {sentiment}: {count}개")
+
+def main():
     # 설정값들
-    INPUT_FILE = "reviews_original.csv"
-    OUTPUT_FILE = "reviews_claude_processed.csv"
+    PROJECT_ID = "mindmap-462708"  # Google Cloud 프로젝트 ID
+    CSV_FILE = "설문조사_전처리데이터_20250620_0731.csv"
+    COLUMN_NAME = "협업 후기"
+    OUTPUT_FILE = "설문조사_전처리데이터_20250620_0731_processed.csv"
     
     try:
         # 리뷰 분석기 생성
-        analyzer = ClaudeReviewAnalyzer(api_key=API_KEY)
+        analyzer = ReviewAnalyzer(project_id=PROJECT_ID)
         
-        # CSV 파일 처리
-        analyzer.process_csv(INPUT_FILE, OUTPUT_FILE)
+        # CSV 파일의 협업 후기 컬럼 처리 (전체 데이터)
+        analyzer.process_csv_with_column(CSV_FILE, COLUMN_NAME, OUTPUT_FILE)
         
     except Exception as e:
         import traceback
         print(f"오류 발생: {e}")
         print(f"상세 오류: {traceback.format_exc()}")
+        print("\n설정 확인 사항:")
+        print("1. Google Cloud 프로젝트 ID가 올바른지 확인")
+        print("2. Vertex AI API가 활성화되어 있는지 확인")
+        print("3. 인증 정보가 설정되어 있는지 확인 (gcloud auth application-default login)")
+        print("4. CSV 파일이 존재하는지 확인")
+        print("5. pandas와 openpyxl 패키지가 설치되어 있는지 확인")
 
 if __name__ == "__main__":
-    main()
+    main() 
