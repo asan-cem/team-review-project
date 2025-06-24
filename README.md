@@ -23,13 +23,30 @@
 
 ## 설치
 
-### 1. 의존성 설치
+### 1. 가상환경 자동 활성화 (권장)
 
 ```bash
+# 프로젝트 폴더에서 가상환경 자동 활성화
+./activate_env.sh
+
+# 또는 전역 함수 사용 (터미널 재시작 후)
+activate_team_review
+```
+
+### 2. 수동 설치
+
+```bash
+# 가상환경 생성
+python3 -m venv venv
+
+# 가상환경 활성화
+source venv/bin/activate
+
+# 의존성 설치
 pip install -r requirements.txt
 ```
 
-### 2. Google Cloud 설정 (Vertex AI 사용 시)
+### 3. Google Cloud 설정 (Vertex AI 사용 시)
 
 ```bash
 # Google Cloud SDK 설치
@@ -46,7 +63,7 @@ gcloud config set project mindmap-462708
 gcloud services enable aiplatform.googleapis.com
 ```
 
-### 3. Claude API 설정 (Claude 사용 시)
+### 4. Claude API 설정 (Claude 사용 시)
 
 ```bash
 export ANTHROPIC_API_KEY='your-api-key-here'
