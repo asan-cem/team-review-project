@@ -259,20 +259,68 @@ class ReviewAnalyzer:
         for sentiment, count in sentiment_counts.items():
             print(f"  {sentiment}: {count}개")
 
+    def process_xlsx_with_column(self, input_file: str, column_name: str, output_file: str = None, delay: float = 0.1, max_rows: int = None):
+        """
+        XLSX 파일의 특정 컬럼의 모든 리뷰를 처리하여 결과를 저장
+        Args:
+            input_file: 입력 XLSX 파일 경로
+            column_name: 리뷰가 포함된 컬럼명
+            output_file: 출력 XLSX 파일 경로 (기본값: input_file에 _processed 추가)
+            delay: API 호출 간 지연 시간 (초)
+            max_rows: 처리할 최대 행 수 (테스트용)
+        """
+        # XLSX 파일 읽기
+        df = pd.read_excel(input_file)
+        # max_rows가 지정된 경우 상위 N개만 사용
+        if max_rows:
+            df = df.head(max_rows)
+        # 컬럼 존재 확인
+        if column_name not in df.columns:
+            available_columns = list(df.columns)
+            raise ValueError(f"'{column_name}' 컬럼을 찾을 수 없습니다. 사용 가능한 컬럼: {available_columns}")
+        # 전체 데이터 처리 (max_rows 무시)
+        total_rows = len(df)
+        if output_file is None:
+            output_file = str(Path(input_file).stem) + "_processed.xlsx"
+        results = []
+        import math
+        import datetime
+        print(f"총 {total_rows}개의 '{column_name}' 리뷰를 처리합니다...")
+        est_sec = total_rows * delay
+        est_time = str(datetime.timedelta(seconds=math.ceil(est_sec)))
+        print(f"예상 소요시간: {est_time} (지연 {delay}초/건 기준)")
+        for idx, row in df.iterrows():
+            original_text = str(row[column_name]) if pd.notna(row[column_name]) else ""
+            print(f"처리 중... ({idx + 1}/{total_rows})")
+            result = self.analyze_review(original_text)
+            if "original_text" in result:
+                del result["original_text"]
+            results.append(result)
+            if delay > 0:
+                time.sleep(delay)
+        result_df = pd.DataFrame(results)
+        processed_df = df.copy()
+        for col in result_df.columns:
+            processed_df[f"{column_name}_{col}"] = result_df[col]
+        drop_col = f"{column_name}_original_text"
+        if drop_col in processed_df.columns:
+            processed_df = processed_df.drop(columns=[drop_col])
+        processed_df.to_excel(output_file, index=False)
+        print(f"처리 완료! 결과가 '{output_file}'에 저장되었습니다.")
+        sentiment_counts = result_df['sentiment'].value_counts()
+        print(f"\n'{column_name}' 감정 분석 결과:")
+        for sentiment, count in sentiment_counts.items():
+            print(f"  {sentiment}: {count}개")
+
 def main():
     # 설정값들
     PROJECT_ID = "mindmap-462708"  # Google Cloud 프로젝트 ID
-    CSV_FILE = "설문조사_전처리데이터_20250620_0731.csv"
+    XLSX_FILE = "설문조사_전처리데이터_20250620_0731.xlsx"
     COLUMN_NAME = "협업 후기"
-    OUTPUT_FILE = "설문조사_전처리데이터_20250620_0731_processed.csv"
-    
+    OUTPUT_FILE = "설문조사_전처리데이터_20250620_0731_processed.xlsx"
     try:
-        # 리뷰 분석기 생성
         analyzer = ReviewAnalyzer(project_id=PROJECT_ID)
-        
-        # CSV 파일의 협업 후기 컬럼 처리 (전체 데이터)
-        analyzer.process_csv_with_column(CSV_FILE, COLUMN_NAME, OUTPUT_FILE)
-        
+        analyzer.process_xlsx_with_column(XLSX_FILE, COLUMN_NAME, OUTPUT_FILE, max_rows=200)
     except Exception as e:
         import traceback
         print(f"오류 발생: {e}")
@@ -281,7 +329,7 @@ def main():
         print("1. Google Cloud 프로젝트 ID가 올바른지 확인")
         print("2. Vertex AI API가 활성화되어 있는지 확인")
         print("3. 인증 정보가 설정되어 있는지 확인 (gcloud auth application-default login)")
-        print("4. CSV 파일이 존재하는지 확인")
+        print("4. XLSX 파일이 존재하는지 확인")
         print("5. pandas와 openpyxl 패키지가 설치되어 있는지 확인")
 
 if __name__ == "__main__":
