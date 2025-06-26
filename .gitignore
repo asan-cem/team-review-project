@@ -7,3 +7,4 @@ __pycache__/
 dashboard_interactive_v7.html
 *.csv
 *.xlsx venv-backup/
+venv-backup/
