@@ -6,4 +6,4 @@ __pycache__/
 # Generated files
 dashboard_interactive_v7.html
 *.csv
-*.xlsx 
+*.xlsx venv-backup/

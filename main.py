@@ -683,9 +683,9 @@ def main():
             XLSX_FILE, 
             COLUMN_NAME, 
             OUTPUT_FILE, 
-            max_rows=100,    # 100개 샘플로 전체 테스트
+            max_rows=10000,  # 상위 10000개 데이터 처리
             use_batch=True,  # 배치 처리 사용
-            batch_size=3,    # 배치 크기 (안정성을 위해 속도 느리게 설정)
+            batch_size=10,   # 배치 크기 (10000개 처리를 위해 속도 최적화)
             enable_quality_retry=True  # 자동 재검토 기능 활성화
         )
         
