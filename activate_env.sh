@@ -2,7 +2,7 @@
 
 # 프로젝트 가상환경 자동 활성화 스크립트
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VENV_PATH="$PROJECT_DIR/venv"
+VENV_PATH="$PROJECT_DIR/.venv"
 
 echo "🔧 팀 리뷰 프로젝트 가상환경 활성화 중..."
 echo "📁 프로젝트 경로: $PROJECT_DIR"
