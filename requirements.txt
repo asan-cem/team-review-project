@@ -1,3 +1,10 @@
 pandas>=2.0.0
 google-cloud-aiplatform>=1.38.0
 openpyxl>=3.1.0
+tqdm
+scipy
+scikit-learn
+streamlit
+plotly
+psutil
+reportlab
