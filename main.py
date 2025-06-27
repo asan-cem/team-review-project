@@ -236,7 +236,7 @@ class BackgroundWorker:
     백그라운드 작업 관리 클래스
     """
     
-    def __init__(self, timeout_seconds: int = 300):
+    def __init__(self, timeout_seconds: int = 60):
         self.timeout_seconds = timeout_seconds
         self.is_running = False
         self.heartbeat_interval = 30  # 30초마다 하트비트
@@ -313,7 +313,7 @@ class ReviewAnalyzer:
         )
     
     
-    def analyze_review(self, original_text: str, use_background: bool = True) -> dict:
+    def analyze_review(self, original_text: str, use_background: bool = False) -> dict:
         """
         텍스트를 AI로 분석하여 감정, 개선된 텍스트 등을 반환합니다.
         
@@ -340,14 +340,8 @@ class ReviewAnalyzer:
             }
         
         try:
-            if use_background and self.background_worker:
-                # 백그라운드 처리로 타임아웃 방지
-                result = self.background_worker.run_with_timeout(
-                    self._analyze_text_internal, original_text
-                )
-            else:
-                # 일반 처리
-                result = self._analyze_text_internal(original_text)
+            # 간소화된 직접 처리 (백그라운드 워커 제거)
+            result = self._analyze_text_internal(original_text)
             
             # 처리 시간 로깅
             processing_time = time.time() - start_time
@@ -355,9 +349,6 @@ class ReviewAnalyzer:
             
             return result
             
-        except TimeoutError:
-            logging.warning(f"텍스트 분석 타임아웃: {original_text[:50]}...")
-            return self._get_fallback_result(original_text)
         except Exception as e:
             logging.error(f"텍스트 분석 오류: {e} - {original_text[:50]}...")
             return self._get_fallback_result(original_text)
@@ -369,9 +360,9 @@ class ReviewAnalyzer:
         # AI 분석 프롬프트 생성
         prompt = PROMPT_TEMPLATE.format(original_text=original_text)
         
-        # API 한계 대응을 위한 재시도 로직
-        max_retries = 5  # 재시도 횟수 증가
-        base_wait_time = 1  # 기본 대기 시간
+        # API 한계 대응을 위한 재시도 로직 (균형 조정)
+        max_retries = 3  # 재시도 횟수 적정
+        base_wait_time = 1.0  # 기본 대기 시간 적정
         
         for attempt in range(max_retries):
             try:
@@ -441,12 +432,12 @@ class ReviewAnalyzer:
         """
         results = []
         
-        # 병렬 처리를 위한 ThreadPoolExecutor 사용
-        with ThreadPoolExecutor(max_workers=min(5, len(texts))) as executor:
+        # 병렬 처리를 위한 ThreadPoolExecutor 사용 (적당한 병렬 처리)
+        with ThreadPoolExecutor(max_workers=min(20, len(texts))) as executor:
             # 각 텍스트에 대해 비동기 작업 제출
             future_to_index = {}
             for idx, text in enumerate(texts):
-                future = executor.submit(self.analyze_review, text, True)  # 백그라운드 사용
+                future = executor.submit(self.analyze_review, text, False)  # 직접 처리
                 future_to_index[future] = (idx, text)
             
             # 배치 크기만큼 결과 리스트 초기화
@@ -457,7 +448,7 @@ class ReviewAnalyzer:
                 idx, original_text = future_to_index[future]
                 start_time = time.time()
                 try:
-                    result = future.result(timeout=120)  # 2분 타임아웃
+                    result = future.result(timeout=60)  # 1분 타임아웃으로 단축
                     batch_results[idx] = result
                     processing_time = time.time() - start_time
                     progress_monitor.update(1, processing_time)
@@ -488,7 +479,7 @@ class ReviewAnalyzer:
             batch_results = []
             
             # 병렬 처리를 위한 ThreadPoolExecutor 사용
-            with ThreadPoolExecutor(max_workers=min(5, len(batch))) as executor:
+            with ThreadPoolExecutor(max_workers=min(10, len(batch))) as executor:
                 # 각 텍스트에 대해 비동기 작업 제출 (인덱스와 함께)
                 future_to_index = {}
                 for idx, text in enumerate(batch):
@@ -870,8 +861,8 @@ class ReviewAnalyzer:
             results = [None] * total_texts
         
         if len(valid_texts) > 0 and not checkpoint_data:
-            # 배치 처리 또는 순차 처리
-            if use_batch and len(valid_texts) > batch_size:
+            # 배치 처리 강제 활성화 (속도 최적화)
+            if use_batch and len(valid_texts) > 0:
                 print(f"배치 처리 모드 (배치 크기: {batch_size})")
                 valid_results = []
                 
@@ -903,8 +894,7 @@ class ReviewAnalyzer:
                         
                         pbar.update(len(batch_texts))
                         
-                        # API 제한을 위한 대기 (최적화)
-                        time.sleep(0.5)
+                        # API 대기 시간 제거 (재시도 로직에서 자동 처리)
             else:
                 print("순차 처리 모드")
                 valid_results = []
@@ -1141,7 +1131,7 @@ def main():
         input_file = "설문조사_전처리데이터_20250620_0731.xlsx"
         column_name = "협업 후기"
         output_file = "설문조사_전처리데이터_20250620_0731_processed.xlsx"
-        max_rows = None  # 전체 처리
+        max_rows = None  # 전체 17,361개 처리 시작
         project_id = "mindmap-462708"
         
         print(f"\n설정 확인:")
@@ -1152,7 +1142,7 @@ def main():
         print(f"- 프로젝트 ID: {project_id}")
         print()
         
-        # 분석기 생성 및 실행 (백그라운드 처리 비활성화로 속도 향상)
+        # 분석기 생성 및 실행 (백그라운드 워커 제거로 효율성 향상)
         analyzer = ReviewAnalyzer(project_id=project_id, enable_background=False)
         
         # 원본 텍스트 분석
@@ -1163,7 +1153,7 @@ def main():
             output_file, 
             max_rows=max_rows,
             use_batch=True,
-            batch_size=10,  # 배치 크기 증가로 처리량 향상
+            batch_size=50,  # 배치 크기 적정 수준으로 조정
             enable_quality_retry=False,  # 속도 최적화를 위해 비활성화
             checkpoint_interval=100,  # 100개마다 체크포인트
             resume_from_checkpoint=True  # 체크포인트에서 재개 활성화
