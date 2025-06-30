@@ -8,3 +8,4 @@ dashboard_interactive_v7.html
 *.csv
 venv-backup/
 node_modules
+respect/
