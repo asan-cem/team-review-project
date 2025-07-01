@@ -48,8 +48,16 @@ def build_html(data_json):
         .filter-group {{ display: flex; flex-direction: column; }}
         .filter-group label {{ margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }}
         .filter-group select, .filter-group input {{ padding: 8px; border-radius: 5px; border: 1px solid #ced4da; min-width: 200px; }}
-        .checkbox-group {{ display: flex; flex-direction: column; gap: 5px; align-items: stretch; padding: 10px; border-radius: 5px; background-color: #f1f3f5; border: 1px solid #dee2e6; }}
-        .checkbox-group label {{ font-weight: normal; display: flex; width: 100%; justify-content: space-between; align-items: center; cursor: pointer; padding: 2px 5px; }}
+        .expander-container {{ border: 1px solid #ced4da; border-radius: 5px; background-color: white; min-width: 200px; }}
+        .expander-header {{ padding: 10px; background-color: #f8f9fa; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-radius: 5px 5px 0 0; user-select: none; }}
+        .expander-header:hover {{ background-color: #e9ecef; }}
+        .expander-arrow {{ transition: transform 0.3s ease; font-size: 12px; }}
+        .expander-arrow.expanded {{ transform: rotate(180deg); }}
+        .expander-content {{ padding: 10px; border-top: 1px solid #dee2e6; display: none; max-height: 200px; overflow-y: auto; }}
+        .expander-content.expanded {{ display: block; }}
+        .checkbox-item {{ display: flex; align-items: center; padding: 4px 0; }}
+        .checkbox-item input {{ margin-right: 8px; }}
+        .checkbox-item label {{ cursor: pointer; font-weight: normal; flex: 1; }}
         #metrics-container {{ display: flex; gap: 30px; margin-top: 20px; text-align: center; justify-content: center; }}
         .metric {{ background-color: #e9ecef; padding: 15px; border-radius: 8px; flex-grow: 1; }}
         .metric-value {{ font-size: 2em; font-weight: bold; color: #4a69bd; }}
@@ -69,7 +77,15 @@ def build_html(data_json):
             <div class="filters">
                 <div class="filter-group">
                     <label>문항 선택</label>
-                    <div id="hospital-score-filter" class="checkbox-group"></div>
+                    <div class="expander-container">
+                        <div class="expander-header" id="hospital-score-header" onclick="toggleExpander('hospital-score-expander')">
+                            <span>문항 선택 (6개 선택됨)</span>
+                            <span class="expander-arrow" id="hospital-score-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="hospital-score-expander">
+                            <div id="hospital-score-filter"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div id="hospital-yearly-chart-container"></div>
@@ -83,7 +99,15 @@ def build_html(data_json):
                 </div>
                 <div class="filter-group">
                     <label>문항 선택</label>
-                    <div id="division-score-filter" class="checkbox-group"></div>
+                    <div class="expander-container">
+                        <div class="expander-header" id="division-score-header" onclick="toggleExpander('division-score-expander')">
+                            <span>문항 선택 (6개 선택됨)</span>
+                            <span class="expander-arrow" id="division-score-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="division-score-expander">
+                            <div id="division-score-filter"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div id="division-yearly-chart-container"></div>
@@ -97,7 +121,15 @@ def build_html(data_json):
                 </div>
                 <div class="filter-group">
                     <label>부문 선택</label>
-                    <div id="comparison-division-filter" class="checkbox-group"></div>
+                    <div class="expander-container">
+                        <div class="expander-header" id="comparison-division-header" onclick="toggleExpander('comparison-division-expander')">
+                            <span>부문 선택 (0개 선택됨)</span>
+                            <span class="expander-arrow" id="comparison-division-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="comparison-division-expander">
+                            <div id="comparison-division-filter"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div id="comparison-chart-container"></div>
@@ -114,7 +146,15 @@ def build_html(data_json):
             <div class="filters" style="margin-top: 20px;">
                 <div class="filter-group">
                     <label>문항 선택</label>
-                    <div id="drilldown-score-filter" class="checkbox-group"></div>
+                    <div class="expander-container">
+                        <div class="expander-header" id="drilldown-score-header" onclick="toggleExpander('drilldown-score-expander')">
+                            <span>문항 선택 (6개 선택됨)</span>
+                            <span class="expander-arrow" id="drilldown-score-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="drilldown-score-expander">
+                            <div id="drilldown-score-filter"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -231,7 +271,7 @@ def build_html(data_json):
             }}
 
             const averages = calculateAverages(data);
-            const chartData = [{{ x: selectedScores, y: selectedScores.map(col => averages[col].toFixed(1)), type: 'bar', text: selectedScores.map(col => averages[col].toFixed(1)), textposition: 'outside', marker: {{ color: '#6a89cc' }} }}];
+            const chartData = [{{ x: selectedScores, y: selectedScores.map(col => averages[col].toFixed(1)), type: 'bar', text: selectedScores.map(col => averages[col].toFixed(1)), textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#6a89cc' }} }}];
             const selectedYear = document.getElementById('year-filter').value;
             const title = selectedYear === '전체' ? '<b>선택 조건별 문항 점수 (전체 연도)</b>' : `<b>선택 조건별 문항 점수 (${{selectedYear}})</b>`;
             const layout = {{ title: title, yaxis: {{ title: '종합 점수', range: [0, 100] }}, font: layoutFont }};
@@ -256,11 +296,11 @@ def build_html(data_json):
 
             selectedScores.forEach(col => {{
                 const y_values = years.map(year => calculateAverages(rawData.filter(d => d['설문연도'] === year))[col].toFixed(1));
-                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 10 }} }});
+                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }} }});
             }});
             
             const yearly_counts = years.map(year => rawData.filter(d => d['설문연도'] === year).length);
-            traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers', yaxis: 'y2' }});
+            traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', text: yearly_counts.map(count => `${{count.toLocaleString()}}명`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2' }});
 
             const layout = {{
                 title: '<b>[전체] 연도별 문항 점수</b>',
@@ -294,11 +334,11 @@ def build_html(data_json):
 
             selectedScores.forEach(col => {{
                 const y_values = years.map(year => calculateAverages(divisionData.filter(d => d['설문연도'] === year))[col].toFixed(1));
-                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 10 }} }});
+                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }} }});
             }});
             
             const yearly_counts = years.map(year => divisionData.filter(d => d['설문연도'] === year).length);
-            traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers', yaxis: 'y2' }});
+            traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', text: yearly_counts.map(count => `${{count.toLocaleString()}}명`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2' }});
 
             const layout = {{
                 title: `<b>[${{selectedDivision}}] 연도별 문항 점수</b>`,
@@ -342,7 +382,7 @@ def build_html(data_json):
             const divisions = Object.keys(divisionScores).sort((a,b) => a.localeCompare(b, 'ko'));
             const avgScores = divisions.map(div => (divisionScores[div].sum / divisionScores[div].count).toFixed(1));
 
-            const trace = [{{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside' }}];
+            const trace = [{{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }} }}];
             const layout = {{
                 title: `<b>${{selectedYear}} 부문별 종합 점수 비교</b>`,
                 yaxis: {{ title: '종합 점수', range: [0, 100] }},
@@ -359,28 +399,67 @@ def build_html(data_json):
             tbody.innerHTML = (reviews.length > 0) ? reviews.map(r => `<tr><td>${{r.year}}</td><td>${{r.review}}</td></tr>`).join('') : '<tr><td colspan="2">해당 조건의 후기가 없습니다.</td></tr>';
         }}
 
+        function toggleExpander(expanderId) {{
+            const content = document.getElementById(expanderId);
+            const arrow = document.getElementById(expanderId.replace('-expander', '-arrow'));
+            
+            if (content.classList.contains('expanded')) {{
+                content.classList.remove('expanded');
+                arrow.classList.remove('expanded');
+            }} else {{
+                content.classList.add('expanded');
+                arrow.classList.add('expanded');
+            }}
+        }}
+
+        function updateExpanderHeader(groupName, selectedCount, totalCount) {{
+            const headerId = groupName.replace('-filter', '-header');
+            const headerSpan = document.querySelector(`#${{headerId}} span:first-child`);
+            if (headerSpan) {{
+                if (groupName.includes('division')) {{
+                    headerSpan.textContent = `부문 선택 (${{selectedCount}}개 선택됨)`;
+                }} else {{
+                    headerSpan.textContent = `문항 선택 (${{selectedCount}}개 선택됨)`;
+                }}
+            }}
+        }}
+
         function createCheckboxFilter(containerId, items, groupName, updateFunction, startChecked = true) {{
             const container = document.getElementById(containerId);
-            const content = `
-                <label>
-                    <b>전체 선택</b> <input type="checkbox" name="${{groupName}}-select-all" ${{startChecked ? 'checked' : ''}}>
-                </label>
-                ${{items.map(item => `
-                    <label>
-                        <span>${{item}}</span> <input type="checkbox" name="${{groupName}}" value="${{item}}" ${{startChecked ? 'checked' : ''}}>
-                    </label>
-                `).join('')}}
+            
+            // 전체 선택 체크박스 생성
+            const selectAllDiv = document.createElement('div');
+            selectAllDiv.className = 'checkbox-item';
+            selectAllDiv.innerHTML = `
+                <input type="checkbox" id="${{groupName}}-select-all" ${{startChecked ? 'checked' : ''}}>
+                <label for="${{groupName}}-select-all"><b>전체 선택</b></label>
             `;
-            container.innerHTML = content;
+            container.appendChild(selectAllDiv);
+            
+            // 개별 체크박스 생성
+            items.forEach(item => {{
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'checkbox-item';
+                itemDiv.innerHTML = `
+                    <input type="checkbox" id="${{groupName}}-${{item}}" name="${{groupName}}" value="${{item}}" ${{startChecked ? 'checked' : ''}}>
+                    <label for="${{groupName}}-${{item}}">${{item}}</label>
+                `;
+                container.appendChild(itemDiv);
+            }});
 
-            const selectAllCheckbox = container.querySelector(`input[name="${{groupName}}-select-all"]`);
+            const selectAllCheckbox = container.querySelector(`#${{groupName}}-select-all`);
             const itemCheckboxes = container.querySelectorAll(`input[name="${{groupName}}"]`);
 
             function updateSelectAllState() {{
                 const allChecked = [...itemCheckboxes].every(cb => cb.checked);
                 const someChecked = [...itemCheckboxes].some(cb => cb.checked);
+                const checkedCount = [...itemCheckboxes].filter(cb => cb.checked).length;
+                
                 selectAllCheckbox.checked = allChecked;
                 selectAllCheckbox.indeterminate = !allChecked && someChecked;
+                
+                // 헤더 업데이트
+                updateExpanderHeader(containerId, checkedCount, items.length);
             }}
 
             selectAllCheckbox.addEventListener('change', (e) => {{
