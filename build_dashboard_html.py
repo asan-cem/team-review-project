@@ -190,6 +190,9 @@ def build_html(data_json):
                 </div>
             </div>
             <div id="reviews-table-container"><table id="reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody></tbody></table></div>
+            
+            <h3>감정 강도 분석</h3>
+            <div id="emotion-intensity-trend-container"></div>
         </div>
         <div class="section">
             <h2>연도별 부서/Unit 점수 비교</h2>
@@ -321,6 +324,7 @@ def build_html(data_json):
             updateDrilldownChart(filteredData);
             updateSentimentChart(filteredData);
             updateReviewsTable(filteredData);
+            updateEmotionIntensityTrend();
         }}
         
         function calculateAverages(data) {{
@@ -559,6 +563,172 @@ def build_html(data_json):
             }};
 
             Plotly.react(container, [trace], layout);
+        }}
+
+        function updateEmotionIntensityTrend() {{
+            const container = document.getElementById('emotion-intensity-trend-container');
+            
+            // 상세 분석 섹션의 부서/Unit 필터만 사용 (연도는 무시하여 전체 트렌드 표시)
+            const selectedDept = document.getElementById('department-filter').value;
+            const selectedUnit = document.getElementById('unit-filter').value;
+            
+            // 디버깅: 전체 데이터와 감정 강도 데이터 확인
+            console.log('전체 데이터 수:', rawData.length);
+            const intensityDataCount = rawData.filter(item => {{
+                const intensity = item['감정_강도_점수'];
+                return intensity !== null && intensity !== undefined && intensity !== '' && !isNaN(parseFloat(intensity));
+            }}).length;
+            console.log('감정 강도 데이터가 있는 항목 수:', intensityDataCount);
+            
+            // 감정 강도 데이터가 있는 항목만 필터링 (0도 유효한 값으로 처리)
+            let targetData = rawData.filter(item => {{
+                const intensity = item['감정_강도_점수'];
+                return intensity !== null && intensity !== undefined && intensity !== '' && !isNaN(parseFloat(intensity));
+            }});
+            
+            console.log('필터링 전 감정 강도 데이터 수:', targetData.length);
+            
+            // 부서 필터 적용
+            if (selectedDept !== '전체') {{
+                targetData = targetData.filter(item => item['피평가부서'] === selectedDept);
+                console.log(`${{selectedDept}} 부서 필터링 후 데이터 수:`, targetData.length);
+            }}
+            
+            // Unit 필터 적용
+            if (selectedUnit !== '전체') {{
+                targetData = targetData.filter(item => item['피평가Unit'] === selectedUnit);
+                console.log(`${{selectedUnit}} Unit 필터링 후 데이터 수:`, targetData.length);
+            }}
+            
+            if (targetData.length === 0) {{
+                // 더 구체적인 메시지 제공
+                let message = '감정 강도 데이터가 없습니다.';
+                if (selectedDept !== '전체' || selectedUnit !== '전체') {{
+                    message = '선택된 부서/Unit에 해당하는 감정 강도 데이터가 없습니다.';
+                }}
+                
+                Plotly.react(container, [], {{
+                    height: 400,
+                    annotations: [{{ text: message, xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+            
+            // 연도별 감정 강도 및 감정 분류별 집계
+            const yearlyData = {{}};
+            targetData.forEach(item => {{
+                const year = item['설문연도'];
+                const intensity = parseFloat(item['감정_강도_점수']);
+                const sentiment = item['감정_분류'] || '알 수 없음';
+                
+                if (!yearlyData[year]) {{
+                    yearlyData[year] = {{
+                        intensities: [],
+                        sentiments: {{ '긍정': [], '부정': [], '중립': [], '알 수 없음': [] }}
+                    }};
+                }}
+                
+                yearlyData[year].intensities.push(intensity);
+                if (yearlyData[year].sentiments[sentiment]) {{
+                    yearlyData[year].sentiments[sentiment].push(intensity);
+                }}
+            }});
+            
+            // 연도 정렬
+            const years = Object.keys(yearlyData).sort();
+            
+            if (years.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 400,
+                    annotations: [{{ text: '표시할 연도별 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+            
+            // 트레이스 생성
+            const traces = [];
+            
+            // 전체 평균 감정 강도 라인
+            const overallAvg = years.map(year => {{
+                const intensities = yearlyData[year].intensities;
+                return (intensities.reduce((sum, val) => sum + val, 0) / intensities.length).toFixed(2);
+            }});
+            
+            traces.push({{
+                x: years,
+                y: overallAvg,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: '전체 평균',
+                line: {{ color: '#1f77b4', width: 3 }},
+                marker: {{ size: 8 }},
+                hovertemplate: '연도: %{{x}}<br>전체 평균 강도: %{{y}}<extra></extra>'
+            }});
+            
+            // 감정 분류별 평균 강도 라인
+            const sentimentColors = {{
+                '긍정': '#28a745',
+                '부정': '#dc3545',
+                '중립': '#6c757d'
+            }};
+            
+            Object.entries(sentimentColors).forEach(([sentiment, color]) => {{
+                const sentimentAvg = years.map(year => {{
+                    const sentimentIntensities = yearlyData[year].sentiments[sentiment];
+                    if (sentimentIntensities.length === 0) return null;
+                    return (sentimentIntensities.reduce((sum, val) => sum + val, 0) / sentimentIntensities.length).toFixed(2);
+                }});
+                
+                // null이 아닌 값이 있는 경우에만 트레이스 추가
+                if (sentimentAvg.some(val => val !== null)) {{
+                    traces.push({{
+                        x: years,
+                        y: sentimentAvg,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: `${{sentiment}} 평균`,
+                        line: {{ color: color, width: 2, dash: 'dot' }},
+                        marker: {{ size: 6 }},
+                        connectgaps: false,
+                        hovertemplate: `연도: %{{x}}<br>${{sentiment}} 평균 강도: %{{y}}<extra></extra>`
+                    }});
+                }}
+            }});
+            
+            // 제목 생성
+            let titleParts = [];
+            if (selectedDept !== '전체') {{ titleParts.push(selectedDept); }}
+            if (selectedUnit !== '전체') {{ titleParts.push(selectedUnit); }}
+            
+            const titlePrefix = titleParts.length > 0 ? titleParts.join(' > ') : '전체';
+            const title = `<b>${{titlePrefix}} 연도별 감정 강도 트렌드</b>`;
+            
+            const layout = {{
+                title: title,
+                height: 400,
+                xaxis: {{ 
+                    title: '연도',
+                    type: 'category'
+                }},
+                yaxis: {{ 
+                    title: '평균 감정 강도',
+                    range: [1, 10]
+                }},
+                font: layoutFont,
+                hovermode: 'x unified',
+                showlegend: true,
+                legend: {{
+                    orientation: 'h',
+                    yanchor: 'bottom',
+                    y: 1.02,
+                    xanchor: 'right',
+                    x: 1
+                }}
+            }};
+            
+            Plotly.react(container, traces, layout);
         }}
 
         function updateReviewsTable(data = null) {{
@@ -1074,6 +1244,7 @@ def build_html(data_json):
             updateTeamRankingChart();
             updateYearlyComparisonChart();
             updateUnitComparisonChart();
+            updateEmotionIntensityTrend();
         }};
     </script>
 </body>
@@ -1085,7 +1256,7 @@ def main():
     print("🚀 대화형 대시보드 생성을 시작합니다...")
     df = load_data()
     print("✅ 데이터 로드 완료")
-    df_for_json = df[['설문연도', '피평가부문', '피평가부서', '피평가Unit', '존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합 점수', '정제된_텍스트', '감정_분류']].copy()
+    df_for_json = df[['설문연도', '피평가부문', '피평가부서', '피평가Unit', '존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합 점수', '정제된_텍스트', '감정_분류', '감정_강도_점수']].copy()
     data_json = df_for_json.to_json(orient='records', force_ascii=False)
     print("✅ 데이터 JSON 변환 완료")
     dashboard_html = build_html(data_json)
