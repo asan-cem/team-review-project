@@ -271,7 +271,7 @@ def build_html(data_json):
             }}
 
             const averages = calculateAverages(data);
-            const chartData = [{{ x: selectedScores, y: selectedScores.map(col => averages[col].toFixed(1)), type: 'bar', text: selectedScores.map(col => averages[col].toFixed(1)), textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#6a89cc' }} }}];
+            const chartData = [{{ x: selectedScores, y: selectedScores.map(col => averages[col].toFixed(1)), type: 'bar', text: selectedScores.map(col => averages[col].toFixed(1)), textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#6a89cc' }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
             const selectedYear = document.getElementById('year-filter').value;
             const title = selectedYear === '전체' ? '<b>선택 조건별 문항 점수 (전체 연도)</b>' : `<b>선택 조건별 문항 점수 (${{selectedYear}})</b>`;
             const layout = {{ title: title, yaxis: {{ title: '종합 점수', range: [0, 100] }}, font: layoutFont }};
@@ -296,11 +296,11 @@ def build_html(data_json):
 
             selectedScores.forEach(col => {{
                 const y_values = years.map(year => calculateAverages(rawData.filter(d => d['설문연도'] === year))[col].toFixed(1));
-                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }} }});
+                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>연도: %{{x}}<extra></extra>' }});
             }});
             
             const yearly_counts = years.map(year => rawData.filter(d => d['설문연도'] === year).length);
-            traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', text: yearly_counts.map(count => `${{count.toLocaleString()}}명`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2' }});
+            traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', text: yearly_counts.map(count => `${{count.toLocaleString()}}명`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}명<br>연도: %{{x}}<extra></extra>' }});
 
             const layout = {{
                 title: '<b>[전체] 연도별 문항 점수</b>',
@@ -334,11 +334,11 @@ def build_html(data_json):
 
             selectedScores.forEach(col => {{
                 const y_values = years.map(year => calculateAverages(divisionData.filter(d => d['설문연도'] === year))[col].toFixed(1));
-                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }} }});
+                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>연도: %{{x}}<extra></extra>' }});
             }});
             
             const yearly_counts = years.map(year => divisionData.filter(d => d['설문연도'] === year).length);
-            traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', text: yearly_counts.map(count => `${{count.toLocaleString()}}명`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2' }});
+            traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', text: yearly_counts.map(count => `${{count.toLocaleString()}}명`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}명<br>연도: %{{x}}<extra></extra>' }});
 
             const layout = {{
                 title: `<b>[${{selectedDivision}}] 연도별 문항 점수</b>`,
@@ -382,7 +382,7 @@ def build_html(data_json):
             const divisions = Object.keys(divisionScores).sort((a,b) => a.localeCompare(b, 'ko'));
             const avgScores = divisions.map(div => (divisionScores[div].sum / divisionScores[div].count).toFixed(1));
 
-            const trace = [{{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }} }}];
+            const trace = [{{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
             const layout = {{
                 title: `<b>${{selectedYear}} 부문별 종합 점수 비교</b>`,
                 yaxis: {{ title: '종합 점수', range: [0, 100] }},
