@@ -175,6 +175,20 @@ def build_html(data_json):
             <div id="sentiment-chart-container" style="margin-top: 20px;"></div>
             
             <h3>협업 후기</h3>
+            <div class="filters">
+                <div class="filter-group">
+                    <label>감정 분류 필터</label>
+                    <div class="expander-container">
+                        <div class="expander-header" id="review-sentiment-header" onclick="toggleExpander('review-sentiment-expander')">
+                            <span>감정 선택 (4개 선택됨)</span>
+                            <span class="expander-arrow" id="review-sentiment-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="review-sentiment-expander">
+                            <div id="review-sentiment-filter"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div id="reviews-table-container"><table id="reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody></tbody></table></div>
         </div>
         <div class="section">
@@ -547,10 +561,34 @@ def build_html(data_json):
             Plotly.react(container, [trace], layout);
         }}
 
-        function updateReviewsTable(data) {{
+        function updateReviewsTable(data = null) {{
             const tbody = document.querySelector("#reviews-table tbody");
-            const reviews = data.map(item => ({{ year: item['설문연도'], review: item['정제된_텍스트'] }})).filter(r => r.review && r.review !== 'N/A');
-            tbody.innerHTML = (reviews.length > 0) ? reviews.map(r => `<tr><td>${{r.year}}</td><td>${{r.review}}</td></tr>`).join('') : '<tr><td colspan="2">해당 조건의 후기가 없습니다.</td></tr>';
+            
+            // data가 null인 경우 getFilteredData() 사용 (필터에서 호출될 때)
+            if (data === null) {{
+                data = getFilteredData();
+            }}
+            
+            // 감정 분류 필터 적용
+            const selectedSentiments = Array.from(document.querySelectorAll('input[name="review-sentiment"]:checked')).map(cb => cb.value);
+            
+            let filteredData = data;
+            if (selectedSentiments.length > 0 && !selectedSentiments.includes('전체')) {{
+                filteredData = data.filter(item => {{
+                    const sentiment = item['감정_분류'];
+                    return selectedSentiments.includes(sentiment);
+                }});
+            }}
+            
+            const reviews = filteredData.map(item => ({{ 
+                year: item['설문연도'], 
+                review: item['정제된_텍스트'],
+                sentiment: item['감정_분류'] || '알 수 없음'
+            }})).filter(r => r.review && r.review !== 'N/A');
+            
+            tbody.innerHTML = (reviews.length > 0) ? 
+                reviews.map(r => `<tr><td>${{r.year}}</td><td>${{r.review}} <span style="color: #666; font-size: 0.9em;">[${{r.sentiment}}]</span></td></tr>`).join('') : 
+                '<tr><td colspan="2">해당 조건의 후기가 없습니다.</td></tr>';
         }}
 
         function setupTeamRankingChart() {{
@@ -1022,6 +1060,7 @@ def build_html(data_json):
             populateFilters(); 
             createCheckboxFilter('hospital-score-filter', scoreCols, 'hospital-score', updateHospitalYearlyChart);
             createCheckboxFilter('drilldown-score-filter', scoreCols, 'drilldown-score', updateDashboard);
+            createCheckboxFilter('review-sentiment-filter', ['전체', '긍정', '부정', '중립'], 'review-sentiment', updateReviewsTable, true);
             setupDivisionChart();
             setupComparisonChart();
             setupTeamRankingChart();
