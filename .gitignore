@@ -9,3 +9,4 @@ dashboard_interactive_v7.html
 venv-backup/
 node_modules
 respect/
+\n# Analysis output files\n*.xlsx
