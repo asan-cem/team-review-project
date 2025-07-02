@@ -527,8 +527,10 @@ def build_html(data_json):
                 sentimentCounts[sentiment] = (sentimentCounts[sentiment] || 0) + 1;
             }});
 
-            const sentiments = Object.keys(sentimentCounts);
-            const counts = Object.values(sentimentCounts);
+            // 원하는 순서로 감정 분류 고정
+            const desiredOrder = ['긍정', '부정', '중립'];
+            const sentiments = desiredOrder.filter(sentiment => sentimentCounts[sentiment] > 0);
+            const counts = sentiments.map(sentiment => sentimentCounts[sentiment]);
             const total = counts.reduce((sum, count) => sum + count, 0);
             const percentages = counts.map(count => ((count / total) * 100).toFixed(1));
 
