@@ -171,7 +171,7 @@ def build_html(data_json):
             <div id="metrics-container"></div>
             <div id="drilldown-chart-container" style="margin-top: 20px;"></div>
             
-            <h3>감정 분류 분석</h3>
+            <h3>협업 주관식 피드백 감정 분석</h3>
             <div id="sentiment-chart-container" style="margin-top: 20px;"></div>
             
             <h3>협업 후기</h3>
@@ -342,7 +342,17 @@ def build_html(data_json):
             const averages = calculateAverages(data);
             const chartData = [{{ x: selectedScores, y: selectedScores.map(col => averages[col].toFixed(1)), type: 'bar', text: selectedScores.map(col => averages[col].toFixed(1)), textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#6a89cc' }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
             const selectedYear = document.getElementById('year-filter').value;
-            const title = selectedYear === '전체' ? '<b>선택 조건별 문항 점수 (전체 연도)</b>' : `<b>선택 조건별 문항 점수 (${{selectedYear}})</b>`;
+            const selectedDept = document.getElementById('department-filter').value;
+            const selectedUnit = document.getElementById('unit-filter').value;
+            
+            // 제목 생성
+            let titleParts = [];
+            if (selectedDept !== '전체') {{ titleParts.push(selectedDept); }}
+            if (selectedUnit !== '전체') {{ titleParts.push(selectedUnit); }}
+            
+            const titlePrefix = titleParts.length > 0 ? titleParts.join(' > ') : '피평가부서, 피평가Unit';
+            const yearSuffix = selectedYear === '전체' ? ' (전체 연도)' : ` (${{selectedYear}})`;
+            const title = `<b>${{titlePrefix}} 문항 점수${{yearSuffix}}</b>`;
             const layout = {{ title: title, yaxis: {{ title: '점수', range: [0, 100] }}, font: layoutFont, hovermode: 'closest' }};
             Plotly.react(container, chartData, layout);
         }}
@@ -528,7 +538,7 @@ def build_html(data_json):
                 title: '<b>감정 분류별 응답 분포</b>',
                 height: 400,
                 xaxis: {{ title: '감정 분류' }},
-                yaxis: {{ title: '응답 수', rangemode: 'tozero' }},
+                yaxis: {{ title: '응답 수', rangemode: 'tozero', range: [0, Math.max(...counts) * 1.15] }},
                 font: layoutFont,
                 hovermode: 'closest',
                 showlegend: false
