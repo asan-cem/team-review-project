@@ -161,6 +161,32 @@ def build_html(data_json):
             <h3>협업 후기</h3>
             <div id="reviews-table-container"><table id="reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody></tbody></table></div>
         </div>
+        <div class="section">
+            <h2>부서 내 Unit 비교</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="unit-comparison-department-filter">피평가부서 선택</label>
+                    <select id="unit-comparison-department-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="unit-comparison-year-filter">연도 선택</label>
+                    <select id="unit-comparison-year-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label>문항 선택</label>
+                    <div class="expander-container">
+                        <div class="expander-header" id="unit-comparison-score-header" onclick="toggleExpander('unit-comparison-score-expander')">
+                            <span>문항 선택 (6개 선택됨)</span>
+                            <span class="expander-arrow" id="unit-comparison-score-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="unit-comparison-score-expander">
+                            <div id="unit-comparison-score-filter"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="unit-comparison-chart-container"></div>
+        </div>
     </div>
     <script>
         const rawData = {data_json};
@@ -220,7 +246,7 @@ def build_html(data_json):
             yearSelect.innerHTML = allYears.map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
             yearSelect.value = allYears[allYears.length - 1]; // Default to last year
             yearSelect.addEventListener('change', updateYearlyDivisionComparisonChart);
-            createCheckboxFilter('comparison-division-filter', allDivisions, 'comparison-division', updateYearlyDivisionComparisonChart, false);
+            createCheckboxFilter('comparison-division-filter', allDivisions, 'comparison-division', updateYearlyDivisionComparisonChart, true);
         }}
 
         function getFilteredData() {{
@@ -274,7 +300,7 @@ def build_html(data_json):
             const chartData = [{{ x: selectedScores, y: selectedScores.map(col => averages[col].toFixed(1)), type: 'bar', text: selectedScores.map(col => averages[col].toFixed(1)), textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#6a89cc' }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
             const selectedYear = document.getElementById('year-filter').value;
             const title = selectedYear === '전체' ? '<b>선택 조건별 문항 점수 (전체 연도)</b>' : `<b>선택 조건별 문항 점수 (${{selectedYear}})</b>`;
-            const layout = {{ title: title, yaxis: {{ title: '종합 점수', range: [0, 100] }}, font: layoutFont }};
+            const layout = {{ title: title, yaxis: {{ title: '종합 점수', range: [0, 100] }}, font: layoutFont, hovermode: 'closest' }};
             Plotly.react(container, chartData, layout);
         }}
         
@@ -309,7 +335,8 @@ def build_html(data_json):
                 yaxis: {{ title: '종합 점수', range: [0, 100] }},
                 yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
-                font: layoutFont
+                font: layoutFont,
+                hovermode: 'closest'
             }};
             Plotly.react(container, traces, layout);
         }}
@@ -347,7 +374,8 @@ def build_html(data_json):
                 yaxis: {{ title: '종합 점수', range: [0, 100] }},
                 yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
-                font: layoutFont
+                font: layoutFont,
+                hovermode: 'closest'
             }};
             Plotly.react(container, traces, layout);
         }}
@@ -388,7 +416,8 @@ def build_html(data_json):
                 yaxis: {{ title: '종합 점수', range: [0, 100] }},
                 font: layoutFont,
                 height: 500,
-                barmode: 'group'
+                barmode: 'group',
+                hovermode: 'closest'
             }};
             Plotly.react(container, trace, layout);
         }}
@@ -397,6 +426,105 @@ def build_html(data_json):
             const tbody = document.querySelector("#reviews-table tbody");
             const reviews = data.map(item => ({{ year: item['설문연도'], review: item['협업후기'] }})).filter(r => r.review && r.review !== 'N/A');
             tbody.innerHTML = (reviews.length > 0) ? reviews.map(r => `<tr><td>${{r.year}}</td><td>${{r.review}}</td></tr>`).join('') : '<tr><td colspan="2">해당 조건의 후기가 없습니다.</td></tr>';
+        }}
+
+        function setupUnitComparisonChart() {{
+            const departmentSelect = document.getElementById('unit-comparison-department-filter');
+            const yearSelect = document.getElementById('unit-comparison-year-filter');
+            
+            // 부서 선택지 설정
+            const allDepartments = [...new Set(rawData.map(item => item['피평가부서']))].filter(d => d && d !== 'N/A').sort((a, b) => String(a).localeCompare(String(b), 'ko'));
+            departmentSelect.innerHTML = ['부서를 선택하세요', ...allDepartments].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            
+            // 연도 선택지 설정
+            yearSelect.innerHTML = ['전체', ...allYears].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            yearSelect.value = allYears[allYears.length - 1]; // 최신 연도로 기본 설정
+            
+            departmentSelect.addEventListener('change', updateUnitComparisonChart);
+            yearSelect.addEventListener('change', updateUnitComparisonChart);
+            
+            createCheckboxFilter('unit-comparison-score-filter', scoreCols, 'unit-comparison-score', updateUnitComparisonChart);
+        }}
+
+        function updateUnitComparisonChart() {{
+            const container = document.getElementById('unit-comparison-chart-container');
+            const selectedDepartment = document.getElementById('unit-comparison-department-filter').value;
+            const selectedYear = document.getElementById('unit-comparison-year-filter').value;
+            const selectedScores = Array.from(document.querySelectorAll('input[name="unit-comparison-score"]:checked')).map(cb => cb.value);
+
+            if (selectedDepartment === '부서를 선택하세요') {{
+                Plotly.react(container, [], {{
+                    height: 500,
+                    annotations: [{{ text: '비교할 부서를 선택해주세요.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+
+            if (selectedScores.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 500,
+                    annotations: [{{ text: '표시할 문항을 선택해주세요.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+
+            // 선택된 부서의 데이터 필터링
+            let departmentData = rawData.filter(item => item['피평가부서'] === selectedDepartment);
+            
+            if (selectedYear !== '전체') {{
+                departmentData = departmentData.filter(item => item['설문연도'] === selectedYear);
+            }}
+
+            // 부서 내 유닛 목록 추출
+            const unitsInDepartment = [...new Set(departmentData.map(item => item['피평가Unit']))].filter(u => u && u !== 'N/A').sort((a, b) => String(a).localeCompare(String(b), 'ko'));
+
+            if (unitsInDepartment.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 500,
+                    annotations: [{{ text: '선택된 조건에 해당하는 Unit이 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+
+            const traces = [];
+            
+            selectedScores.forEach(col => {{
+                const y_values = [];
+                unitsInDepartment.forEach(unit => {{
+                    const unitData = departmentData.filter(item => item['피평가Unit'] === unit);
+                    const average = unitData.length > 0 ? 
+                        (unitData.reduce((sum, item) => sum + (item[col] || 0), 0) / unitData.length).toFixed(1) : 0;
+                    y_values.push(average);
+                }});
+                
+                traces.push({{
+                    x: unitsInDepartment,
+                    y: y_values,
+                    name: col,
+                    type: 'bar',
+                    text: y_values,
+                    textposition: 'outside',
+                    textfont: {{ size: 14 }},
+                    hovertemplate: '%{{fullData.name}}: %{{y}}<br>Unit: %{{x}}<extra></extra>'
+                }});
+            }});
+
+            const yearTitle = selectedYear === '전체' ? '전체 연도' : selectedYear;
+            const layout = {{
+                title: `<b>[${{selectedDepartment}}] Unit별 문항 점수 비교 (${{yearTitle}})</b>`,
+                barmode: 'group',
+                height: 500,
+                xaxis: {{ title: 'Unit' }},
+                yaxis: {{ title: '점수', range: [0, 100] }},
+                legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
+                font: layoutFont,
+                hovermode: 'closest'
+            }};
+
+            Plotly.react(container, traces, layout);
         }}
 
         function toggleExpander(expanderId) {{
@@ -486,10 +614,12 @@ def build_html(data_json):
             createCheckboxFilter('drilldown-score-filter', scoreCols, 'drilldown-score', updateDashboard);
             setupDivisionChart();
             setupComparisonChart();
+            setupUnitComparisonChart();
             updateDashboard(); 
             updateHospitalYearlyChart();
             updateDivisionYearlyChart();
             updateYearlyDivisionComparisonChart();
+            updateUnitComparisonChart();
         }};
     </script>
 </body>
