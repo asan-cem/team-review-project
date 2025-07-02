@@ -171,6 +171,9 @@ def build_html(data_json):
             <div id="metrics-container"></div>
             <div id="drilldown-chart-container" style="margin-top: 20px;"></div>
             
+            <h3>감정 분류 분석</h3>
+            <div id="sentiment-chart-container" style="margin-top: 20px;"></div>
+            
             <h3>협업 후기</h3>
             <div id="reviews-table-container"><table id="reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody></tbody></table></div>
         </div>
@@ -302,6 +305,7 @@ def build_html(data_json):
             const filteredData = getFilteredData();
             updateMetrics(filteredData);
             updateDrilldownChart(filteredData);
+            updateSentimentChart(filteredData);
             updateReviewsTable(filteredData);
         }}
         
@@ -459,6 +463,78 @@ def build_html(data_json):
                 hovermode: 'closest'
             }};
             Plotly.react(container, trace, layout);
+        }}
+
+        function updateSentimentChart(data) {{
+            const container = document.getElementById('sentiment-chart-container');
+            
+            if (data.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 400,
+                    annotations: [{{ text: '선택된 조건에 해당하는 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+
+            // 감정 분류가 있는 데이터만 필터링
+            const validSentimentData = data.filter(item => {{
+                const sentiment = item['감정_분류'];
+                return sentiment && sentiment !== 'N/A' && sentiment !== '알 수 없음';
+            }});
+
+            if (validSentimentData.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 400,
+                    annotations: [{{ text: '감정 분류 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+
+            // 감정 분류별 집계 (알 수 없음 제외)
+            const sentimentCounts = {{}};
+            validSentimentData.forEach(item => {{
+                const sentiment = item['감정_분류'];
+                sentimentCounts[sentiment] = (sentimentCounts[sentiment] || 0) + 1;
+            }});
+
+            const sentiments = Object.keys(sentimentCounts);
+            const counts = Object.values(sentimentCounts);
+            const total = counts.reduce((sum, count) => sum + count, 0);
+            const percentages = counts.map(count => ((count / total) * 100).toFixed(1));
+
+            // 색상 매핑
+            const colorMap = {{
+                '긍정': '#2E8B57',
+                '부정': '#DC143C', 
+                '중립': '#4682B4',
+                '알 수 없음': '#808080'
+            }};
+            const colors = sentiments.map(sentiment => colorMap[sentiment] || '#808080');
+
+            const trace = {{
+                x: sentiments,
+                y: counts,
+                type: 'bar',
+                text: counts.map((count, idx) => `${{count}}건 (${{percentages[idx]}}%)`),
+                textposition: 'outside',
+                textfont: {{ size: 12 }},
+                marker: {{ color: colors }},
+                hovertemplate: '%{{x}}: %{{y}}건 (%{{text}})<extra></extra>'
+            }};
+
+            const layout = {{
+                title: '<b>감정 분류별 응답 분포</b>',
+                height: 400,
+                xaxis: {{ title: '감정 분류' }},
+                yaxis: {{ title: '응답 수', rangemode: 'tozero' }},
+                font: layoutFont,
+                hovermode: 'closest',
+                showlegend: false
+            }};
+
+            Plotly.react(container, [trace], layout);
         }}
 
         function updateReviewsTable(data) {{
@@ -959,7 +1035,7 @@ def main():
     print("🚀 대화형 대시보드 생성을 시작합니다...")
     df = load_data()
     print("✅ 데이터 로드 완료")
-    df_for_json = df[['설문연도', '피평가부문', '피평가부서', '피평가Unit', '존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합 점수', '정제된_텍스트']].copy()
+    df_for_json = df[['설문연도', '피평가부문', '피평가부서', '피평가Unit', '존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합 점수', '정제된_텍스트', '감정_분류']].copy()
     data_json = df_for_json.to_json(orient='records', force_ascii=False)
     print("✅ 데이터 JSON 변환 완료")
     dashboard_html = build_html(data_json)
