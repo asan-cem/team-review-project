@@ -339,7 +339,7 @@ def build_html(data_json):
             const chartData = [{{ x: selectedScores, y: selectedScores.map(col => averages[col].toFixed(1)), type: 'bar', text: selectedScores.map(col => averages[col].toFixed(1)), textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#6a89cc' }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
             const selectedYear = document.getElementById('year-filter').value;
             const title = selectedYear === '전체' ? '<b>선택 조건별 문항 점수 (전체 연도)</b>' : `<b>선택 조건별 문항 점수 (${{selectedYear}})</b>`;
-            const layout = {{ title: title, yaxis: {{ title: '종합 점수', range: [0, 100] }}, font: layoutFont, hovermode: 'closest' }};
+            const layout = {{ title: title, yaxis: {{ title: '점수', range: [0, 100] }}, font: layoutFont, hovermode: 'closest' }};
             Plotly.react(container, chartData, layout);
         }}
         
@@ -371,8 +371,8 @@ def build_html(data_json):
                 title: '<b>[전체] 연도별 문항 점수</b>',
                 barmode: 'group', height: 500,
                 xaxis: {{ type: 'category', title: '설문 연도' }},
-                yaxis: {{ title: '종합 점수', range: [0, 100] }},
-                yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero' }},
+                yaxis: {{ title: '점수', range: [0, 100] }},
+                yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero', tickformat: 'd' }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
                 font: layoutFont,
                 hovermode: 'closest'
@@ -410,8 +410,8 @@ def build_html(data_json):
                 title: `<b>[${{selectedDivision}}] 연도별 문항 점수</b>`,
                 barmode: 'group', height: 500,
                 xaxis: {{ type: 'category', title: '설문 연도' }},
-                yaxis: {{ title: '종합 점수', range: [0, 100] }},
-                yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero' }},
+                yaxis: {{ title: '점수', range: [0, 100] }},
+                yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero', tickformat: 'd' }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
                 font: layoutFont,
                 hovermode: 'closest'
@@ -451,8 +451,8 @@ def build_html(data_json):
 
             const trace = [{{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
             const layout = {{
-                title: `<b>${{selectedYear}} 부문별 종합 점수 비교</b>`,
-                yaxis: {{ title: '종합 점수', range: [0, 100] }},
+                title: `<b>${{selectedYear}} 부문별 점수 비교</b>`,
+                yaxis: {{ title: '점수', range: [0, 100] }},
                 font: layoutFont,
                 height: 500,
                 barmode: 'group',
@@ -476,7 +476,7 @@ def build_html(data_json):
             yearSelect.value = allYears[allYears.length - 1]; // 최신 연도로 기본 설정
             
             // 부문 선택지 설정
-            divisionSelect.innerHTML = ['전체', ...allDivisions].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            divisionSelect.innerHTML = ['부문을 선택하세요', ...allDivisions].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
             
             yearSelect.addEventListener('change', updateTeamRankingChart);
             divisionSelect.addEventListener('change', updateTeamRankingChart);
@@ -491,7 +491,7 @@ def build_html(data_json):
             let yearData = rawData.filter(item => item['설문연도'] === selectedYear);
 
             // 부문별 필터링
-            if (selectedDivision !== '전체') {{
+            if (selectedDivision !== '부문을 선택하세요') {{
                 yearData = yearData.filter(item => item['피평가부문'] === selectedDivision);
             }}
 
@@ -588,12 +588,12 @@ def build_html(data_json):
                     automargin: true
                 }},
                 yaxis: {{ 
-                    title: '종합 점수',
+                    title: '점수',
                     range: [Math.min(...scores) - 5, Math.max(...scores) + 5]
                 }},
                 font: layoutFont,
                 hovermode: 'closest',
-                showlegend: true,
+                showlegend: false,
                 legend: {{ 
                     orientation: 'h',
                     yanchor: 'bottom',
@@ -742,8 +742,8 @@ def build_html(data_json):
                 barmode: 'group', 
                 height: 500,
                 xaxis: {{ type: 'category', title: '설문 연도' }},
-                yaxis: {{ title: '종합 점수', range: [0, 100] }},
-                yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero' }},
+                yaxis: {{ title: '점수', range: [0, 100] }},
+                yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero', tickformat: 'd' }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
                 font: layoutFont,
                 hovermode: 'closest'
