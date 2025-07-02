@@ -773,7 +773,7 @@ def build_html(data_json):
             plotKeywordChart(posChartContainer, '긍정 키워드 Top 10', topPositive, '긍정');
             plotKeywordChart(negChartContainer, '부정 키워드 Top 10', topNegative, '부정');
             
-            document.getElementById('keyword-reviews-container').innerHTML = '';
+            displayKeywordReviews(null, null, true);
         }}
 
         function plotKeywordChart(container, title, data, sentiment) {{
@@ -807,8 +807,14 @@ def build_html(data_json):
             }});
         }}
 
-        function displayKeywordReviews(keyword, sentiment) {{
+        function displayKeywordReviews(keyword, sentiment, isInitial = false) {{
             const container = document.getElementById('keyword-reviews-container');
+            
+            if (isInitial) {{
+                container.innerHTML = `<h3>관련 리뷰</h3><p>위 그래프의 막대를 클릭하면 관련 리뷰를 확인할 수 있습니다.</p><div id="keyword-reviews-table-container"><table id="keyword-reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody><tr><td colspan="2" style="text-align:center;"></td></tr></tbody></table></div>`;
+                return;
+            }}
+
             const filteredData = getFilteredData();
             
             const reviews = filteredData.filter(item => 
@@ -1190,7 +1196,7 @@ def main():
     print("✅ 데이터 JSON 변환 완료")
     dashboard_html = build_html(data_json)
     print("✅ HTML 빌드 완료")
-    output_filename = "dashboard_interactive_v7.html"
+    output_filename = "서울아산병원 협업평가 대시보드.html"
     with open(output_filename, "w", encoding="utf-8") as f:
         f.write(dashboard_html)
     print(f"🎉 '{output_filename}' 파일이 성공적으로 생성되었습니다.")
