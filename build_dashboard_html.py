@@ -584,7 +584,8 @@ def build_html(data_json):
                 year: item['설문연도'], 
                 review: item['정제된_텍스트'],
                 sentiment: item['감정_분류'] || '알 수 없음'
-            }})).filter(r => r.review && r.review !== 'N/A');
+            }})).filter(r => r.review && r.review !== 'N/A')
+            .sort((a, b) => b.year - a.year); // 연도 내림차순 정렬 (2025, 2024, 2023, 2022)
             
             tbody.innerHTML = (reviews.length > 0) ? 
                 reviews.map(r => `<tr><td>${{r.year}}</td><td>${{r.review}} <span style="color: #666; font-size: 0.9em;">[${{r.sentiment}}]</span></td></tr>`).join('') : 
@@ -1060,7 +1061,7 @@ def build_html(data_json):
             populateFilters(); 
             createCheckboxFilter('hospital-score-filter', scoreCols, 'hospital-score', updateHospitalYearlyChart);
             createCheckboxFilter('drilldown-score-filter', scoreCols, 'drilldown-score', updateDashboard);
-            createCheckboxFilter('review-sentiment-filter', ['전체', '긍정', '부정', '중립'], 'review-sentiment', updateReviewsTable, true);
+            createCheckboxFilter('review-sentiment-filter', ['긍정', '부정', '중립'], 'review-sentiment', updateReviewsTable, true);
             setupDivisionChart();
             setupComparisonChart();
             setupTeamRankingChart();
