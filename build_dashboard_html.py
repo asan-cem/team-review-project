@@ -176,6 +176,32 @@ def build_html(data_json):
             <div id="reviews-table-container"><table id="reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody></tbody></table></div>
         </div>
         <div class="section">
+            <h2>연도별 부서/Unit 점수 비교</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="yearly-comparison-department-filter">피평가부서</label>
+                    <select id="yearly-comparison-department-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="yearly-comparison-unit-filter">피평가Unit</label>
+                    <select id="yearly-comparison-unit-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label>문항 선택</label>
+                    <div class="expander-container">
+                        <div class="expander-header" id="yearly-comparison-score-header" onclick="toggleExpander('yearly-comparison-score-expander')">
+                            <span>문항 선택 (6개 선택됨)</span>
+                            <span class="expander-arrow" id="yearly-comparison-score-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="yearly-comparison-score-expander">
+                            <div id="yearly-comparison-score-filter"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="yearly-comparison-chart-container"></div>
+        </div>
+        <div class="section">
             <h2>부서 내 Unit 비교</h2>
             <div class="filters">
                 <div class="filter-group">
@@ -593,6 +619,140 @@ def build_html(data_json):
             Plotly.react(container, [trace, avgLine], layout);
         }}
 
+        function setupYearlyComparisonChart() {{
+            const departmentSelect = document.getElementById('yearly-comparison-department-filter');
+            const unitSelect = document.getElementById('yearly-comparison-unit-filter');
+            
+            // 부서 선택지 설정
+            const allDepartments = [...new Set(rawData.map(item => item['피평가부서']))].filter(d => d && d !== 'N/A').sort((a, b) => String(a).localeCompare(String(b), 'ko'));
+            departmentSelect.innerHTML = ['전체', ...allDepartments].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            
+            // Unit 선택지 설정
+            const allUnits = [...new Set(rawData.map(item => item['피평가Unit']))].filter(u => u && u !== 'N/A').sort((a, b) => String(a).localeCompare(String(b), 'ko'));
+            unitSelect.innerHTML = ['전체', ...allUnits].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            
+            departmentSelect.addEventListener('change', () => {{
+                updateYearlyComparisonUnitFilter();
+                updateYearlyComparisonChart();
+            }});
+            unitSelect.addEventListener('change', updateYearlyComparisonChart);
+            
+            createCheckboxFilter('yearly-comparison-score-filter', scoreCols, 'yearly-comparison-score', updateYearlyComparisonChart);
+        }}
+
+        function updateYearlyComparisonUnitFilter() {{
+            const deptSelect = document.getElementById('yearly-comparison-department-filter');
+            const unitSelect = document.getElementById('yearly-comparison-unit-filter');
+            const selectedDept = deptSelect.value;
+
+            const allUnits = [...new Set(rawData.map(item => item['피평가Unit']))].filter(u => u && u !== 'N/A').sort((a,b) => a.localeCompare(b, 'ko'));
+            const units = (selectedDept === '전체' || !departmentUnitMap[selectedDept])
+                ? allUnits
+                : departmentUnitMap[selectedDept];
+
+            unitSelect.innerHTML = ['전체', ...units].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            unitSelect.value = '전체';
+        }}
+
+        function updateYearlyComparisonChart() {{
+            const container = document.getElementById('yearly-comparison-chart-container');
+            const selectedDept = document.getElementById('yearly-comparison-department-filter').value;
+            const selectedUnit = document.getElementById('yearly-comparison-unit-filter').value;
+            const selectedScores = Array.from(document.querySelectorAll('input[name="yearly-comparison-score"]:checked')).map(cb => cb.value);
+
+            if (selectedScores.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 500,
+                    annotations: [{{ text: '표시할 문항을 선택해주세요.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+
+            // 데이터 필터링
+            let targetData = [...rawData];
+            
+            if (selectedDept !== '전체') {{
+                targetData = targetData.filter(item => item['피평가부서'] === selectedDept);
+            }}
+            
+            if (selectedUnit !== '전체') {{
+                targetData = targetData.filter(item => item['피평가Unit'] === selectedUnit);
+            }}
+
+            if (targetData.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 500,
+                    annotations: [{{ text: '선택된 조건에 해당하는 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+
+            // 연도별 데이터 추출
+            const years = [...new Set(targetData.map(item => item['설문연도']))].sort();
+            const traces = [];
+
+            selectedScores.forEach(col => {{
+                const y_values = years.map(year => {{
+                    const yearData = targetData.filter(d => d['설문연도'] === year);
+                    const average = yearData.length > 0 ? 
+                        (yearData.reduce((sum, item) => sum + (item[col] || 0), 0) / yearData.length).toFixed(1) : 0;
+                    return average;
+                }});
+                traces.push({{ 
+                    x: years, 
+                    y: y_values, 
+                    name: col, 
+                    type: 'bar', 
+                    text: y_values, 
+                    textposition: 'outside', 
+                    textfont: {{ size: 14 }}, 
+                    hovertemplate: '%{{fullData.name}}: %{{y}}<br>연도: %{{x}}<extra></extra>' 
+                }});
+            }});
+            
+            // 응답수 추가
+            const yearly_counts = years.map(year => targetData.filter(d => d['설문연도'] === year).length);
+            traces.push({{ 
+                x: years, 
+                y: yearly_counts, 
+                name: '응답수', 
+                type: 'scatter', 
+                mode: 'lines+markers+text', 
+                line: {{ shape: 'spline', smoothing: 0.3, width: 3 }}, 
+                text: yearly_counts.map(count => `${{count.toLocaleString()}}멕`), 
+                textposition: 'top center', 
+                textfont: {{ size: 12 }}, 
+                yaxis: 'y2', 
+                hovertemplate: '응답수: %{{y}}명<br>연도: %{{x}}<extra></extra>' 
+            }});
+
+            // 제목 생성
+            let titleText = '연도별 문항 점수';
+            if (selectedDept !== '전체' && selectedUnit !== '전체') {{
+                titleText = `[${{selectedDept}} > ${{selectedUnit}}] 연도별 문항 점수`;
+            }} else if (selectedDept !== '전체') {{
+                titleText = `[${{selectedDept}}] 연도별 문항 점수`;
+            }} else if (selectedUnit !== '전체') {{
+                titleText = `[${{selectedUnit}}] 연도별 문항 점수`;
+            }}
+            
+            const layout = {{
+                title: `<b>${{titleText}}</b>`,
+                barmode: 'group', 
+                height: 500,
+                xaxis: {{ type: 'category', title: '설문 연도' }},
+                yaxis: {{ title: '종합 점수', range: [0, 100] }},
+                yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero' }},
+                legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
+                font: layoutFont,
+                hovermode: 'closest'
+            }};
+            
+            Plotly.react(container, traces, layout);
+        }}
+
         function setupUnitComparisonChart() {{
             const departmentSelect = document.getElementById('unit-comparison-department-filter');
             const yearSelect = document.getElementById('unit-comparison-year-filter');
@@ -780,12 +940,14 @@ def build_html(data_json):
             setupDivisionChart();
             setupComparisonChart();
             setupTeamRankingChart();
+            setupYearlyComparisonChart();
             setupUnitComparisonChart();
             updateDashboard(); 
             updateHospitalYearlyChart();
             updateDivisionYearlyChart();
             updateYearlyDivisionComparisonChart();
             updateTeamRankingChart();
+            updateYearlyComparisonChart();
             updateUnitComparisonChart();
         }};
     </script>
