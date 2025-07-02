@@ -48,16 +48,17 @@ def build_html(data_json):
         .filter-group {{ display: flex; flex-direction: column; }}
         .filter-group label {{ margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }}
         .filter-group select, .filter-group input {{ padding: 8px; border-radius: 5px; border: 1px solid #ced4da; min-width: 200px; }}
-        .expander-container {{ border: 1px solid #ced4da; border-radius: 5px; background-color: white; min-width: 200px; }}
-        .expander-header {{ padding: 10px; background-color: #f8f9fa; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-radius: 5px 5px 0 0; user-select: none; }}
+        .expander-container {{ border: 1px solid #ced4da; border-radius: 5px; background-color: white; min-width: 200px; max-width: 280px; position: relative; }}
+        .expander-header {{ padding: 6px 8px; background-color: #f8f9fa; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-radius: 5px; user-select: none; font-size: 13px; }}
         .expander-header:hover {{ background-color: #e9ecef; }}
-        .expander-arrow {{ transition: transform 0.3s ease; font-size: 12px; }}
+        .expander-arrow {{ transition: transform 0.3s ease; font-size: 11px; }}
         .expander-arrow.expanded {{ transform: rotate(180deg); }}
-        .expander-content {{ padding: 10px; border-top: 1px solid #dee2e6; display: none; max-height: 200px; overflow-y: auto; }}
+        .expander-content {{ padding: 4px; display: none; max-height: 200px; overflow-y: auto; position: absolute; top: 100%; left: 0; width: 100%; background-color: white; border: 1px solid #ced4da; border-top: none; border-radius: 0 0 5px 5px; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
         .expander-content.expanded {{ display: block; }}
-        .checkbox-item {{ display: flex; align-items: center; padding: 4px 0; }}
-        .checkbox-item input {{ margin-right: 8px; }}
-        .checkbox-item label {{ cursor: pointer; font-weight: normal; flex: 1; }}
+        .checkbox-item {{ display: flex; align-items: center; padding: 2px 0; height: auto; min-height: unset; }}
+        .checkbox-item input[type="checkbox"] {{ width: 16px; height: 16px; min-width: 16px; min-height: 16px; margin-right: 6px; box-sizing: border-box; }}
+        .checkbox-item:hover {{ background-color: #f8f9fa; }}
+        .checkbox-item label {{ cursor: pointer; font-weight: normal; font-size: 13px; line-height: 1.1; margin: 0; }}
         #metrics-container {{ display: flex; gap: 30px; margin-top: 20px; text-align: center; justify-content: center; }}
         .metric {{ background-color: #e9ecef; padding: 15px; border-radius: 8px; flex-grow: 1; }}
         .metric-value {{ font-size: 2em; font-weight: bold; color: #4a69bd; }}
