@@ -154,10 +154,6 @@ def build_html(data_json):
                 <div class="filter-group"><label for="year-filter">연도 (전체)</label><select id="year-filter"></select></div>
                 <div class="filter-group"><label for="department-filter">피평가부서</label><select id="department-filter"></select></div>
                 <div class="filter-group"><label for="unit-filter">피평가Unit</label><select id="unit-filter"></select></div>
-            </div>
-            <div id="metrics-container"></div>
-            <div id="drilldown-chart-container" style="margin-top: 20px;"></div>
-            <div class="filters" style="margin-top: 20px;">
                 <div class="filter-group">
                     <label>문항 선택</label>
                     <div class="expander-container">
@@ -171,6 +167,8 @@ def build_html(data_json):
                     </div>
                 </div>
             </div>
+            <div id="metrics-container"></div>
+            <div id="drilldown-chart-container" style="margin-top: 20px;"></div>
             
             <h3>협업 후기</h3>
             <div id="reviews-table-container"><table id="reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody></tbody></table></div>
