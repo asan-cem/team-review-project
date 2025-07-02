@@ -21,7 +21,7 @@ def load_data():
         df[col] = pd.to_numeric(df[col], errors='coerce')
     df.dropna(subset=['종합 점수'], inplace=True)
     
-    for col in ['피평가부문', '피평가부서', '피평가Unit', '협업후기']:
+    for col in ['피평가부문', '피평가부서', '피평가Unit', '정제된_텍스트']:
         df[col] = df[col].fillna('N/A')
         
     return df
@@ -463,7 +463,7 @@ def build_html(data_json):
 
         function updateReviewsTable(data) {{
             const tbody = document.querySelector("#reviews-table tbody");
-            const reviews = data.map(item => ({{ year: item['설문연도'], review: item['협업후기'] }})).filter(r => r.review && r.review !== 'N/A');
+            const reviews = data.map(item => ({{ year: item['설문연도'], review: item['정제된_텍스트'] }})).filter(r => r.review && r.review !== 'N/A');
             tbody.innerHTML = (reviews.length > 0) ? reviews.map(r => `<tr><td>${{r.year}}</td><td>${{r.review}}</td></tr>`).join('') : '<tr><td colspan="2">해당 조건의 후기가 없습니다.</td></tr>';
         }}
 
@@ -959,7 +959,7 @@ def main():
     print("🚀 대화형 대시보드 생성을 시작합니다...")
     df = load_data()
     print("✅ 데이터 로드 완료")
-    df_for_json = df[['설문연도', '피평가부문', '피평가부서', '피평가Unit', '존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합 점수', '협업후기']].copy()
+    df_for_json = df[['설문연도', '피평가부문', '피평가부서', '피평가Unit', '존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합 점수', '정제된_텍스트']].copy()
     data_json = df_for_json.to_json(orient='records', force_ascii=False)
     print("✅ 데이터 JSON 변환 완료")
     dashboard_html = build_html(data_json)
