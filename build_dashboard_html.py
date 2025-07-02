@@ -135,6 +135,20 @@ def build_html(data_json):
             <div id="comparison-chart-container"></div>
         </div>
         <div class="section">
+            <h2>부문별 팀 점수 순위</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="team-ranking-year-filter">연도 선택</label>
+                    <select id="team-ranking-year-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="team-ranking-division-filter">부문 선택</label>
+                    <select id="team-ranking-division-filter"></select>
+                </div>
+            </div>
+            <div id="team-ranking-chart-container"></div>
+        </div>
+        <div class="section">
             <h2>상세 분석 (부서/Unit별)</h2>
             <div class="filters">
                 <div class="filter-group"><label for="year-filter">연도 (전체)</label><select id="year-filter"></select></div>
@@ -326,14 +340,14 @@ def build_html(data_json):
             }});
             
             const yearly_counts = years.map(year => rawData.filter(d => d['설문연도'] === year).length);
-            traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', text: yearly_counts.map(count => `${{count.toLocaleString()}}명`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}명<br>연도: %{{x}}<extra></extra>' }});
+            traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', line: {{ shape: 'spline', smoothing: 0.3, width: 3 }}, text: yearly_counts.map(count => `${{count.toLocaleString()}}명`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}명<br>연도: %{{x}}<extra></extra>' }});
 
             const layout = {{
                 title: '<b>[전체] 연도별 문항 점수</b>',
                 barmode: 'group', height: 500,
                 xaxis: {{ type: 'category', title: '설문 연도' }},
                 yaxis: {{ title: '종합 점수', range: [0, 100] }},
-                yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false }},
+                yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero' }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
                 font: layoutFont,
                 hovermode: 'closest'
@@ -365,14 +379,14 @@ def build_html(data_json):
             }});
             
             const yearly_counts = years.map(year => divisionData.filter(d => d['설문연도'] === year).length);
-            traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', text: yearly_counts.map(count => `${{count.toLocaleString()}}명`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}명<br>연도: %{{x}}<extra></extra>' }});
+            traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', line: {{ shape: 'spline', smoothing: 0.3, width: 3 }}, text: yearly_counts.map(count => `${{count.toLocaleString()}}명`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}명<br>연도: %{{x}}<extra></extra>' }});
 
             const layout = {{
                 title: `<b>[${{selectedDivision}}] 연도별 문항 점수</b>`,
                 barmode: 'group', height: 500,
                 xaxis: {{ type: 'category', title: '설문 연도' }},
                 yaxis: {{ title: '종합 점수', range: [0, 100] }},
-                yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false }},
+                yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero' }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
                 font: layoutFont,
                 hovermode: 'closest'
@@ -426,6 +440,157 @@ def build_html(data_json):
             const tbody = document.querySelector("#reviews-table tbody");
             const reviews = data.map(item => ({{ year: item['설문연도'], review: item['협업후기'] }})).filter(r => r.review && r.review !== 'N/A');
             tbody.innerHTML = (reviews.length > 0) ? reviews.map(r => `<tr><td>${{r.year}}</td><td>${{r.review}}</td></tr>`).join('') : '<tr><td colspan="2">해당 조건의 후기가 없습니다.</td></tr>';
+        }}
+
+        function setupTeamRankingChart() {{
+            const yearSelect = document.getElementById('team-ranking-year-filter');
+            const divisionSelect = document.getElementById('team-ranking-division-filter');
+            
+            // 연도 선택지 설정
+            yearSelect.innerHTML = allYears.map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            yearSelect.value = allYears[allYears.length - 1]; // 최신 연도로 기본 설정
+            
+            // 부문 선택지 설정
+            divisionSelect.innerHTML = ['전체', ...allDivisions].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            
+            yearSelect.addEventListener('change', updateTeamRankingChart);
+            divisionSelect.addEventListener('change', updateTeamRankingChart);
+        }}
+
+        function updateTeamRankingChart() {{
+            const container = document.getElementById('team-ranking-chart-container');
+            const selectedYear = document.getElementById('team-ranking-year-filter').value;
+            const selectedDivision = document.getElementById('team-ranking-division-filter').value;
+
+            // 선택된 연도의 데이터 필터링
+            let yearData = rawData.filter(item => item['설문연도'] === selectedYear);
+
+            // 부문별 필터링
+            if (selectedDivision !== '전체') {{
+                yearData = yearData.filter(item => item['피평가부문'] === selectedDivision);
+            }}
+
+            // 부서별 평균 점수 계산
+            const teamScores = {{}};
+            yearData.forEach(item => {{
+                const department = item['피평가부서'];
+                const division = item['피평가부문'];
+                const score = item['종합 점수'];
+                
+                if (department && department !== 'N/A' && division && division !== 'N/A' && score != null) {{
+                    if (!teamScores[department]) {{
+                        teamScores[department] = {{ 
+                            scores: [], 
+                            division: division,
+                            unit: item['피평가Unit']
+                        }};
+                    }}
+                    teamScores[department].scores.push(score);
+                }}
+            }});
+
+            // 평균 계산 및 정렬
+            const teamRankings = Object.entries(teamScores)
+                .map(([department, data]) => ({{
+                    department: department,
+                    division: data.division,
+                    unit: data.unit,
+                    avgScore: (data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length).toFixed(1),
+                    count: data.scores.length
+                }}))
+                .sort((a, b) => parseFloat(b.avgScore) - parseFloat(a.avgScore));
+
+            if (teamRankings.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 600,
+                    annotations: [{{ text: '선택된 조건에 해당하는 부서 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+
+            // 부문별 색상 매핑
+            const divisionColors = {{
+                '진료부문': '#1f77b4',
+                '간호부문': '#ff7f0e', 
+                '관리부문': '#2ca02c',
+                '의료지원부문': '#d62728',
+                '기타': '#9467bd'
+            }};
+
+            // 차트 데이터 생성
+            const departments = teamRankings.map(item => item.department);
+            const scores = teamRankings.map(item => parseFloat(item.avgScore));
+            const colors = teamRankings.map(item => divisionColors[item.division] || '#17becf');
+            const hoverTexts = teamRankings.map(item => 
+                `부서: ${{item.department}}<br>부문: ${{item.division}}<br>점수: ${{item.avgScore}}<br>응답수: ${{item.count}}명`
+            );
+
+            // 연도별 전체 평균 계산 (선택된 연도의 모든 데이터)
+            const allYearData = rawData.filter(item => item['설문연도'] === selectedYear);
+            const yearlyOverallAverage = allYearData.length > 0 ? 
+                (allYearData.reduce((sum, item) => sum + (item['종합 점수'] || 0), 0) / allYearData.length).toFixed(1) : 0;
+
+            const trace = {{
+                x: departments,
+                y: scores,
+                type: 'bar',
+                text: scores.map(score => score.toString()),
+                textposition: 'outside',
+                textfont: {{ size: 12 }},
+                marker: {{ color: colors }},
+                hovertemplate: '%{{hovertext}}<extra></extra>',
+                hovertext: hoverTexts
+            }};
+
+            // 평균선 추가
+            const avgLine = {{
+                x: [departments[0], departments[departments.length - 1]],
+                y: [yearlyOverallAverage, yearlyOverallAverage],
+                type: 'scatter',
+                mode: 'lines',
+                line: {{ color: 'red', width: 2, dash: 'dash' }},
+                name: `${{selectedYear}} 전체 평균: ${{yearlyOverallAverage}}`,
+                hoverinfo: 'skip'
+            }};
+
+            const layout = {{
+                title: `<b>${{selectedYear}} 부문별 부서 점수 순위 (점수 높은 순)</b>`,
+                height: 600,
+                xaxis: {{ 
+                    title: '부서',
+                    tickangle: -45,
+                    automargin: true
+                }},
+                yaxis: {{ 
+                    title: '종합 점수',
+                    range: [Math.min(...scores) - 5, Math.max(...scores) + 5]
+                }},
+                font: layoutFont,
+                hovermode: 'closest',
+                showlegend: true,
+                legend: {{ 
+                    orientation: 'h',
+                    yanchor: 'bottom',
+                    y: 1.02,
+                    xanchor: 'right',
+                    x: 1
+                }},
+                annotations: [{{
+                    text: `${{selectedYear}} 전체 평균: ${{yearlyOverallAverage}}점`,
+                    xref: 'paper',
+                    yref: 'y',
+                    x: 0.02,
+                    y: parseFloat(yearlyOverallAverage),
+                    showarrow: false,
+                    font: {{ color: 'red', size: 12 }},
+                    bgcolor: 'rgba(255,255,255,0.8)',
+                    bordercolor: 'red',
+                    borderwidth: 1
+                }}]
+            }};
+
+            Plotly.react(container, [trace, avgLine], layout);
         }}
 
         function setupUnitComparisonChart() {{
@@ -614,11 +779,13 @@ def build_html(data_json):
             createCheckboxFilter('drilldown-score-filter', scoreCols, 'drilldown-score', updateDashboard);
             setupDivisionChart();
             setupComparisonChart();
+            setupTeamRankingChart();
             setupUnitComparisonChart();
             updateDashboard(); 
             updateHospitalYearlyChart();
             updateDivisionYearlyChart();
             updateYearlyDivisionComparisonChart();
+            updateTeamRankingChart();
             updateUnitComparisonChart();
         }};
     </script>
