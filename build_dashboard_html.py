@@ -721,7 +721,7 @@ def build_html(data_json):
                 type: 'scatter', 
                 mode: 'lines+markers+text', 
                 line: {{ shape: 'spline', smoothing: 0.3, width: 3 }}, 
-                text: yearly_counts.map(count => `${{count.toLocaleString()}}멕`), 
+                text: yearly_counts.map(count => `${{count.toLocaleString()}}명`), 
                 textposition: 'top center', 
                 textfont: {{ size: 12 }}, 
                 yaxis: 'y2', 
