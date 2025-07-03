@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>서울아산병원 협업 평가 대시보드</title>
+            <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+            
+        <style>
+        
+        body { 
+            font-family: 'Malgun Gothic', 'Segoe UI', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f8f9fa; 
+            color: #343a40; 
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: auto; 
+            padding: 20px; 
+        }
+        
+        .header { 
+            background: linear-gradient(90deg, #4a69bd, #6a89cc); 
+            color: white; 
+            padding: 25px; 
+            text-align: center; 
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2, h3 { 
+            margin: 0; 
+            padding: 0; 
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            font-weight: 300;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        h2 { 
+            color: #4a69bd; 
+            border-bottom: 3px solid #6a89cc; 
+            padding-bottom: 10px; 
+            margin-top: 40px; 
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+        
+        h3 { 
+            color: #555; 
+            margin-top: 30px; 
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            font-weight: 500;
+        }
+        
+        
+        .section { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05); 
+            margin-bottom: 30px;
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .section:hover {
+            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: #4a69bd;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3d5aa0;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        
+        .filters, .trend-filters { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 20px; 
+            align-items: flex-end; 
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .filter-group { 
+            display: flex; 
+            flex-direction: column;
+            min-width: 200px;
+        }
+        
+        .filter-group label { 
+            margin-bottom: 5px; 
+            font-weight: 600; 
+            font-size: 0.9em;
+            color: #495057;
+        }
+        
+        .filter-group select, .filter-group input { 
+            padding: 10px 12px; 
+            border-radius: 6px; 
+            border: 1px solid #ced4da;
+            font-size: 14px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .filter-group select:focus, .filter-group input:focus {
+            outline: none;
+            border-color: #4a69bd;
+            box-shadow: 0 0 0 2px rgba(74, 105, 189, 0.2);
+        }
+        
+        .filter-group select:hover, .filter-group input:hover {
+            border-color: #adb5bd;
+        }
+        
+        
+        .expander-container { 
+            border: 1px solid #ced4da; 
+            border-radius: 6px; 
+            background-color: white; 
+            min-width: 200px; 
+            max-width: 300px; 
+            position: relative;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .expander-header { 
+            padding: 10px 12px; 
+            background-color: #f8f9fa; 
+            cursor: pointer; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-radius: 6px; 
+            user-select: none; 
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+        
+        .expander-header:hover { 
+            background-color: #e9ecef; 
+        }
+        
+        .expander-arrow { 
+            transition: transform 0.3s ease; 
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .expander-arrow.expanded { 
+            transform: rotate(180deg); 
+        }
+        
+        .expander-content { 
+            padding: 8px; 
+            display: none; 
+            max-height: 250px; 
+            overflow-y: auto; 
+            position: absolute; 
+            top: 100%; 
+            left: 0; 
+            width: 100%; 
+            background-color: white; 
+            border: 1px solid #ced4da; 
+            border-top: none; 
+            border-radius: 0 0 6px 6px; 
+            z-index: 1000; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .expander-content.expanded { 
+            display: block; 
+        }
+        
+        .checkbox-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 6px 4px; 
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .checkbox-item:hover { 
+            background-color: #f8f9fa; 
+        }
+        
+        .checkbox-item input[type="checkbox"] { 
+            width: 16px; 
+            height: 16px; 
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        
+        .checkbox-item label { 
+            cursor: pointer; 
+            font-weight: normal; 
+            font-size: 13px; 
+            line-height: 1.3; 
+            margin: 0;
+            flex: 1;
+        }
+        
+        /* 스크롤바 스타일링 */
+        .expander-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .expander-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .expander-content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        .expander-content::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+        
+        
+        #metrics-container { 
+            display: flex; 
+            gap: 30px; 
+            margin-top: 20px; 
+            text-align: center; 
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .metric { 
+            background: linear-gradient(135deg, #e9ecef, #f8f9fa);
+            padding: 20px; 
+            border-radius: 12px; 
+            flex: 1;
+            min-width: 150px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .metric:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .metric-value { 
+            font-size: 2.5em; 
+            font-weight: bold; 
+            color: #4a69bd;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .metric-label { 
+            font-size: 0.95em; 
+            color: #6c757d;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        
+        #reviews-table-container, #keyword-reviews-table-container { 
+            max-height: 450px; 
+            overflow-y: auto; 
+            margin-top: 20px; 
+            border: 1px solid #dee2e6; 
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        #reviews-table, #keyword-reviews-table { 
+            width: 100%; 
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        #reviews-table th, #reviews-table td, 
+        #keyword-reviews-table th, #keyword-reviews-table td { 
+            padding: 12px 15px; 
+            border-bottom: 1px solid #dee2e6; 
+            text-align: left;
+            vertical-align: top;
+        }
+        
+        #reviews-table th, #keyword-reviews-table th { 
+            background-color: #f8f9fa; 
+            position: sticky; 
+            top: 0;
+            font-weight: 600;
+            color: #495057;
+            z-index: 10;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        #reviews-table tr:last-child td, 
+        #keyword-reviews-table tr:last-child td { 
+            border-bottom: none; 
+        }
+        
+        #reviews-table tbody tr:hover,
+        #keyword-reviews-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* 테이블 스크롤바 스타일링 */
+        #reviews-table-container::-webkit-scrollbar,
+        #keyword-reviews-table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #reviews-table-container::-webkit-scrollbar-track,
+        #keyword-reviews-table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        #reviews-table-container::-webkit-scrollbar-thumb,
+        #keyword-reviews-table-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        
+        
+        .keyword-charts-container { 
+            display: flex; 
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .keyword-chart { 
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .chart-container {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #fafafa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .chart-loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 16px;
+            color: #6c757d;
+        }
+        
+        .chart-error {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 16px;
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+        }
+        
+        
+        /* 태블릿 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .filters {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .filter-group {
+                min-width: auto;
+                width: 100%;
+            }
+            
+            #metrics-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .keyword-charts-container {
+                flex-direction: column;
+            }
+            
+            .keyword-chart {
+                min-width: auto;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            h2 {
+                font-size: 1.5em;
+            }
+        }
+        
+        /* 모바일 */
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .section {
+                padding: 15px;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            h2 {
+                font-size: 1.3em;
+            }
+            
+            .metric {
+                padding: 15px;
+            }
+            
+            .metric-value {
+                font-size: 2em;
+            }
+            
+            #reviews-table th, #reviews-table td,
+            #keyword-reviews-table th, #keyword-reviews-table td {
+                padding: 8px 10px;
+                font-size: 13px;
+            }
+        }
+        
+        
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+        .text-right { text-align: right; }
+        
+        .mb-0 { margin-bottom: 0; }
+        .mb-1 { margin-bottom: 0.25rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
+        .mb-4 { margin-bottom: 1.5rem; }
+        .mb-5 { margin-bottom: 3rem; }
+        
+        .mt-0 { margin-top: 0; }
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-3 { margin-top: 1rem; }
+        .mt-4 { margin-top: 1.5rem; }
+        .mt-5 { margin-top: 3rem; }
+        
+        .p-0 { padding: 0; }
+        .p-1 { padding: 0.25rem; }
+        .p-2 { padding: 0.5rem; }
+        .p-3 { padding: 1rem; }
+        .p-4 { padding: 1.5rem; }
+        .p-5 { padding: 3rem; }
+        
+        .d-none { display: none; }
+        .d-block { display: block; }
+        .d-flex { display: flex; }
+        .d-inline { display: inline; }
+        .d-inline-block { display: inline-block; }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4a69bd;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        </style>
+        
+        </head>
+        
+<body>
+    
+        <div class="header">
+            <h1>📊 서울아산병원 협업 평가 대시보드</h1>
+        </div>
+        
+    <div class="container">
+        
+        <div class="section">
+            <h2>[전체] 연도별 문항 점수</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label>문항 선택</label>
+                    <div class="expander-container">
+                        <div class="expander-header" id="hospital-score-header" onclick="toggleExpander('hospital-score-expander')">
+                            <span>문항 선택 (6개 선택됨)</span>
+                            <span class="expander-arrow" id="hospital-score-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="hospital-score-expander">
+                            <div id="hospital-score-filter"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="hospital-yearly-chart-container"></div>
+        </div>
+        
+        
+        <div class="section">
+            <h2>[부문별] 연도별 문항 점수</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="division-chart-filter">부문 선택</label>
+                    <select id="division-chart-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label>문항 선택</label>
+                    <div class="expander-container">
+                        <div class="expander-header" id="division-score-header" onclick="toggleExpander('division-score-expander')">
+                            <span>문항 선택 (6개 선택됨)</span>
+                            <span class="expander-arrow" id="division-score-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="division-score-expander">
+                            <div id="division-score-filter"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="division-yearly-chart-container"></div>
+        </div>
+        
+        
+        <div class="section">
+            <h2>연도별 부문 비교</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="comparison-year-filter">연도 선택</label>
+                    <select id="comparison-year-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label>부문 선택</label>
+                    <div class="expander-container">
+                        <div class="expander-header" id="comparison-division-header" onclick="toggleExpander('comparison-division-expander')">
+                            <span>부문 선택 (0개 선택됨)</span>
+                            <span class="expander-arrow" id="comparison-division-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="comparison-division-expander">
+                            <div id="comparison-division-filter"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="comparison-chart-container"></div>
+        </div>
+        
+        
+        <div class="section">
+            <h2>부문별 팀 점수 순위</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="team-ranking-year-filter">연도 선택</label>
+                    <select id="team-ranking-year-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="team-ranking-division-filter">부문 선택</label>
+                    <select id="team-ranking-division-filter"></select>
+                </div>
+            </div>
+            <div id="team-ranking-chart-container"></div>
+        </div>
+        
+        
+        <div class="section">
+            <h2>상세 분석 (부서/Unit별)</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="year-filter">연도 (전체)</label>
+                    <select id="year-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="department-filter">피평가부서</label>
+                    <select id="department-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="unit-filter">피평가Unit</label>
+                    <select id="unit-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label>문항 선택</label>
+                    <div class="expander-container">
+                        <div class="expander-header" id="drilldown-score-header" onclick="toggleExpander('drilldown-score-expander')">
+                            <span>문항 선택 (6개 선택됨)</span>
+                            <span class="expander-arrow" id="drilldown-score-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="drilldown-score-expander">
+                            <div id="drilldown-score-filter"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="metrics-container"></div>
+            <div id="drilldown-chart-container" class="mt-4"></div>
+            
+            <h3>협업 주관식 피드백 감정 분석</h3>
+            <div id="sentiment-chart-container" class="mt-4"></div>
+            
+            <h3>협업 후기</h3>
+            <div class="filters">
+                <div class="filter-group">
+                    <label>감정 분류 필터</label>
+                    <div class="expander-container">
+                        <div class="expander-header" id="review-sentiment-header" onclick="toggleExpander('review-sentiment-expander')">
+                            <span>감정 선택 (3개 선택됨)</span>
+                            <span class="expander-arrow" id="review-sentiment-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="review-sentiment-expander">
+                            <div id="review-sentiment-filter"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="reviews-table-container">
+                <table id="reviews-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 100px;">연도</th>
+                            <th>후기 내용</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            
+            <h3>감정 강도 분석</h3>
+            <div id="emotion-intensity-trend-container"></div>
+            
+            <div id="keyword-analysis-section">
+                <h3>핵심 키워드 분석</h3>
+                <div class="keyword-charts-container">
+                    <div id="positive-keywords-chart" class="keyword-chart"></div>
+                    <div id="negative-keywords-chart" class="keyword-chart"></div>
+                </div>
+                <div id="keyword-reviews-container" class="mt-4"></div>
+            </div>
+        </div>
+        
+        
+        <div class="section">
+            <h2>연도별 부서/Unit 점수 비교</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="yearly-comparison-department-filter">피평가부서</label>
+                    <select id="yearly-comparison-department-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="yearly-comparison-unit-filter">피평가Unit</label>
+                    <select id="yearly-comparison-unit-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label>문항 선택</label>
+                    <div class="expander-container">
+                        <div class="expander-header" id="yearly-comparison-score-header" onclick="toggleExpander('yearly-comparison-score-expander')">
+                            <span>문항 선택 (6개 선택됨)</span>
+                            <span class="expander-arrow" id="yearly-comparison-score-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="yearly-comparison-score-expander">
+                            <div id="yearly-comparison-score-filter"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="yearly-comparison-chart-container"></div>
+        </div>
+        
+        
+        <div class="section">
+            <h2>부서 내 Unit 비교</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="unit-comparison-department-filter">피평가부서 선택</label>
+                    <select id="unit-comparison-department-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="unit-comparison-year-filter">연도 선택</label>
+                    <select id="unit-comparison-year-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label>문항 선택</label>
+                    <div class="expander-container">
+                        <div class="expander-header" id="unit-comparison-score-header" onclick="toggleExpander('unit-comparison-score-expander')">
+                            <span>문항 선택 (6개 선택됨)</span>
+                            <span class="expander-arrow" id="unit-comparison-score-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="unit-comparison-score-expander">
+                            <div id="unit-comparison-score-filter"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="unit-comparison-chart-container"></div>
+        </div>
+        
+        
+        <footer class="section text-center">
+            <p style="color: #6c757d; margin: 0;">
+                서울아산병원 협업 평가 대시보드 | 
+                생성일: <span id="generation-date"></span>
+            </p>
+        </footer>
+        <script>
+            document.getElementById('generation-date').textContent = new Date().toLocaleDateString('ko-KR');
+        </script>
+        
+    </div>
+    
+        <script>
+        
+        const CONFIG = {
+            SCORE_COLUMNS: ['존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합 점수'],
+            FILTER_MAPPING: {'year-filter': '설문연도', 'department-filter': '피평가부서', 'unit-filter': '피평가Unit'},
+            SENTIMENT_ORDER: ['긍정', '부정', '중립'],
+            SENTIMENT_COLORS: {'긍정': '#2E8B57', '부정': '#DC143C', '중립': '#4682B4', '알 수 없음': '#808080'},
+            DIVISION_COLORS: {'진료부문': '#1f77b4', '간호부문': '#ff7f0e', '관리부문': '#2ca02c', '의료지원부문': '#d62728', '기타': '#9467bd'},
+            CHART_CONFIG: {'default_height': 400, 'ranking_height': 600, 'large_height': 500, 'font_size': 14, 'text_font_size': 12, 'marker_font_size': 14, 'score_range': [0, 100], 'intensity_range': [1, 10]},
+            JS_CONFIG: {'plotly_cdn': 'https://cdn.plot.ly/plotly-latest.min.js', 'cache_enabled': True, 'debounce_delay': 300, 'max_keywords': 10},
+            DEFAULT_LAYOUT: {
+                font: { size: 14 },
+                hovermode: 'closest'
+            },
+            PLOTLY_CONFIG: {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+                displaylogo: false
+            }
+        };
+        
+        
+        class DataCache {
+            constructor(rawData) {
+                this.rawData = rawData;
+                this.cache = new Map();
+                this.filterCache = new Map();
+            }
+            
+            getFilteredData(filters) {
+                const key = JSON.stringify(filters);
+                if (!this.filterCache.has(key)) {
+                    this.filterCache.set(key, this.applyFilters(filters));
+                }
+                return this.filterCache.get(key);
+            }
+            
+            applyFilters(filters) {
+                let filteredData = [...this.rawData];
+                for (const [elementId, dataCol] of Object.entries(filters)) {
+                    const selectedValue = filters[elementId];
+                    if (selectedValue && selectedValue !== '전체') {
+                        filteredData = filteredData.filter(item => item[dataCol] == selectedValue);
+                    }
+                }
+                return filteredData;
+            }
+            
+            calculateAverages(data) {
+                const averages = {};
+                CONFIG.SCORE_COLUMNS.forEach(col => {
+                    const total = data.reduce((sum, item) => sum + (item[col] || 0), 0);
+                    averages[col] = data.length > 0 ? (total / data.length) : 0;
+                });
+                return averages;
+            }
+            
+            clearCache() {
+                this.cache.clear();
+                this.filterCache.clear();
+            }
+        }
+        
+        
+        class ChartManager {
+            constructor(dataCache) {
+                this.dataCache = dataCache;
+                this.charts = new Map();
+                this.updateQueue = [];
+                this.isUpdating = false;
+            }
+            
+            createChart(containerId, data, layout, config = {}) {
+                try {
+                    const container = document.getElementById(containerId);
+                    if (!container) {
+                        console.warn(`Container not found: ${containerId}`);
+                        return;
+                    }
+                    
+                    const mergedLayout = {
+                        ...CONFIG.DEFAULT_LAYOUT,
+                        ...layout,
+                        font: { size: CONFIG.CHART_CONFIG.font_size }
+                    };
+                    
+                    Plotly.react(container, data, mergedLayout, CONFIG.PLOTLY_CONFIG);
+                    this.charts.set(containerId, { data, layout: mergedLayout, config });
+                } catch (error) {
+                    console.error(`Chart creation failed for ${containerId}:`, error);
+                    this.showChartError(containerId, 'Chart creation failed');
+                }
+            }
+            
+            updateChart(containerId, newData, newLayout = {}) {
+                if (this.charts.has(containerId)) {
+                    const chart = this.charts.get(containerId);
+                    const mergedLayout = { ...chart.layout, ...newLayout };
+                    this.createChart(containerId, newData, mergedLayout, chart.config);
+                }
+            }
+            
+            showEmptyChart(containerId, message = 'No data to display') {
+                const layout = {
+                    height: CONFIG.CHART_CONFIG.default_height,
+                    annotations: [{
+                        text: message,
+                        xref: 'paper',
+                        yref: 'paper',
+                        x: 0.5,
+                        y: 0.5,
+                        showarrow: false,
+                        font: { size: 16, color: '#888' }
+                    }],
+                    xaxis: { visible: false },
+                    yaxis: { visible: false }
+                };
+                this.createChart(containerId, [], layout);
+            }
+            
+            showChartError(containerId, message = 'Chart error occurred') {
+                const container = document.getElementById(containerId);
+                if (container) {
+                    container.innerHTML = `<div class="chart-error">${message}</div>`;
+                }
+            }
+            
+            showChartLoading(containerId) {
+                const container = document.getElementById(containerId);
+                if (container) {
+                    container.innerHTML = '<div class="chart-loading"><div class="loading-spinner"></div></div>';
+                }
+            }
+            
+            queueUpdate(updateFunction) {
+                this.updateQueue.push(updateFunction);
+                if (!this.isUpdating) {
+                    this.processQueue();
+                }
+            }
+            
+            async processQueue() {
+                this.isUpdating = true;
+                while (this.updateQueue.length > 0) {
+                    const updateFunction = this.updateQueue.shift();
+                    try {
+                        await updateFunction();
+                        await new Promise(resolve => setTimeout(resolve, 10)); // 브라우저 리플로우 방지
+                    } catch (error) {
+                        console.error('Chart update error:', error);
+                    }
+                }
+                this.isUpdating = false;
+            }
+        }
+        
+        
+        class FilterManager {
+            constructor(dataCache, chartManager) {
+                this.dataCache = dataCache;
+                this.chartManager = chartManager;
+                this.debounceTimeouts = new Map();
+                this.expanderStates = new Map();
+            }
+            
+            setupFilters() {
+                this.populateBasicFilters();
+                this.setupExpanderFilters();
+                this.setupEventListeners();
+            }
+            
+            populateBasicFilters() {
+                const filters = CONFIG.FILTER_MAPPING;
+                for (const [elementId, dataCol] of Object.entries(filters)) {
+                    const select = document.getElementById(elementId);
+                    if (!select) continue;
+                    
+                    const values = [...new Set(this.dataCache.rawData.map(item => item[dataCol]))]
+                        .sort((a, b) => String(a).localeCompare(String(b), 'ko'));
+                    const options = ['전체', ...values];
+                    
+                    select.innerHTML = options.map(opt => 
+                        `<option value="${this.escapeHtml(opt)}">${this.escapeHtml(opt)}</option>`
+                    ).join('');
+                }
+            }
+            
+            setupExpanderFilters() {
+                // Score filters
+                this.createCheckboxFilter('hospital-score-filter', CONFIG.SCORE_COLUMNS, 'hospital-score', true);
+                this.createCheckboxFilter('division-score-filter', CONFIG.SCORE_COLUMNS, 'division-score', true);
+                this.createCheckboxFilter('drilldown-score-filter', CONFIG.SCORE_COLUMNS, 'drilldown-score', true);
+                this.createCheckboxFilter('yearly-comparison-score-filter', CONFIG.SCORE_COLUMNS, 'yearly-comparison-score', true);
+                this.createCheckboxFilter('unit-comparison-score-filter', CONFIG.SCORE_COLUMNS, 'unit-comparison-score', true);
+                
+                // Division filters
+                const allDivisions = [...new Set(this.dataCache.rawData.map(item => item['피평가부문']))]
+                    .filter(d => d && d !== 'N/A').sort((a, b) => String(a).localeCompare(String(b), 'ko'));
+                this.createCheckboxFilter('comparison-division-filter', allDivisions, 'comparison-division', false);
+                
+                // Sentiment filters
+                this.createCheckboxFilter('review-sentiment-filter', CONFIG.SENTIMENT_ORDER, 'review-sentiment', true);
+            }
+            
+            createCheckboxFilter(containerId, items, groupName, startChecked = true) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                container.innerHTML = '';
+                
+                // Select All checkbox
+                const selectAllDiv = document.createElement('div');
+                selectAllDiv.className = 'checkbox-item';
+                selectAllDiv.innerHTML = `
+                    <input type="checkbox" id="${groupName}-select-all" ${startChecked ? 'checked' : ''}>
+                    <label for="${groupName}-select-all"><b>전체 선택</b></label>
+                `;
+                container.appendChild(selectAllDiv);
+                
+                // Individual checkboxes
+                items.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'checkbox-item';
+                    const escapedItem = this.escapeHtml(item);
+                    itemDiv.innerHTML = `
+                        <input type="checkbox" id="${groupName}-${escapedItem}" name="${groupName}" 
+                               value="${escapedItem}" ${startChecked ? 'checked' : ''}>
+                        <label for="${groupName}-${escapedItem}">${escapedItem}</label>
+                    `;
+                    container.appendChild(itemDiv);
+                });
+                
+                this.setupCheckboxLogic(container, groupName, containerId);
+            }
+            
+            setupCheckboxLogic(container, groupName, containerId) {
+                const selectAllCheckbox = container.querySelector(`#${groupName}-select-all`);
+                const itemCheckboxes = container.querySelectorAll(`input[name="${groupName}"]`);
+                
+                const updateSelectAllState = () => {
+                    const allChecked = [...itemCheckboxes].every(cb => cb.checked);
+                    const someChecked = [...itemCheckboxes].some(cb => cb.checked);
+                    const checkedCount = [...itemCheckboxes].filter(cb => cb.checked).length;
+                    
+                    selectAllCheckbox.checked = allChecked;
+                    selectAllCheckbox.indeterminate = !allChecked && someChecked;
+                    
+                    this.updateExpanderHeader(containerId, checkedCount, itemCheckboxes.length);
+                };
+                
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.addEventListener('change', (e) => {
+                        itemCheckboxes.forEach(checkbox => {
+                            checkbox.checked = e.target.checked;
+                        });
+                        updateSelectAllState();
+                        this.debouncedUpdate();
+                    });
+                }
+                
+                itemCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', () => {
+                        updateSelectAllState();
+                        this.debouncedUpdate();
+                    });
+                });
+                
+                updateSelectAllState();
+            }
+            
+            updateExpanderHeader(containerId, selectedCount, totalCount) {
+                const headerId = containerId.replace('-filter', '-header');
+                const headerSpan = document.querySelector(`#${headerId} span:first-child`);
+                if (headerSpan) {
+                    if (containerId.includes('division')) {
+                        headerSpan.textContent = `부문 선택 (${selectedCount}개 선택됨)`;
+                    } else {
+                        headerSpan.textContent = `문항 선택 (${selectedCount}개 선택됨)`;
+                    }
+                }
+            }
+            
+            setupEventListeners() {
+                // Basic filter change events
+                Object.keys(CONFIG.FILTER_MAPPING).forEach(elementId => {
+                    const element = document.getElementById(elementId);
+                    if (element) {
+                        element.addEventListener('change', () => this.debouncedUpdate());
+                    }
+                });
+                
+                // Department-Unit dependency
+                const deptFilter = document.getElementById('department-filter');
+                if (deptFilter) {
+                    deptFilter.addEventListener('change', () => {
+                        this.updateUnitFilter();
+                        this.debouncedUpdate();
+                    });
+                }
+            }
+            
+            updateUnitFilter() {
+                const deptSelect = document.getElementById('department-filter');
+                const unitSelect = document.getElementById('unit-filter');
+                if (!deptSelect || !unitSelect) return;
+                
+                const selectedDept = deptSelect.value;
+                const departmentUnitMap = this.getDepartmentUnitMapping();
+                
+                const allUnits = [...new Set(this.dataCache.rawData.map(item => item['피평가Unit']))]
+                    .filter(u => u && u !== 'N/A').sort((a, b) => a.localeCompare(b, 'ko'));
+                
+                const units = (selectedDept === '전체' || !departmentUnitMap[selectedDept])
+                    ? allUnits
+                    : departmentUnitMap[selectedDept];
+                
+                unitSelect.innerHTML = ['전체', ...units].map(opt => 
+                    `<option value="${this.escapeHtml(opt)}">${this.escapeHtml(opt)}</option>`
+                ).join('');
+                unitSelect.value = '전체';
+            }
+            
+            getDepartmentUnitMapping() {
+                const mapping = {};
+                this.dataCache.rawData.forEach(item => {
+                    const dept = item['피평가부서'];
+                    const unit = item['피평가Unit'];
+                    if (dept && dept !== 'N/A' && unit && unit !== 'N/A') {
+                        if (!mapping[dept]) mapping[dept] = new Set();
+                        mapping[dept].add(unit);
+                    }
+                });
+                
+                for (const dept in mapping) {
+                    mapping[dept] = [...mapping[dept]].sort((a, b) => 
+                        String(a).localeCompare(String(b), 'ko')
+                    );
+                }
+                return mapping;
+            }
+            
+            debouncedUpdate() {
+                clearTimeout(this.debounceTimeouts.get('main'));
+                this.debounceTimeouts.set('main', setTimeout(() => {
+                    this.chartManager.queueUpdate(() => window.updateAllCharts());
+                }, CONFIG.JS_CONFIG.debounce_delay));
+            }
+            
+            toggleExpander(expanderId) {
+                const content = document.getElementById(expanderId);
+                const arrow = document.getElementById(expanderId.replace('-expander', '-arrow'));
+                
+                if (!content || !arrow) return;
+                
+                const isExpanded = content.classList.contains('expanded');
+                
+                if (isExpanded) {
+                    content.classList.remove('expanded');
+                    arrow.classList.remove('expanded');
+                    this.expanderStates.set(expanderId, false);
+                } else {
+                    content.classList.add('expanded');
+                    arrow.classList.add('expanded');
+                    this.expanderStates.set(expanderId, true);
+                }
+            }
+            
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            getSelectedValues(groupName) {
+                return Array.from(document.querySelectorAll(`input[name="${groupName}"]:checked`))
+                    .map(cb => cb.value);
+            }
+        }
+        
+        
+        // Global variables
+        let dataCache;
+        let chartManager;
+        let filterManager;
+        
+        function initializeDashboard(rawData) {
+            dataCache = new DataCache(rawData);
+            chartManager = new ChartManager(dataCache);
+            filterManager = new FilterManager(dataCache, chartManager);
+            
+            filterManager.setupFilters();
+            updateAllCharts();
+        }
+        
+        function getFilteredData() {
+            const filters = {};
+            Object.keys(CONFIG.FILTER_MAPPING).forEach(elementId => {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    filters[CONFIG.FILTER_MAPPING[elementId]] = element.value;
+                }
+            });
+            return dataCache.getFilteredData(filters);
+        }
+        
+        function updateAllCharts() {
+            const filteredData = getFilteredData();
+            
+            // Update metrics
+            updateMetrics(filteredData);
+            
+            // Update main charts
+            updateHospitalYearlyChart();
+            updateDivisionYearlyChart();
+            updateYearlyDivisionComparisonChart();
+            updateTeamRankingChart();
+            updateDrilldownChart(filteredData);
+            updateYearlyComparisonChart();
+            updateUnitComparisonChart();
+            
+            // Update analysis charts
+            updateSentimentChart(filteredData);
+            updateEmotionIntensityTrend();
+            updateKeywordAnalysis(filteredData);
+            
+            // Update tables
+            updateReviewsTable(filteredData);
+        }
+        
+        function updateMetrics(data) {
+            const container = document.getElementById('metrics-container');
+            if (!container) return;
+            
+            if (data.length === 0) {
+                container.innerHTML = "<p class='text-center'>선택된 조건에 해당하는 데이터가 없습니다.</p>";
+                return;
+            }
+            
+            const averages = dataCache.calculateAverages(data);
+            container.innerHTML = `
+                <div class="metric">
+                    <div class="metric-value">${data.length.toLocaleString()}</div>
+                    <div class="metric-label">응답 수</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">${averages['종합 점수'].toFixed(1)}</div>
+                    <div class="metric-label">종합 점수</div>
+                </div>
+            `;
+        }
+        
+        function updateHospitalYearlyChart() {
+            const selectedScores = filterManager.getSelectedValues('hospital-score');
+            
+            if (selectedScores.length === 0) {
+                chartManager.showEmptyChart('hospital-yearly-chart-container', '표시할 문항을 선택해주세요.');
+                return;
+            }
+            
+            const allYears = [...new Set(dataCache.rawData.map(item => item['설문연도']))].sort();
+            const traces = [];
+            
+            selectedScores.forEach(col => {
+                const y_values = allYears.map(year => {
+                    const yearData = dataCache.rawData.filter(d => d['설문연도'] === year);
+                    return dataCache.calculateAverages(yearData)[col].toFixed(1);
+                });
+                traces.push({
+                    x: allYears,
+                    y: y_values,
+                    name: col,
+                    type: 'bar',
+                    text: y_values,
+                    textposition: 'outside',
+                    textfont: { size: CONFIG.CHART_CONFIG.marker_font_size },
+                    hovertemplate: '%{fullData.name}: %{y}<br>연도: %{x}<extra></extra>'
+                });
+            });
+            
+            // 응답수 추가
+            const yearly_counts = allYears.map(year => 
+                dataCache.rawData.filter(d => d['설문연도'] === year).length
+            );
+            traces.push({
+                x: allYears,
+                y: yearly_counts,
+                name: '응답수',
+                type: 'scatter',
+                mode: 'lines+markers+text',
+                line: { shape: 'spline', smoothing: 0.3, width: 3 },
+                text: yearly_counts.map(count => `${count.toLocaleString()}명`),
+                textposition: 'top center',
+                textfont: { size: CONFIG.CHART_CONFIG.text_font_size },
+                yaxis: 'y2',
+                hovertemplate: '응답수: %{y}명<br>연도: %{x}<extra></extra>'
+            });
+            
+            const layout = {
+                title: '<b>[전체] 연도별 문항 점수</b>',
+                barmode: 'group',
+                height: CONFIG.CHART_CONFIG.large_height,
+                xaxis: { type: 'category', title: '설문 연도' },
+                yaxis: { title: '점수', range: CONFIG.CHART_CONFIG.score_range },
+                yaxis2: {
+                    title: '응답 수',
+                    overlaying: 'y',
+                    side: 'right',
+                    showgrid: false,
+                    rangemode: 'tozero',
+                    tickformat: 'd'
+                },
+                legend: { orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }
+            };
+            
+            chartManager.createChart('hospital-yearly-chart-container', traces, layout);
+        }
+        
+        // Window event handlers
+        window.toggleExpander = function(expanderId) {
+            filterManager.toggleExpander(expanderId);
+        };
+        
+        window.updateAllCharts = updateAllCharts;
+        window.initializeDashboard = initializeDashboard;
+        
+        
+        // Initialize dashboard when page loads
+        window.onload = function() {
+            const rawData = {data_json};
+            initializeDashboard(JSON.parse(rawData));
+        };
+        </script>
+        
+</body>
+</html>
