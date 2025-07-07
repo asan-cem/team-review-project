@@ -10,3 +10,4 @@ venv-backup/
 node_modules
 respect/
 \n# Analysis output files\n*.xlsx
+.env
