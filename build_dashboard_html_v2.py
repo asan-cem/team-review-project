@@ -91,10 +91,11 @@ def build_html_v2(data_json):
         .metric-value {{ font-size: 2em; font-weight: bold; color: #4a69bd; }}
         .metric-label {{ font-size: 0.9em; color: #6c757d; }}
         #reviews-table-container, #keyword-reviews-table-container {{ max-height: 400px; overflow-y: auto; margin-top: 20px; border: 1px solid #dee2e6; border-radius: 5px; }}
-        #reviews-table, #keyword-reviews-table {{ width: 100%; border-collapse: collapse; }}
-        #reviews-table th, #reviews-table td, #keyword-reviews-table th, #keyword-reviews-table td {{ padding: 12px; border-bottom: 1px solid #dee2e6; text-align: left; }}
-        #reviews-table th, #keyword-reviews-table th {{ background-color: #f8f9fa; position: sticky; top: 0; }}
-        #reviews-table tr:last-child td, #keyword-reviews-table tr:last-child td {{ border-bottom: none; }}
+        #network-reviews-table-container {{ max-height: 300px; overflow-y: auto; margin-top: 20px; border: 1px solid #dee2e6; border-radius: 5px; }}
+        #reviews-table, #keyword-reviews-table, #network-reviews-table {{ width: 100%; border-collapse: collapse; }}
+        #reviews-table th, #reviews-table td, #keyword-reviews-table th, #keyword-reviews-table td, #network-reviews-table th, #network-reviews-table td {{ padding: 12px; border-bottom: 1px solid #dee2e6; text-align: left; }}
+        #reviews-table th, #keyword-reviews-table th, #network-reviews-table th {{ background-color: #f8f9fa; position: sticky; top: 0; }}
+        #reviews-table tr:last-child td, #keyword-reviews-table tr:last-child td, #network-reviews-table tr:last-child td {{ border-bottom: none; }}
         .keyword-charts-container {{ display: flex; gap: 20px; }}
         .keyword-chart {{ flex: 1; }}
         
@@ -346,11 +347,9 @@ def build_html_v2(data_json):
                 <div style="background: #e8f4fd; padding: 15px; border-left: 4px solid #0066cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
                     <p style="margin: 0; color: #495057; font-size: 0.95em;">
                         <strong>📊 이 차트는 무엇인가요?</strong><br>
-                        선택한 부서/Unit과 가장 많이 협업하는 상위 10개 파트너를 보여줍니다.<br><br>
+                        선택한 부서/Unit과 가장 많이 협업하는 상위 10개 부서를 보여줍니다.<br><br>
                         <strong>💡 활용 방법:</strong><br>
-                        • <span style="color: #28a745;"><strong>주요 협업 식별</strong></span>: 업무 연계가 가장 많은 부서 파악<br>
-                        • <span style="color: #007bff;"><strong>네트워크 중심성</strong></span>: 협업 허브 역할 부서 확인<br>
-                        • <span style="color: #6c757d;"><strong>업무 의존도</strong></span>: 업무 연계가 높은 관계 분석
+                        • <span style="color: #28a745;"><strong>주요 협업 식별</strong></span>: 업무 연계가 가장 많은 부서 파악
                     </p>
                 </div>
                 <div id="collaboration-frequency-chart-container" class="chart-container"></div>
@@ -1541,14 +1540,14 @@ def build_html_v2(data_json):
                 textposition: 'outside',
                 textfont: {{ size: 12 }},
                 marker: {{ color: statusColors }},
-                hovertemplate: '%{{x}}: %{{y}}개 관계<extra></extra>'
+                hovertemplate: '%{{x}}: %{{y}}개 부서<extra></extra>'
             }};
             
             const layout = {{
                 title: '<b>협업 관계 현황</b>',
                 height: 400,
-                xaxis: {{ title: '관계 상태' }},
-                yaxis: {{ title: '관계 수', rangemode: 'tozero' }},
+                xaxis: {{ title: '상태' }},
+                yaxis: {{ title: '부서 수', rangemode: 'tozero', range: [0, Math.max(...statusValues) * 1.2] }},
                 font: layoutFont
             }};
             
@@ -1557,65 +1556,102 @@ def build_html_v2(data_json):
 
         function updateCollaborationTrendChart() {{
             const container = document.getElementById('collaboration-trend-chart-container');
+            const filteredData = getNetworkFilteredData();
             const minCollabCount = parseInt(document.getElementById('min-collaboration-filter').value);
             
-            // 연도별 데이터 준비 (전체 연도 사용)
-            const yearlyData = {{}};
-            allYears.forEach(year => {{
-                let yearData = rawData.filter(item => item['설문연도'] === year);
-                
-                // 네트워크 필터 적용 (연도 제외)
-                const selectedDivision = document.getElementById('network-division-filter').value;
-                const selectedDepartment = document.getElementById('network-department-filter').value;
-                const selectedUnit = document.getElementById('network-unit-filter').value;
-                
-                if (selectedDivision !== '전체') {{ yearData = yearData.filter(item => item['피평가부문'] === selectedDivision); }}
-                if (selectedDepartment !== '전체') {{ yearData = yearData.filter(item => item['피평가부서'] === selectedDepartment); }}
-                if (selectedUnit !== '전체') {{ yearData = yearData.filter(item => item['피평가Unit'] === selectedUnit); }}
-                
-                yearlyData[year] = yearData;
-            }});
-            
-            // 연도별 평균 점수 계산
-            const yearlyAvgScores = allYears.map(year => {{
-                const data = yearlyData[year];
-                if (data.length < minCollabCount) return null;
-                const avgScore = data.reduce((sum, item) => sum + (item['종합 점수'] || 0), 0) / data.length;
-                return avgScore.toFixed(1);
-            }});
-            
-            if (yearlyAvgScores.every(score => score === null)) {{
+            if (filteredData.length === 0) {{
                 Plotly.react(container, [], {{
                     height: 400,
-                    annotations: [{{ text: `최소 ${{minCollabCount}}회 이상의 데이터가 있는 연도가 없습니다.`, xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    annotations: [{{ text: '선택된 조건에 해당하는 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
                     xaxis: {{visible: false}}, yaxis: {{visible: false}}
                 }});
                 return;
             }}
             
-            const trace = {{
-                x: allYears,
-                y: yearlyAvgScores,
-                type: 'scatter',
-                mode: 'lines+markers+text',
-                line: {{ color: '#4a69bd', width: 3 }},
-                marker: {{ size: 8 }},
-                text: yearlyAvgScores.map(score => score ? `${{score}}점` : ''),
-                textposition: 'top center',
-                textfont: {{ size: 12 }},
-                connectgaps: false,
-                hovertemplate: '연도: %{{x}}<br>평균 점수: %{{y}}점<extra></extra>'
-            }};
+            // 먼저 TOP 10 협업 부서들을 구함
+            const collaborationCounts = {{}};
+            filteredData.forEach(item => {{
+                const evaluator = item['평가부서'];
+                const evaluated = item['피평가부서'];
+                if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A') {{
+                    collaborationCounts[evaluated] = (collaborationCounts[evaluated] || 0) + 1;
+                }}
+            }});
+            
+            const top10Departments = Object.entries(collaborationCounts)
+                .filter(([_, count]) => count >= minCollabCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10)
+                .map(([dept, _]) => dept);
+            
+            if (top10Departments.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 400,
+                    annotations: [{{ text: `최소 ${{minCollabCount}}회 이상 협업한 부서가 없습니다.`, xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+            
+            // 각 TOP 10 부서별로 연도별 트렌드 생성
+            const traces = [];
+            const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+            
+            top10Departments.forEach((department, index) => {{
+                const departmentYearlyScores = allYears.map(year => {{
+                    // 현재 필터 조건 + 특정 연도 + 특정 부서
+                    let yearData = rawData.filter(item => item['설문연도'] === year && item['피평가부서'] === department);
+                    
+                    // 네트워크 필터 적용 (연도 제외)
+                    const selectedDivision = document.getElementById('network-division-filter').value;
+                    const selectedDepartment = document.getElementById('network-department-filter').value;
+                    const selectedUnit = document.getElementById('network-unit-filter').value;
+                    
+                    if (selectedDivision !== '전체') {{ yearData = yearData.filter(item => item['피평가부문'] === selectedDivision); }}
+                    if (selectedDepartment !== '전체') {{ yearData = yearData.filter(item => item['평가부서'] === selectedDepartment || item['피평가부서'] === selectedDepartment); }}
+                    if (selectedUnit !== '전체') {{ yearData = yearData.filter(item => item['피평가Unit'] === selectedUnit); }}
+                    
+                    if (yearData.length === 0) return null;
+                    const avgScore = yearData.reduce((sum, item) => sum + (item['종합 점수'] || 0), 0) / yearData.length;
+                    return avgScore.toFixed(1);
+                }});
+                
+                // 데이터가 있는 부서만 표시
+                if (!departmentYearlyScores.every(score => score === null)) {{
+                    traces.push({{
+                        x: allYears,
+                        y: departmentYearlyScores,
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        name: department,
+                        line: {{ color: colors[index % colors.length], width: 2 }},
+                        marker: {{ size: 6 }},
+                        connectgaps: false,
+                        hovertemplate: `${{department}}<br>연도: %{{x}}<br>평균 점수: %{{y}}점<extra></extra>`
+                    }});
+                }}
+            }});
+            
+            if (traces.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 400,
+                    annotations: [{{ text: '표시할 트렌드 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
             
             const layout = {{
-                title: '<b>협업 관계 변화 트렌드</b>',
+                title: '<b>협업 관계 변화 트렌드 (TOP 10 부서별)</b>',
                 height: 400,
                 xaxis: {{ title: '연도', type: 'category' }},
                 yaxis: {{ title: '평균 협업 점수', range: [0, 100] }},
-                font: layoutFont
+                font: layoutFont,
+                legend: {{ orientation: 'v', x: 1.02, y: 1 }},
+                margin: {{ r: 150 }}
             }};
             
-            Plotly.react(container, [trace], layout);
+            Plotly.react(container, traces, layout);
         }}
 
         function updateNetworkReviews() {{
