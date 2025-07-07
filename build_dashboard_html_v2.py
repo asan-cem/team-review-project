@@ -105,6 +105,17 @@ def build_html_v2(data_json):
         
         /* 협업 빈도 차트 스크롤 컨테이너 */
         #collaboration-frequency-chart-container {{ max-height: 600px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 5px; }}
+        
+        /* 협업 관계 현황 드롭다운 스타일 */
+        .collaboration-status-dropdowns {{ margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }}
+        .status-dropdown {{ border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; background: white; }}
+        .status-dropdown h5 {{ margin: 0 0 10px 0; font-size: 1em; font-weight: bold; }}
+        .status-dropdown.excellent {{ border-left: 4px solid #28a745; }}
+        .status-dropdown.good {{ border-left: 4px solid #17a2b8; }}
+        .status-dropdown.caution {{ border-left: 4px solid #ffc107; }}
+        .status-dropdown.problem {{ border-left: 4px solid #dc3545; }}
+        .status-dropdown select {{ width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px; background: white; }}
+        .status-dropdown .dept-count {{ color: #6c757d; font-size: 0.9em; margin-top: 5px; }}
     </style>
 </head>
 <body>
@@ -371,6 +382,36 @@ def build_html_v2(data_json):
                     </p>
                 </div>
                 <div id="collaboration-status-chart-container" class="chart-container"></div>
+                <div class="collaboration-status-dropdowns">
+                    <div class="status-dropdown excellent">
+                        <h5>🏆 우수 (75점 이상)</h5>
+                        <select id="excellent-dept-dropdown">
+                            <option value="">부서를 선택하세요</option>
+                        </select>
+                        <div class="dept-count" id="excellent-count">0개 부서</div>
+                    </div>
+                    <div class="status-dropdown good">
+                        <h5>✅ 양호 (60-74점)</h5>
+                        <select id="good-dept-dropdown">
+                            <option value="">부서를 선택하세요</option>
+                        </select>
+                        <div class="dept-count" id="good-count">0개 부서</div>
+                    </div>
+                    <div class="status-dropdown caution">
+                        <h5>⚠️ 주의 (50-59점)</h5>
+                        <select id="caution-dept-dropdown">
+                            <option value="">부서를 선택하세요</option>
+                        </select>
+                        <div class="dept-count" id="caution-count">0개 부서</div>
+                    </div>
+                    <div class="status-dropdown problem">
+                        <h5>🚨 문제 (50점 미만)</h5>
+                        <select id="problem-dept-dropdown">
+                            <option value="">부서를 선택하세요</option>
+                        </select>
+                        <div class="dept-count" id="problem-count">0개 부서</div>
+                    </div>
+                </div>
             </div>
 
             <!-- 2.3 협업 관계 변화 트렌드 -->
@@ -1493,6 +1534,7 @@ def build_html_v2(data_json):
                     annotations: [{{ text: '선택된 조건에 해당하는 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
                     xaxis: {{visible: false}}, yaxis: {{visible: false}}
                 }});
+                updateStatusDropdowns({{}});
                 return;
             }}
             
@@ -1512,14 +1554,39 @@ def build_html_v2(data_json):
             
             // 최소 협업 횟수 이상인 관계만 필터링하고 점수별로 분류
             const statusCounts = {{ '우수 (75점 이상)': 0, '양호 (60-74점)': 0, '주의 (50-59점)': 0, '문제 (50점 미만)': 0 }};
+            const statusDepartments = {{
+                '우수': [],
+                '양호': [],
+                '주의': [],
+                '문제': []
+            }};
+            
             Object.entries(relationshipScores)
                 .filter(([_, data]) => data.count >= minCollabCount)
-                .forEach(([_, data]) => {{
+                .forEach(([relationship, data]) => {{
                     const avgScore = data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length;
-                    if (avgScore >= 75) statusCounts['우수 (75점 이상)']++;
-                    else if (avgScore >= 60) statusCounts['양호 (60-74점)']++;
-                    else if (avgScore >= 50) statusCounts['주의 (50-59점)']++;
-                    else statusCounts['문제 (50점 미만)']++;
+                    const [evaluator, evaluated] = relationship.split(' → ');
+                    const relationshipInfo = {{
+                        relationship: relationship,
+                        avgScore: avgScore.toFixed(1),
+                        count: data.count,
+                        evaluator: evaluator,
+                        evaluated: evaluated
+                    }};
+                    
+                    if (avgScore >= 75) {{
+                        statusCounts['우수 (75점 이상)']++;
+                        statusDepartments['우수'].push(relationshipInfo);
+                    }} else if (avgScore >= 60) {{
+                        statusCounts['양호 (60-74점)']++;
+                        statusDepartments['양호'].push(relationshipInfo);
+                    }} else if (avgScore >= 50) {{
+                        statusCounts['주의 (50-59점)']++;
+                        statusDepartments['주의'].push(relationshipInfo);
+                    }} else {{
+                        statusCounts['문제 (50점 미만)']++;
+                        statusDepartments['문제'].push(relationshipInfo);
+                    }}
                 }});
             
             const statusLabels = Object.keys(statusCounts);
@@ -1532,6 +1599,7 @@ def build_html_v2(data_json):
                     annotations: [{{ text: `최소 ${{minCollabCount}}회 이상 협업한 관계가 없습니다.`, xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
                     xaxis: {{visible: false}}, yaxis: {{visible: false}}
                 }});
+                updateStatusDropdowns({{}});
                 return;
             }}
             
@@ -1555,6 +1623,42 @@ def build_html_v2(data_json):
             }};
             
             Plotly.react(container, [trace], layout);
+            
+            // 드롭다운 업데이트
+            updateStatusDropdowns(statusDepartments);
+        }}
+        
+        function updateStatusDropdowns(statusData) {{
+            const statusMappings = {{
+                '우수': {{ dropdown: 'excellent-dept-dropdown', count: 'excellent-count' }},
+                '양호': {{ dropdown: 'good-dept-dropdown', count: 'good-count' }},
+                '주의': {{ dropdown: 'caution-dept-dropdown', count: 'caution-count' }},
+                '문제': {{ dropdown: 'problem-dept-dropdown', count: 'problem-count' }}
+            }};
+            
+            Object.entries(statusMappings).forEach(([status, elements]) => {{
+                const dropdown = document.getElementById(elements.dropdown);
+                const countElement = document.getElementById(elements.count);
+                
+                // 드롭다운 초기화
+                dropdown.innerHTML = '<option value="">부서를 선택하세요</option>';
+                
+                if (statusData[status] && statusData[status].length > 0) {{
+                    // 관계별로 옵션 추가
+                    statusData[status]
+                        .sort((a, b) => b.avgScore - a.avgScore) // 점수 높은 순으로 정렬
+                        .forEach(item => {{
+                            const option = document.createElement('option');
+                            option.value = item.relationship;
+                            option.textContent = `${{item.relationship}} (평균: ${{item.avgScore}}점, ${{item.count}}회)`;
+                            dropdown.appendChild(option);
+                        }});
+                    
+                    countElement.textContent = `${{statusData[status].length}}개 관계`;
+                }} else {{
+                    countElement.textContent = '0개 관계';
+                }}
+            }});
         }}
 
         function updateCollaborationTrendChart() {{
