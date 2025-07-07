@@ -299,7 +299,7 @@ def build_html_v2(data_json):
             
             <!-- 5.5 협업 후기 -->
             <div class="subsection">
-                <h3>협업 후기</h3>
+                <h3>협업 후기 <span id="reviews-count-display" style="color: #666; font-size: 0.9em;"></span></h3>
                 <div class="filters">
                     <div class="filter-group">
                         <label>감정 분류 필터</label>
@@ -431,7 +431,7 @@ def build_html_v2(data_json):
 
             <!-- 2.4 협업 후기 -->
             <div class="subsection">
-                <h3>협업 후기</h3>
+                <h3>협업 후기 <span id="network-reviews-count-display" style="color: #666; font-size: 0.9em;"></span></h3>
                 <div class="filters">
                     <div class="filter-group">
                         <label>감정 분류 필터</label>
@@ -955,7 +955,14 @@ def build_html_v2(data_json):
                 review: item['정제된_텍스트'],
                 sentiment: item['감정_분류'] || '알 수 없음'
             }})).filter(r => r.review && r.review !== 'N/A')
-            .sort((a, b) => b.year - a.year);
+            .sort((a, b) => b.year - a.year)
+            .slice(0, 40000); // 최대 40000개만 표시
+            
+            // 후기 개수 표시 업데이트
+            const countDisplay = document.getElementById('reviews-count-display');
+            if (countDisplay) {{
+                countDisplay.textContent = `(${{reviews.length}}건)`;
+            }}
             
             tbody.innerHTML = (reviews.length > 0) ? 
                 reviews.map(r => `<tr><td>${{r.year}}</td><td>${{r.review}} <span style="color: #666; font-size: 0.9em;">[${{r.sentiment}}]</span></td></tr>`).join('') : 
@@ -1043,7 +1050,7 @@ def build_html_v2(data_json):
             if (reviews.length > 0) {{
                 content += `<div id="keyword-reviews-table-container"><table id="keyword-reviews-table">
                     <thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody>`;
-                content += reviews.map(r => `<tr><td>${{r['설문연도']}}</td><td>${{r['정제된_텍스트']}}</td></tr>`).join('');
+                content += reviews.slice(0, 40000).map(r => `<tr><td>${{r['설문연도']}}</td><td>${{r['정제된_텍스트']}}</td></tr>`).join(''); // 최대 40000개만 표시
                 content += `</tbody></table></div>`;
             }} else {{
                 content += '<p>관련 리뷰가 없습니다.</p>';
@@ -1437,7 +1444,7 @@ def build_html_v2(data_json):
             const selectedDepartment = document.getElementById('network-department-filter').value;
             const selectedUnit = document.getElementById('network-unit-filter').value;
             
-            if (selectedYear !== '전체') {{ filteredData = filteredData.filter(item => item['설문연도'] === selectedYear); }}
+            if (selectedYear !== '전체') {{ filteredData = filteredData.filter(item => String(item['설문연도']) === String(selectedYear)); }}
             if (selectedDivision !== '전체') {{ filteredData = filteredData.filter(item => item['피평가부문'] === selectedDivision); }}
             if (selectedDepartment !== '전체') {{ filteredData = filteredData.filter(item => item['피평가부서'] === selectedDepartment); }}
             if (selectedUnit !== '전체') {{ filteredData = filteredData.filter(item => item['피평가Unit'] === selectedUnit); }}
@@ -1766,13 +1773,27 @@ def build_html_v2(data_json):
             const reviews = reviewData
                 .filter(item => item['정제된_텍스트'] && item['정제된_텍스트'] !== 'N/A')
                 .map(item => ({{
-                    year: item['설문연도'],
+                    year: String(item['설문연도']),
                     partner: item['평가부서'] !== item['피평가부서'] ? item['평가부서'] : '동일부서',
                     review: item['정제된_텍스트'],
                     sentiment: item['감정_분류'] || '알 수 없음'
                 }}))
-                .sort((a, b) => b.year - a.year)
-                .slice(0, 50); // 최대 50개만 표시
+                .sort((a, b) => {{
+                    // 1차 정렬: 연도별 (2025, 2024, 2023, 2022 순서)
+                    const yearA = parseInt(a.year);
+                    const yearB = parseInt(b.year);
+                    if (yearA !== yearB) return yearB - yearA;
+                    
+                    // 2차 정렬: 협업 파트너 가나다 순
+                    return a.partner.localeCompare(b.partner, 'ko');
+                }})
+                .slice(0, 40000); // 최대 40000개만 표시
+            
+            // 후기 개수 표시 업데이트
+            const countDisplay = document.getElementById('network-reviews-count-display');
+            if (countDisplay) {{
+                countDisplay.textContent = `(${{reviews.length}}건)`;
+            }}
             
             tbody.innerHTML = (reviews.length > 0) ?
                 reviews.map(r => `<tr><td>${{r.year}}</td><td>${{r.partner}}</td><td>${{r.review}} <span style="color: #666; font-size: 0.9em;">[${{r.sentiment}}]</span></td></tr>`).join('') :
