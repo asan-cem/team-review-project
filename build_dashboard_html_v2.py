@@ -1675,7 +1675,7 @@ def build_html_v2(data_json):
                 return;
             }}
             
-            // 먼저 TOP 10 협업 부서들을 구함
+            // 네트워크 필터를 적용한 협업 부서들을 구함
             const collaborationCounts = {{}};
             filteredData.forEach(item => {{
                 const evaluator = item['평가부서'];
@@ -1685,12 +1685,12 @@ def build_html_v2(data_json):
                 }}
             }});
             
-            const top10Departments = Object.entries(collaborationCounts)
+            const filteredDepartments = Object.entries(collaborationCounts)
                 .filter(([_, count]) => count >= minCollabCount)
                 .sort((a, b) => b[1] - a[1])
                 .map(([dept, _]) => dept);
             
-            if (top10Departments.length === 0) {{
+            if (filteredDepartments.length === 0) {{
                 Plotly.react(container, [], {{
                     height: 400,
                     annotations: [{{ text: `최소 ${{minCollabCount}}회 이상 협업한 부서가 없습니다.`, xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
@@ -1699,26 +1699,19 @@ def build_html_v2(data_json):
                 return;
             }}
             
-            // 각 TOP 10 부서별로 연도별 트렌드 생성
+            // 각 부서별로 연도별 트렌드 생성 (네트워크 필터 적용)
             const traces = [];
             const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
             
-            top10Departments.forEach((department, index) => {{
+            filteredDepartments.forEach((department, index) => {{
                 const departmentYearlyScores = allYears.map(year => {{
-                    // 현재 필터 조건 + 특정 연도 + 특정 부서
-                    let yearData = rawData.filter(item => item['설문연도'] === year && item['피평가부서'] === department);
+                    // 연도별로 네트워크 필터를 적용한 데이터에서 특정 부서 데이터만 추출
+                    const yearFilteredData = filteredData.filter(item => 
+                        item['설문연도'] === year && item['피평가부서'] === department
+                    );
                     
-                    // 네트워크 필터 적용 (연도 제외)
-                    const selectedDivision = document.getElementById('network-division-filter').value;
-                    const selectedDepartment = document.getElementById('network-department-filter').value;
-                    const selectedUnit = document.getElementById('network-unit-filter').value;
-                    
-                    if (selectedDivision !== '전체') {{ yearData = yearData.filter(item => item['피평가부문'] === selectedDivision); }}
-                    if (selectedDepartment !== '전체') {{ yearData = yearData.filter(item => item['평가부서'] === selectedDepartment || item['피평가부서'] === selectedDepartment); }}
-                    if (selectedUnit !== '전체') {{ yearData = yearData.filter(item => item['피평가Unit'] === selectedUnit); }}
-                    
-                    if (yearData.length === 0) return null;
-                    const avgScore = yearData.reduce((sum, item) => sum + (item['종합 점수'] || 0), 0) / yearData.length;
+                    if (yearFilteredData.length === 0) return null;
+                    const avgScore = yearFilteredData.reduce((sum, item) => sum + (item['종합 점수'] || 0), 0) / yearFilteredData.length;
                     return avgScore.toFixed(1);
                 }});
                 
@@ -1748,7 +1741,7 @@ def build_html_v2(data_json):
             }}
             
             const layout = {{
-                title: '<b>협업 관계 변화 트렌드 (TOP 10 부서별)</b>',
+                title: '<b>협업 관계 변화 트렌드</b>',
                 height: 400,
                 xaxis: {{ title: '연도', type: 'category' }},
                 yaxis: {{ title: '종합 점수', range: [0, 100] }},
