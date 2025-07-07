@@ -211,8 +211,8 @@ def build_html_v2(data_json):
             <!-- 공통 필터 -->
             <div class="filters">
                 <div class="filter-group"><label for="year-filter">연도 (전체)</label><select id="year-filter"></select></div>
-                <div class="filter-group"><label for="department-filter">피평가부서</label><select id="department-filter"></select></div>
-                <div class="filter-group"><label for="unit-filter">피평가Unit</label><select id="unit-filter"></select></div>
+                <div class="filter-group"><label for="department-filter">부서</label><select id="department-filter"></select></div>
+                <div class="filter-group"><label for="unit-filter">Unit</label><select id="unit-filter"></select></div>
                 <div class="filter-group">
                     <label>문항 선택</label>
                     <div class="expander-container">
@@ -244,12 +244,34 @@ def build_html_v2(data_json):
             <!-- 5.3 감정 강도 -->
             <div class="subsection">
                 <h3>감정 강도 분석</h3>
+                <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #6a89cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
+                    <p style="margin: 0; color: #495057; font-size: 0.95em;">
+                        <strong>📊 이 차트는 무엇인가요?</strong><br>
+                        협업 후기의 감정이 얼마나 강한지를 1점(매우 약함)부터 10점(매우 강함)까지 수치로 나타낸 것입니다.<br><br>
+                        <strong>💡 해석 방법:</strong><br>
+                        • <span style="color: #28a745;"><strong>높은 점수(7-10점)</strong></span>: 매우 만족하거나 매우 불만족한 강한 감정<br>
+                        • <span style="color: #ffc107;"><strong>중간 점수(4-6점)</strong></span>: 보통 수준의 감정<br>
+                        • <span style="color: #6c757d;"><strong>낮은 점수(1-3점)</strong></span>: 담담하고 객관적인 평가<br><br>
+                        <em>예시: "정말 훌륭한 협업이었다"(9점) vs "괜찮은 협업이었다"(5점)</em>
+                    </p>
+                </div>
                 <div id="emotion-intensity-trend-container" class="chart-container"></div>
             </div>
 
             <!-- 5.4 키워드 분석 -->
             <div class="subsection">
                 <h3>핵심 키워드 분석</h3>
+                <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #6a89cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
+                    <p style="margin: 0; color: #495057; font-size: 0.95em;">
+                        <strong>📊 이 차트는 무엇인가요?</strong><br>
+                        협업 후기에서 자주 언급되는 단어들을 긍정/부정으로 분류하여 상위 10개를 보여줍니다.<br><br>
+                        <strong>💡 활용 방법:</strong><br>
+                        • <span style="color: #28a745;"><strong>긍정 키워드</strong></span>: 어떤 부분에서 만족하고 있는지 파악<br>
+                        • <span style="color: #dc3545;"><strong>부정 키워드</strong></span>: 개선이 필요한 부분을 빠르게 확인<br>
+                        • <strong>막대 클릭</strong>: 해당 키워드가 포함된 실제 후기 내용을 확인할 수 있습니다<br><br>
+                        <em>예시: "신속한" 키워드 클릭 → "신속한 응답으로 업무가 원활했다" 등의 후기 표시</em>
+                    </p>
+                </div>
                 <div class="keyword-charts-container">
                     <div id="positive-keywords-chart" class="keyword-chart"></div>
                     <div id="negative-keywords-chart" class="keyword-chart"></div>
@@ -283,7 +305,7 @@ def build_html_v2(data_json):
             <p style="color: #6c757d; margin-bottom: 20px;">같은 부서 내 Unit간 비교분석을 수행합니다.</p>
             <div class="filters">
                 <div class="filter-group">
-                    <label for="unit-comparison-department-filter">피평가부서 선택</label>
+                    <label for="unit-comparison-department-filter">부서 선택</label>
                     <select id="unit-comparison-department-filter"></select>
                 </div>
                 <div class="filter-group">
@@ -429,7 +451,7 @@ def build_html_v2(data_json):
             if (selectedDept !== '전체') {{ titleParts.push(selectedDept); }}
             if (selectedUnit !== '전체') {{ titleParts.push(selectedUnit); }}
             
-            const titlePrefix = titleParts.length > 0 ? titleParts.join(' > ') : '피평가부서, 피평가Unit';
+            const titlePrefix = titleParts.length > 0 ? titleParts.join(' > ') : '부서, Unit';
             const yearSuffix = selectedYear === '전체' ? ' (전체 연도)' : ` (${{selectedYear}})`;
             const title = `<b>${{titlePrefix}} 문항 점수${{yearSuffix}}</b>`;
             const layout = {{ title: title, yaxis: {{ title: '점수', range: [0, 100] }}, font: layoutFont, hovermode: 'closest' }};
