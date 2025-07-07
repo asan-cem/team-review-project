@@ -29,6 +29,9 @@ def load_data():
     score_cols = ['존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합 점수']
     for col in score_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce')
+    # '미분류' 값을 결측값으로 처리하여 점수 계산에서 제외 (데이터 감소율: 1.2%)
+    df = df[(df['평가부문'] != '미분류') & (df['피평가부문'] != '미분류')]
+    
     df.dropna(subset=['종합 점수'], inplace=True)
     
     for col in ['피평가부문', '피평가부서', '피평가Unit', '정제된_텍스트']:
@@ -297,6 +300,125 @@ def build_html_v2(data_json):
                     </div>
                 </div>
                 <div id="reviews-table-container"><table id="reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody></tbody></table></div>
+            </div>
+        </div>
+
+        <div class="part-divider"></div>
+        
+        <!-- Part 4: 협업 네트워크 분석 (Collaboration Network Analysis) -->
+        <div class="part-title">🔗 Part 4: 협업 네트워크 분석 (Collaboration Network Analysis)</div>
+        
+        <div class="section">
+            <h2>협업 네트워크 분석</h2>
+            <p style="color: #6c757d; margin-bottom: 20px;">🔍 부서/Unit간 협업 관계와 중요성을 종합적으로 분석합니다.</p>
+            
+            <!-- 공통 필터 -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="network-division-filter">연도 (전체)</label>
+                    <select id="network-year-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="network-division-filter">부문</label>
+                    <select id="network-division-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="network-department-filter">부서</label>
+                    <select id="network-department-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="network-unit-filter">Unit</label>
+                    <select id="network-unit-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label for="min-collaboration-filter">최소 협업 횟수</label>
+                    <select id="min-collaboration-filter">
+                        <option value="5">5회 이상</option>
+                        <option value="10" selected>10회 이상</option>
+                        <option value="30">30회 이상</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 2.1 협업 빈도 TOP 파트너 -->
+            <div class="subsection">
+                <h3>협업 빈도 TOP 파트너</h3>
+                <div style="background: #e8f4fd; padding: 15px; border-left: 4px solid #0066cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
+                    <p style="margin: 0; color: #495057; font-size: 0.95em;">
+                        <strong>📊 이 차트는 무엇인가요?</strong><br>
+                        선택한 부서/Unit과 가장 많이 협업하는 상위 10개 파트너를 보여줍니다.<br><br>
+                        <strong>💡 활용 방법:</strong><br>
+                        • <span style="color: #28a745;"><strong>주요 협업 식별</strong></span>: 업무 연계가 가장 많은 부서 파악<br>
+                        • <span style="color: #007bff;"><strong>네트워크 중심성</strong></span>: 협업 허브 역할 부서 확인<br>
+                        • <span style="color: #6c757d;"><strong>업무 의존도</strong></span>: 업무 연계가 높은 관계 분석
+                    </p>
+                </div>
+                <div id="collaboration-frequency-chart-container" class="chart-container"></div>
+            </div>
+
+            <!-- 2.2 협업 관계 현황 -->
+            <div class="subsection">
+                <h3>협업 관계 현황</h3>
+                <div style="background: #e8f4fd; padding: 15px; border-left: 4px solid #0066cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
+                    <p style="margin: 0; color: #495057; font-size: 0.95em;">
+                        <strong>📊 관계 분류 기준:</strong><br>
+                        • <span style="color: #28a745;"><strong>우수 (75점 이상)</strong></span>: 매우 공정적인 협업 관계<br>
+                        • <span style="color: #ffc107;"><strong>양호 (60-74점)</strong></span>: 안정적인 협업 관계<br>
+                        • <span style="color: #fd7e14;"><strong>주의 (50-59점)</strong></span>: 개선이 필요한 관계<br>
+                        • <span style="color: #dc3545;"><strong>문제 (50점 미만)</strong></span>: 시급한 개선이 필요한 관계
+                    </p>
+                </div>
+                <div id="collaboration-status-chart-container" class="chart-container"></div>
+            </div>
+
+            <!-- 2.3 협업 관계 변화 트렌드 -->
+            <div class="subsection">
+                <h3>협업 관계 변화 트렌드</h3>
+                <div style="background: #e8f4fd; padding: 15px; border-left: 4px solid #0066cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
+                    <p style="margin: 0; color: #495057; font-size: 0.95em;">
+                        <strong>📈 개선도 파악 기준:</strong><br>
+                        • <span style="color: #28a745;"><strong>연평균 +3점 이상 증가</strong></span>: 눈에 띄는 개선<br>
+                        • <span style="color: #ffc107;"><strong>연평균 +2점 이상 증가</strong></span>: 안정적 개선<br>
+                        • <span style="color: #6c757d;"><strong>연평균 -3점 이상 감소</strong></span>: 악화 추세<br>
+                        • <span style="color: #dc3545;"><strong>연평균 -5점 이상 감소</strong></span>: 악화 주의 감수
+                    </p>
+                </div>
+                <div id="collaboration-trend-chart-container" class="chart-container"></div>
+            </div>
+
+            <!-- 2.4 협업 후기 -->
+            <div class="subsection">
+                <h3>협업 후기</h3>
+                <div style="background: #e8f4fd; padding: 15px; border-left: 4px solid #0066cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
+                    <p style="margin: 0; color: #495057; font-size: 0.95em;">
+                        <strong>🔍 텍터링된 협업 후기:</strong><br>
+                        선택한 부서/Unit과 관련된 실제 협업 후기를 확인할 수 있습니다.<br>
+                        감정 분류별로 필터링하여 구체적인 피드백 내용을 파악하세요.
+                    </p>
+                </div>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>감정 분류 필터</label>
+                        <select id="network-sentiment-filter">
+                            <option value="전체">전체 (긍정+부정+중립)</option>
+                            <option value="긍정">긍정</option>
+                            <option value="부정">부정</option>
+                            <option value="중립">중립</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="network-reviews-table-container">
+                    <table id="network-reviews-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">연도</th>
+                                <th style="width: 120px;">협업 파트너</th>
+                                <th>후기 내용</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -1189,6 +1311,339 @@ def build_html_v2(data_json):
             updateSelectAllState();
         }}
 
+        // === 협업 네트워크 분석 기능 ===
+        
+        // 부문-부서-Unit 매핑 생성
+        const divisionDepartmentMap = rawData.reduce((acc, item) => {{
+            const division = item['피평가부문'];
+            const department = item['피평가부서'];
+            if (division && division !== 'N/A' && department && department !== 'N/A') {{
+                if (!acc[division]) {{ acc[division] = new Set(); }}
+                acc[division].add(department);
+            }}
+            return acc;
+        }}, {{}});
+        for (const division in divisionDepartmentMap) {{
+            divisionDepartmentMap[division] = [...divisionDepartmentMap[division]].sort((a, b) => String(a).localeCompare(String(b), 'ko'));
+        }}
+
+        function setupNetworkAnalysis() {{
+            const yearSelect = document.getElementById('network-year-filter');
+            const divisionSelect = document.getElementById('network-division-filter');
+            const departmentSelect = document.getElementById('network-department-filter');
+            const unitSelect = document.getElementById('network-unit-filter');
+            const minCollabSelect = document.getElementById('min-collaboration-filter');
+            const sentimentSelect = document.getElementById('network-sentiment-filter');
+            
+            // 연도 필터 설정
+            yearSelect.innerHTML = ['전체', ...allYears].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            
+            // 부문 필터 설정
+            divisionSelect.innerHTML = ['전체', ...allDivisions].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            
+            // 초기 부서, Unit 설정
+            departmentSelect.innerHTML = '<option value="전체">전체</option>';
+            unitSelect.innerHTML = '<option value="전체">전체</option>';
+            
+            // 이벤트 리스너 추가
+            yearSelect.addEventListener('change', updateNetworkAnalysis);
+            divisionSelect.addEventListener('change', updateNetworkDepartments);
+            departmentSelect.addEventListener('change', updateNetworkUnits);
+            unitSelect.addEventListener('change', updateNetworkAnalysis);
+            minCollabSelect.addEventListener('change', updateNetworkAnalysis);
+            sentimentSelect.addEventListener('change', updateNetworkReviews);
+        }}
+
+        function updateNetworkDepartments() {{
+            const divisionSelect = document.getElementById('network-division-filter');
+            const departmentSelect = document.getElementById('network-department-filter');
+            const unitSelect = document.getElementById('network-unit-filter');
+            const selectedDivision = divisionSelect.value;
+            
+            // 부서 드롭다운 업데이트
+            const allDepartments = [...new Set(rawData.map(item => item['피평가부서']))].filter(d => d && d !== 'N/A').sort((a, b) => String(a).localeCompare(String(b), 'ko'));
+            const departments = (selectedDivision === '전체' || !divisionDepartmentMap[selectedDivision])
+                ? allDepartments
+                : divisionDepartmentMap[selectedDivision];
+            
+            departmentSelect.innerHTML = ['전체', ...departments].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            departmentSelect.value = '전체';
+            
+            // Unit 드롭다운 리셋
+            unitSelect.innerHTML = '<option value="전체">전체</option>';
+            unitSelect.value = '전체';
+            
+            updateNetworkAnalysis();
+        }}
+
+        function updateNetworkUnits() {{
+            const departmentSelect = document.getElementById('network-department-filter');
+            const unitSelect = document.getElementById('network-unit-filter');
+            const selectedDept = departmentSelect.value;
+            
+            // Unit 드롭다운 업데이트
+            const allUnits = [...new Set(rawData.map(item => item['피평가Unit']))].filter(u => u && u !== 'N/A').sort((a,b) => a.localeCompare(b, 'ko'));
+            const units = (selectedDept === '전체' || !departmentUnitMap[selectedDept])
+                ? allUnits
+                : departmentUnitMap[selectedDept];
+            
+            unitSelect.innerHTML = ['전체', ...units].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            unitSelect.value = '전체';
+            
+            updateNetworkAnalysis();
+        }}
+
+        function getNetworkFilteredData() {{
+            let filteredData = [...rawData];
+            
+            const selectedYear = document.getElementById('network-year-filter').value;
+            const selectedDivision = document.getElementById('network-division-filter').value;
+            const selectedDepartment = document.getElementById('network-department-filter').value;
+            const selectedUnit = document.getElementById('network-unit-filter').value;
+            
+            if (selectedYear !== '전체') {{ filteredData = filteredData.filter(item => item['설문연도'] === selectedYear); }}
+            if (selectedDivision !== '전체') {{ filteredData = filteredData.filter(item => item['피평가부문'] === selectedDivision); }}
+            if (selectedDepartment !== '전체') {{ filteredData = filteredData.filter(item => item['피평가부서'] === selectedDepartment); }}
+            if (selectedUnit !== '전체') {{ filteredData = filteredData.filter(item => item['피평가Unit'] === selectedUnit); }}
+            
+            return filteredData;
+        }}
+
+        function updateNetworkAnalysis() {{
+            updateCollaborationFrequencyChart();
+            updateCollaborationStatusChart();
+            updateCollaborationTrendChart();
+            updateNetworkReviews();
+        }}
+
+        function updateCollaborationFrequencyChart() {{
+            const container = document.getElementById('collaboration-frequency-chart-container');
+            const filteredData = getNetworkFilteredData();
+            const minCollabCount = parseInt(document.getElementById('min-collaboration-filter').value);
+            
+            if (filteredData.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 400,
+                    annotations: [{{ text: '선택된 조건에 해당하는 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+            
+            // 협업 빈도 계산
+            const collaborationCounts = {{}};
+            filteredData.forEach(item => {{
+                const evaluator = item['평가부서'];
+                const evaluated = item['피평가부서'];
+                if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A') {{
+                    const key = `${{evaluator}} ↔ ${{evaluated}}`;
+                    collaborationCounts[key] = (collaborationCounts[key] || 0) + 1;
+                }}
+            }});
+            
+            // 최소 협업 횟수 이상인 관계만 필터링
+            const filteredCollaborations = Object.entries(collaborationCounts)
+                .filter(([_, count]) => count >= minCollabCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+            
+            if (filteredCollaborations.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 400,
+                    annotations: [{{ text: `최소 ${{minCollabCount}}회 이상 협업한 관계가 없습니다.`, xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+            
+            const trace = {{
+                y: filteredCollaborations.map(([key, _]) => key).reverse(),
+                x: filteredCollaborations.map(([_, count]) => count).reverse(),
+                type: 'bar',
+                orientation: 'h',
+                text: filteredCollaborations.map(([_, count]) => `${{count}}회`).reverse(),
+                textposition: 'outside',
+                textfont: {{ size: 12 }},
+                marker: {{ color: '#4a69bd' }},
+                hovertemplate: '협업 횟수: %{{x}}회<extra></extra>'
+            }};
+            
+            const layout = {{
+                title: '<b>협업 빈도 TOP 10</b>',
+                height: 400,
+                margin: {{ l: 200 }},
+                xaxis: {{ title: '협업 횟수' }},
+                yaxis: {{ automargin: true }},
+                font: layoutFont
+            }};
+            
+            Plotly.react(container, [trace], layout);
+        }}
+
+        function updateCollaborationStatusChart() {{
+            const container = document.getElementById('collaboration-status-chart-container');
+            const filteredData = getNetworkFilteredData();
+            const minCollabCount = parseInt(document.getElementById('min-collaboration-filter').value);
+            
+            if (filteredData.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 400,
+                    annotations: [{{ text: '선택된 조건에 해당하는 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+            
+            // 협업 관계별 점수 계산
+            const relationshipScores = {{}};
+            filteredData.forEach(item => {{
+                const evaluator = item['평가부서'];
+                const evaluated = item['피평가부서'];
+                const score = item['종합 점수'];
+                if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A' && score != null) {{
+                    const key = `${{evaluator}} → ${{evaluated}}`;
+                    if (!relationshipScores[key]) {{ relationshipScores[key] = {{ scores: [], count: 0 }}; }}
+                    relationshipScores[key].scores.push(score);
+                    relationshipScores[key].count++;
+                }}
+            }});
+            
+            // 최소 협업 횟수 이상인 관계만 필터링하고 점수별로 분류
+            const statusCounts = {{ '우수 (75점 이상)': 0, '양호 (60-74점)': 0, '주의 (50-59점)': 0, '문제 (50점 미만)': 0 }};
+            Object.entries(relationshipScores)
+                .filter(([_, data]) => data.count >= minCollabCount)
+                .forEach(([_, data]) => {{
+                    const avgScore = data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length;
+                    if (avgScore >= 75) statusCounts['우수 (75점 이상)']++;
+                    else if (avgScore >= 60) statusCounts['양호 (60-74점)']++;
+                    else if (avgScore >= 50) statusCounts['주의 (50-59점)']++;
+                    else statusCounts['문제 (50점 미만)']++;
+                }});
+            
+            const statusLabels = Object.keys(statusCounts);
+            const statusValues = Object.values(statusCounts);
+            const statusColors = ['#28a745', '#ffc107', '#fd7e14', '#dc3545'];
+            
+            if (statusValues.every(val => val === 0)) {{
+                Plotly.react(container, [], {{
+                    height: 400,
+                    annotations: [{{ text: `최소 ${{minCollabCount}}회 이상 협업한 관계가 없습니다.`, xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+            
+            const trace = {{
+                x: statusLabels,
+                y: statusValues,
+                type: 'bar',
+                text: statusValues.map(val => `${{val}}개`),
+                textposition: 'outside',
+                textfont: {{ size: 12 }},
+                marker: {{ color: statusColors }},
+                hovertemplate: '%{{x}}: %{{y}}개 관계<extra></extra>'
+            }};
+            
+            const layout = {{
+                title: '<b>협업 관계 현황</b>',
+                height: 400,
+                xaxis: {{ title: '관계 상태' }},
+                yaxis: {{ title: '관계 수', rangemode: 'tozero' }},
+                font: layoutFont
+            }};
+            
+            Plotly.react(container, [trace], layout);
+        }}
+
+        function updateCollaborationTrendChart() {{
+            const container = document.getElementById('collaboration-trend-chart-container');
+            const minCollabCount = parseInt(document.getElementById('min-collaboration-filter').value);
+            
+            // 연도별 데이터 준비 (전체 연도 사용)
+            const yearlyData = {{}};
+            allYears.forEach(year => {{
+                let yearData = rawData.filter(item => item['설문연도'] === year);
+                
+                // 네트워크 필터 적용 (연도 제외)
+                const selectedDivision = document.getElementById('network-division-filter').value;
+                const selectedDepartment = document.getElementById('network-department-filter').value;
+                const selectedUnit = document.getElementById('network-unit-filter').value;
+                
+                if (selectedDivision !== '전체') {{ yearData = yearData.filter(item => item['피평가부문'] === selectedDivision); }}
+                if (selectedDepartment !== '전체') {{ yearData = yearData.filter(item => item['피평가부서'] === selectedDepartment); }}
+                if (selectedUnit !== '전체') {{ yearData = yearData.filter(item => item['피평가Unit'] === selectedUnit); }}
+                
+                yearlyData[year] = yearData;
+            }});
+            
+            // 연도별 평균 점수 계산
+            const yearlyAvgScores = allYears.map(year => {{
+                const data = yearlyData[year];
+                if (data.length < minCollabCount) return null;
+                const avgScore = data.reduce((sum, item) => sum + (item['종합 점수'] || 0), 0) / data.length;
+                return avgScore.toFixed(1);
+            }});
+            
+            if (yearlyAvgScores.every(score => score === null)) {{
+                Plotly.react(container, [], {{
+                    height: 400,
+                    annotations: [{{ text: `최소 ${{minCollabCount}}회 이상의 데이터가 있는 연도가 없습니다.`, xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+            
+            const trace = {{
+                x: allYears,
+                y: yearlyAvgScores,
+                type: 'scatter',
+                mode: 'lines+markers+text',
+                line: {{ color: '#4a69bd', width: 3 }},
+                marker: {{ size: 8 }},
+                text: yearlyAvgScores.map(score => score ? `${{score}}점` : ''),
+                textposition: 'top center',
+                textfont: {{ size: 12 }},
+                connectgaps: false,
+                hovertemplate: '연도: %{{x}}<br>평균 점수: %{{y}}점<extra></extra>'
+            }};
+            
+            const layout = {{
+                title: '<b>협업 관계 변화 트렌드</b>',
+                height: 400,
+                xaxis: {{ title: '연도', type: 'category' }},
+                yaxis: {{ title: '평균 협업 점수', range: [0, 100] }},
+                font: layoutFont
+            }};
+            
+            Plotly.react(container, [trace], layout);
+        }}
+
+        function updateNetworkReviews() {{
+            const tbody = document.querySelector('#network-reviews-table tbody');
+            const filteredData = getNetworkFilteredData();
+            const selectedSentiment = document.getElementById('network-sentiment-filter').value;
+            
+            let reviewData = filteredData;
+            if (selectedSentiment !== '전체') {{
+                reviewData = filteredData.filter(item => item['감정_분류'] === selectedSentiment);
+            }}
+            
+            const reviews = reviewData
+                .filter(item => item['정제된_텍스트'] && item['정제된_텍스트'] !== 'N/A')
+                .map(item => ({{
+                    year: item['설문연도'],
+                    partner: item['평가부서'] !== item['피평가부서'] ? item['평가부서'] : '동일부서',
+                    review: item['정제된_텍스트'],
+                    sentiment: item['감정_분류'] || '알 수 없음'
+                }}))
+                .sort((a, b) => b.year - a.year)
+                .slice(0, 50); // 최대 50개만 표시
+            
+            tbody.innerHTML = (reviews.length > 0) ?
+                reviews.map(r => `<tr><td>${{r.year}}</td><td>${{r.partner}}</td><td>${{r.review}} <span style="color: #666; font-size: 0.9em;">[${{r.sentiment}}]</span></td></tr>`).join('') :
+                '<tr><td colspan="3">해당 조건의 후기가 없습니다.</td></tr>';
+        }}
+
         window.onload = () => {{ 
             populateFilters(); 
             createCheckboxFilter('hospital-score-filter', scoreCols, 'hospital-score', updateHospitalYearlyChart);
@@ -1198,6 +1653,7 @@ def build_html_v2(data_json):
             setupComparisonChart();
             setupTeamRankingChart();
             setupUnitComparisonChart();
+            setupNetworkAnalysis();
             updateDashboard(); 
             updateHospitalYearlyChart();
             updateDivisionYearlyChart();
@@ -1205,6 +1661,7 @@ def build_html_v2(data_json):
             updateTeamRankingChart();
             updateUnitComparisonChart();
             updateEmotionIntensityTrend();
+            updateNetworkAnalysis();
         }};
     </script>
 </body>
@@ -1216,7 +1673,7 @@ def main():
     print("🚀 개선된 대화형 대시보드 v2.0 생성을 시작합니다...")
     df = load_data()
     print("✅ 데이터 로드 완료")
-    df_for_json = df[['설문연도', '피평가부문', '피평가부서', '피평가Unit', '존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합 점수', '정제된_텍스트', '감정_분류', '감정_강도_점수', '핵심_키워드']].copy()
+    df_for_json = df[['설문연도', '평가부서', '피평가부문', '피평가부서', '피평가Unit', '존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합 점수', '정제된_텍스트', '감정_분류', '감정_강도_점수', '핵심_키워드']].copy()
     data_json = df_for_json.to_json(orient='records', force_ascii=False)
     print("✅ 데이터 JSON 변환 완료")
     dashboard_html = build_html_v2(data_json)
