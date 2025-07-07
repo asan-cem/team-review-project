@@ -1,0 +1,29 @@
+# 프로젝트 전용 bashrc 설정
+# 이 파일을 ~/.bashrc에 추가하거나 소스로 사용
+
+# 프로젝트 디렉토리 설정
+export PROJECT_DIR="/home/cocori2864/team-review-project"
+
+# 프로젝트 디렉토리로 이동하는 별칭
+alias cdproject="cd $PROJECT_DIR"
+
+# 가상환경 활성화 별칭
+alias activate="source $PROJECT_DIR/.venv/bin/activate"
+
+# 프로젝트 실행 별칭
+alias runproject="$PROJECT_DIR/run_project.sh"
+
+# 프로젝트 관련 빠른 실행 명령어
+alias dashboard="cd $PROJECT_DIR && source .venv/bin/activate && python build_dashboard_html_v2.py"
+alias mainproc="cd $PROJECT_DIR && source .venv/bin/activate && python main.py"
+
+# 프로젝트 시작시 자동으로 가상환경 활성화
+if [ -f "$PROJECT_DIR/.venv/bin/activate" ]; then
+    echo "🔧 프로젝트 환경 설정 완료"
+    echo "사용 가능한 명령어:"
+    echo "  cdproject  - 프로젝트 디렉토리로 이동"
+    echo "  activate   - 가상환경 활성화"
+    echo "  runproject - 프로젝트 실행 스크립트"
+    echo "  dashboard  - 대시보드 생성"
+    echo "  mainproc   - 메인 데이터 처리"
+fi

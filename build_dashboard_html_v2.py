@@ -341,13 +341,13 @@ def build_html_v2(data_json):
                 </div>
             </div>
             
-            <!-- 2.1 협업 빈도 TOP 파트너 -->
+            <!-- 2.1 협업을 많이 하는 부서 -->
             <div class="subsection">
-                <h3>협업 빈도 TOP 파트너</h3>
+                <h3>협업을 많이 하는 부서</h3>
                 <div style="background: #e8f4fd; padding: 15px; border-left: 4px solid #0066cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
                     <p style="margin: 0; color: #495057; font-size: 0.95em;">
                         <strong>📊 이 차트는 무엇인가요?</strong><br>
-                        선택한 부서/Unit과 가장 많이 협업하는 상위 10개 부서를 보여줍니다.<br><br>
+                        선택한 부서/Unit과 가장 많이 협업하는 부서를 보여줍니다.<br><br>
                         <strong>💡 활용 방법:</strong><br>
                         • <span style="color: #28a745;"><strong>주요 협업 식별</strong></span>: 업무 연계가 가장 많은 부서 파악
                     </p>
@@ -388,13 +388,6 @@ def build_html_v2(data_json):
             <!-- 2.4 협업 후기 -->
             <div class="subsection">
                 <h3>협업 후기</h3>
-                <div style="background: #e8f4fd; padding: 15px; border-left: 4px solid #0066cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
-                    <p style="margin: 0; color: #495057; font-size: 0.95em;">
-                        <strong>🔍 텍터링된 협업 후기:</strong><br>
-                        선택한 부서/Unit과 관련된 실제 협업 후기를 확인할 수 있습니다.<br>
-                        감정 분류별로 필터링하여 구체적인 피드백 내용을 파악하세요.
-                    </p>
-                </div>
                 <div class="filters">
                     <div class="filter-group">
                         <label>감정 분류 필터</label>
@@ -1443,8 +1436,7 @@ def build_html_v2(data_json):
             // 최소 협업 횟수 이상인 관계만 필터링
             const filteredCollaborations = Object.entries(collaborationCounts)
                 .filter(([_, count]) => count >= minCollabCount)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10);
+                .sort((a, b) => b[1] - a[1]);
             
             if (filteredCollaborations.length === 0) {{
                 Plotly.react(container, [], {{
@@ -1468,7 +1460,7 @@ def build_html_v2(data_json):
             }};
             
             const layout = {{
-                title: '<b>협업 빈도 TOP 10</b>',
+                title: '<b>부서 리스트</b>',
                 height: 400,
                 margin: {{ l: 200 }},
                 xaxis: {{ title: '협업 횟수' }},
@@ -1581,7 +1573,6 @@ def build_html_v2(data_json):
             const top10Departments = Object.entries(collaborationCounts)
                 .filter(([_, count]) => count >= minCollabCount)
                 .sort((a, b) => b[1] - a[1])
-                .slice(0, 10)
                 .map(([dept, _]) => dept);
             
             if (top10Departments.length === 0) {{
@@ -1645,7 +1636,7 @@ def build_html_v2(data_json):
                 title: '<b>협업 관계 변화 트렌드 (TOP 10 부서별)</b>',
                 height: 400,
                 xaxis: {{ title: '연도', type: 'category' }},
-                yaxis: {{ title: '평균 협업 점수', range: [0, 100] }},
+                yaxis: {{ title: '종합 점수', range: [0, 100] }},
                 font: layoutFont,
                 legend: {{ orientation: 'v', x: 1.02, y: 1 }},
                 margin: {{ r: 150 }}
