@@ -102,6 +102,9 @@ def build_html_v2(data_json):
         /* 차트 컨테이너 스타일 개선 */
         .chart-container {{ margin: 20px 0; }}
         .subsection {{ margin: 30px 0; }}
+        
+        /* 협업 빈도 차트 스크롤 컨테이너 */
+        #collaboration-frequency-chart-container {{ max-height: 600px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 5px; }}
     </style>
 </head>
 <body>
@@ -1459,12 +1462,20 @@ def build_html_v2(data_json):
                 hovertemplate: '협업 횟수: %{{x}}회<extra></extra>'
             }};
             
+            // 부서 수에 따라 동적 높이 계산 (막대당 최소 25px 보장)
+            const barHeight = 25;
+            const dynamicHeight = Math.max(400, filteredCollaborations.length * barHeight + 100);
+            
             const layout = {{
                 title: '<b>부서 리스트</b>',
-                height: 400,
-                margin: {{ l: 200 }},
+                height: dynamicHeight,
+                margin: {{ l: 200, r: 20, t: 50, b: 50 }},
                 xaxis: {{ title: '협업 횟수' }},
-                yaxis: {{ automargin: true }},
+                yaxis: {{ 
+                    automargin: true,
+                    fixedrange: true,
+                    categoryorder: 'total ascending'
+                }},
                 font: layoutFont
             }};
             
