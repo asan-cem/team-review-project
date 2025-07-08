@@ -1684,10 +1684,19 @@ def build_html_v2(data_json):
 
         function updateCollaborationTrendChart() {{
             const container = document.getElementById('collaboration-trend-chart-container');
-            const filteredData = getNetworkFilteredDataWithoutYear();
             const minCollabCount = parseInt(document.getElementById('min-collaboration-filter').value);
             
-            if (filteredData.length === 0) {{
+            // 부문, 부서, Unit 필터만 적용 (연도 필터 제외)
+            const selectedDivision = document.getElementById('network-division-filter').value;
+            const selectedDepartment = document.getElementById('network-department-filter').value;
+            const selectedUnit = document.getElementById('network-unit-filter').value;
+            
+            let baseFilteredData = [...rawData];
+            if (selectedDivision !== '전체') {{ baseFilteredData = baseFilteredData.filter(item => item['피평가부문'] === selectedDivision); }}
+            if (selectedDepartment !== '전체') {{ baseFilteredData = baseFilteredData.filter(item => item['피평가부서'] === selectedDepartment); }}
+            if (selectedUnit !== '전체') {{ baseFilteredData = baseFilteredData.filter(item => item['피평가Unit'] === selectedUnit); }}
+            
+            if (baseFilteredData.length === 0) {{
                 Plotly.react(container, [], {{
                     height: 400,
                     annotations: [{{ text: '선택된 조건에 해당하는 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
@@ -1698,7 +1707,7 @@ def build_html_v2(data_json):
             
             // 협업 관계별 카운트 계산 (평가부서-피평가부서)
             const collaborationRelationCounts = {{}};
-            filteredData.forEach(item => {{
+            baseFilteredData.forEach(item => {{
                 const evaluator = item['평가부서'];
                 const evaluated = item['피평가부서'];
                 if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A') {{
@@ -1729,8 +1738,8 @@ def build_html_v2(data_json):
             filteredRelations.forEach((relation, index) => {{
                 const [evaluator, evaluated] = relation.split('-');
                 const relationYearlyScores = allYears.map(year => {{
-                    // 특정 협업 관계의 연도별 데이터 추출
-                    const yearRelationData = filteredData.filter(item => 
+                    // 특정 협업 관계의 연도별 데이터 추출 (원본 데이터에서 직접)
+                    const yearRelationData = baseFilteredData.filter(item => 
                         item['설문연도'] === year && 
                         item['평가부서'] === evaluator && 
                         item['피평가부서'] === evaluated
