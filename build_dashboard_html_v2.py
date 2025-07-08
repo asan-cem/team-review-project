@@ -534,7 +534,7 @@ def build_html_v2(data_json):
 
         function setupDivisionChart() {{
             const select = document.getElementById('division-chart-filter');
-            select.innerHTML = allDivisions.map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            select.innerHTML = ['부문을 선택하세요', ...allDivisions].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
             select.addEventListener('change', updateDivisionYearlyChart);
             createCheckboxFilter('division-score-filter', scoreCols, 'division-score', updateDivisionYearlyChart);
         }}
@@ -657,6 +657,16 @@ def build_html_v2(data_json):
             const container = document.getElementById('division-yearly-chart-container');
             const selectedDivision = document.getElementById('division-chart-filter').value;
             const selectedScores = Array.from(document.querySelectorAll('input[name="division-score"]:checked')).map(cb => cb.value);
+
+            // 부문이 선택되지 않은 경우 메시지 표시
+            if (selectedDivision === '부문을 선택하세요') {{
+                Plotly.react(container, [], {{
+                    height: 500,
+                    annotations: [{{ text: '부문을 선택하세요', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 18, color: '#6c757d'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
 
             if (selectedScores.length === 0) {{
                 Plotly.react(container, [], {{
@@ -1076,11 +1086,18 @@ def build_html_v2(data_json):
             const selectedYear = document.getElementById('team-ranking-year-filter').value;
             const selectedDivision = document.getElementById('team-ranking-division-filter').value;
 
-            let yearData = rawData.filter(item => item['설문연도'] === selectedYear);
-
-            if (selectedDivision !== '부문을 선택하세요') {{
-                yearData = yearData.filter(item => item['피평가부문'] === selectedDivision);
+            // 부문이 선택되지 않은 경우 메시지 표시
+            if (selectedDivision === '부문을 선택하세요') {{
+                Plotly.react(container, [], {{
+                    height: 400,
+                    annotations: [{{ text: '부문을 선택하세요', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 18, color: '#6c757d'}} }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
             }}
+
+            let yearData = rawData.filter(item => item['설문연도'] === selectedYear);
+            yearData = yearData.filter(item => item['피평가부문'] === selectedDivision);
 
             const teamScores = {{}};
             yearData.forEach(item => {{
