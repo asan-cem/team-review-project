@@ -1451,6 +1451,20 @@ def build_html_v2(data_json):
             
             return filteredData;
         }}
+        
+        function getNetworkFilteredDataWithoutYear() {{
+            let filteredData = [...rawData];
+            
+            const selectedDivision = document.getElementById('network-division-filter').value;
+            const selectedDepartment = document.getElementById('network-department-filter').value;
+            const selectedUnit = document.getElementById('network-unit-filter').value;
+            
+            if (selectedDivision !== '전체') {{ filteredData = filteredData.filter(item => item['피평가부문'] === selectedDivision); }}
+            if (selectedDepartment !== '전체') {{ filteredData = filteredData.filter(item => item['피평가부서'] === selectedDepartment); }}
+            if (selectedUnit !== '전체') {{ filteredData = filteredData.filter(item => item['피평가Unit'] === selectedUnit); }}
+            
+            return filteredData;
+        }}
 
         function updateNetworkAnalysis() {{
             updateCollaborationFrequencyChart();
@@ -1670,7 +1684,7 @@ def build_html_v2(data_json):
 
         function updateCollaborationTrendChart() {{
             const container = document.getElementById('collaboration-trend-chart-container');
-            const filteredData = getNetworkFilteredData();
+            const filteredData = getNetworkFilteredDataWithoutYear();
             const minCollabCount = parseInt(document.getElementById('min-collaboration-filter').value);
             
             if (filteredData.length === 0) {{
@@ -1682,58 +1696,63 @@ def build_html_v2(data_json):
                 return;
             }}
             
-            // 네트워크 필터를 적용한 협업 부서들을 구함
-            const collaborationCounts = {{}};
+            // 협업 관계별 카운트 계산 (평가부서-피평가부서)
+            const collaborationRelationCounts = {{}};
             filteredData.forEach(item => {{
                 const evaluator = item['평가부서'];
                 const evaluated = item['피평가부서'];
                 if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A') {{
-                    collaborationCounts[evaluated] = (collaborationCounts[evaluated] || 0) + 1;
+                    const relationKey = `${{evaluator}}-${{evaluated}}`;
+                    collaborationRelationCounts[relationKey] = (collaborationRelationCounts[relationKey] || 0) + 1;
                 }}
             }});
             
-            const filteredDepartments = Object.entries(collaborationCounts)
+            // 최소 협업 횟수 조건을 만족하는 협업 관계 필터링
+            const filteredRelations = Object.entries(collaborationRelationCounts)
                 .filter(([_, count]) => count >= minCollabCount)
                 .sort((a, b) => b[1] - a[1])
-                .map(([dept, _]) => dept);
+                .map(([relation, _]) => relation);
             
-            if (filteredDepartments.length === 0) {{
+            if (filteredRelations.length === 0) {{
                 Plotly.react(container, [], {{
                     height: 400,
-                    annotations: [{{ text: `최소 ${{minCollabCount}}회 이상 협업한 부서가 없습니다.`, xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    annotations: [{{ text: `최소 ${{minCollabCount}}회 이상 협업한 관계가 없습니다.`, xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
                     xaxis: {{visible: false}}, yaxis: {{visible: false}}
                 }});
                 return;
             }}
             
-            // 각 부서별로 연도별 트렌드 생성 (네트워크 필터 적용)
+            // 각 협업 관계별로 연도별 트렌드 생성
             const traces = [];
             const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
             
-            filteredDepartments.forEach((department, index) => {{
-                const departmentYearlyScores = allYears.map(year => {{
-                    // 연도별로 네트워크 필터를 적용한 데이터에서 특정 부서 데이터만 추출
-                    const yearFilteredData = filteredData.filter(item => 
-                        item['설문연도'] === year && item['피평가부서'] === department
+            filteredRelations.forEach((relation, index) => {{
+                const [evaluator, evaluated] = relation.split('-');
+                const relationYearlyScores = allYears.map(year => {{
+                    // 특정 협업 관계의 연도별 데이터 추출
+                    const yearRelationData = filteredData.filter(item => 
+                        item['설문연도'] === year && 
+                        item['평가부서'] === evaluator && 
+                        item['피평가부서'] === evaluated
                     );
                     
-                    if (yearFilteredData.length === 0) return null;
-                    const avgScore = yearFilteredData.reduce((sum, item) => sum + (item['종합 점수'] || 0), 0) / yearFilteredData.length;
+                    if (yearRelationData.length === 0) return null;
+                    const avgScore = yearRelationData.reduce((sum, item) => sum + (item['종합 점수'] || 0), 0) / yearRelationData.length;
                     return avgScore.toFixed(1);
                 }});
                 
-                // 데이터가 있는 부서만 표시
-                if (!departmentYearlyScores.every(score => score === null)) {{
+                // 데이터가 있는 협업 관계만 표시
+                if (!relationYearlyScores.every(score => score === null)) {{
                     traces.push({{
                         x: allYears,
-                        y: departmentYearlyScores,
+                        y: relationYearlyScores,
                         type: 'scatter',
                         mode: 'lines+markers',
-                        name: department,
+                        name: relation,
                         line: {{ color: colors[index % colors.length], width: 2 }},
                         marker: {{ size: 6 }},
                         connectgaps: false,
-                        hovertemplate: `${{department}}<br>연도: %{{x}}<br>평균 점수: %{{y}}점<extra></extra>`
+                        hovertemplate: `${{relation}}<br>연도: %{{x}}<br>평균 점수: %{{y}}점<extra></extra>`
                     }});
                 }}
             }});
