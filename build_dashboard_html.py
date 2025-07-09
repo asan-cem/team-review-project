@@ -494,6 +494,33 @@ def build_html(data_json):
                 <div id="metrics-container"></div>
                 <div id="drilldown-chart-container" class="chart-container"></div>
                 <div id="yearly-comparison-chart-container" class="chart-container"></div>
+                
+                <!-- 부서 내 Unit 비교 -->
+                <div style="margin-top: 30px;">
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label for="unit-comparison-department-filter">부서 선택</label>
+                            <select id="unit-comparison-department-filter"></select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="unit-comparison-year-filter">연도 선택</label>
+                            <select id="unit-comparison-year-filter"></select>
+                        </div>
+                        <div class="filter-group">
+                            <label>문항 선택</label>
+                            <div class="expander-container">
+                                <div class="expander-header" id="unit-comparison-score-header" onclick="toggleExpander('unit-comparison-score-expander')">
+                                    <span>문항 선택 (6개 선택됨)</span>
+                                    <span class="expander-arrow" id="unit-comparison-score-arrow">▼</span>
+                                </div>
+                                <div class="expander-content" id="unit-comparison-score-expander">
+                                    <div id="unit-comparison-score-filter"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="unit-comparison-chart-container" class="chart-container"></div>
+                </div>
             </div>
             
             <!-- 5.2 감정 분석 -->
@@ -683,33 +710,6 @@ def build_html(data_json):
             </div>
         </div>
 
-        <div class="section">
-            <h2>부서 내 Unit 비교</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">부서 내 Unit간 접수를 파악합니다.</p>
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="unit-comparison-department-filter">부서 선택</label>
-                    <select id="unit-comparison-department-filter"></select>
-                </div>
-                <div class="filter-group">
-                    <label for="unit-comparison-year-filter">연도 선택</label>
-                    <select id="unit-comparison-year-filter"></select>
-                </div>
-                <div class="filter-group">
-                    <label>문항 선택</label>
-                    <div class="expander-container">
-                        <div class="expander-header" id="unit-comparison-score-header" onclick="toggleExpander('unit-comparison-score-expander')">
-                            <span>문항 선택 (6개 선택됨)</span>
-                            <span class="expander-arrow" id="unit-comparison-score-arrow">▼</span>
-                        </div>
-                        <div class="expander-content" id="unit-comparison-score-expander">
-                            <div id="unit-comparison-score-filter"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div id="unit-comparison-chart-container" class="chart-container"></div>
-        </div>
     </div>
     <script>
         const rawData = {data_json};
