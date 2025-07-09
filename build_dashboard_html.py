@@ -557,7 +557,7 @@ def build_html(data_json):
         
         <div class="section">
             <h2>협업 네트워크 분석</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">🔍 우리 부서와 협업을 하는 부서/Unit과의 관계를 종합적으로 분석합니다.</p>
+            <p style="color: #6c757d; margin-bottom: 20px;">🔍 우리 팀/Unit과 협업을 하는 팀/Unit과의 관계를 종합적으로 분석합니다.</p>
             
             <!-- 공통 필터 -->
             <div class="filters">
@@ -1768,12 +1768,14 @@ def build_html(data_json):
             const container = document.getElementById('collaboration-trend-chart-container');
             const minCollabCount = parseInt(document.getElementById('min-collaboration-filter').value);
             
-            // 부문, 부서, Unit 필터만 적용 (연도 필터 제외)
+            // 모든 필터 적용 (연도 필터 포함)
+            const selectedYear = document.getElementById('network-year-filter').value;
             const selectedDivision = document.getElementById('network-division-filter').value;
             const selectedDepartment = document.getElementById('network-department-filter').value;
             const selectedUnit = document.getElementById('network-unit-filter').value;
             
             let baseFilteredData = [...rawData];
+            if (selectedYear !== '전체') {{ baseFilteredData = baseFilteredData.filter(item => String(item['설문연도']) === String(selectedYear)); }}
             if (selectedDivision !== '전체') {{ baseFilteredData = baseFilteredData.filter(item => item['피평가부문'] === selectedDivision); }}
             if (selectedDepartment !== '전체') {{ baseFilteredData = baseFilteredData.filter(item => item['피평가부서'] === selectedDepartment); }}
             if (selectedUnit !== '전체') {{ baseFilteredData = baseFilteredData.filter(item => item['피평가Unit'] === selectedUnit); }}
@@ -1813,23 +1815,29 @@ def build_html(data_json):
                 return;
             }}
             
-            // 각 협업 관계별로 연도별 트렌드 생성
+            // 필터링된 부서 리스트의 연도별 선형 차트 생성
             const traces = [];
             const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
             
             filteredRelations.forEach((relation, index) => {{
                 const [evaluator, evaluated] = relation.split('-');
+                
+                // 전체 연도 범위에서 해당 협업 관계의 연도별 점수 계산
                 const relationYearlyScores = allYears.map(year => {{
-                    // 특정 협업 관계의 연도별 데이터 추출 (원본 데이터에서 직접)
-                    const yearRelationData = baseFilteredData.filter(item => 
+                    // 전체 원본 데이터에서 해당 연도의 특정 협업 관계 데이터 추출
+                    const yearRelationData = rawData.filter(item => 
                         item['설문연도'] === year && 
                         item['평가부서'] === evaluator && 
-                        item['피평가부서'] === evaluated
+                        item['피평가부서'] === evaluated &&
+                        // 현재 선택된 필터 조건도 적용 (연도 제외)
+                        (selectedDivision === '전체' || item['피평가부문'] === selectedDivision) &&
+                        (selectedDepartment === '전체' || item['피평가부서'] === selectedDepartment) &&
+                        (selectedUnit === '전체' || item['피평가Unit'] === selectedUnit)
                     );
                     
                     if (yearRelationData.length === 0) return null;
                     const avgScore = yearRelationData.reduce((sum, item) => sum + (item['종합 점수'] || 0), 0) / yearRelationData.length;
-                    return avgScore.toFixed(1);
+                    return parseFloat(avgScore.toFixed(1));
                 }});
                 
                 // 데이터가 있는 협업 관계만 표시
@@ -1839,11 +1847,11 @@ def build_html(data_json):
                         y: relationYearlyScores,
                         type: 'scatter',
                         mode: 'lines+markers',
-                        name: relation,
+                        name: `${{evaluator}}(평가부서) - ${{evaluated}}(피평가부서)`,
                         line: {{ color: colors[index % colors.length], width: 2 }},
                         marker: {{ size: 6 }},
                         connectgaps: false,
-                        hovertemplate: `${{relation}}<br>연도: %{{x}}<br>평균 점수: %{{y}}점<extra></extra>`
+                        hovertemplate: `${{evaluator}} → ${{evaluated}}<br>연도: %{{x}}<br>평균 점수: %{{y}}점<extra></extra>`
                     }});
                 }}
             }});
