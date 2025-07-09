@@ -56,7 +56,7 @@ SCORE_COLUMNS = ['존중배려', '정보공유', '명확처리', '태도개선',
 JSON_OUTPUT_COLUMNS = [
     '설문연도', '평가부서', '피평가부문', '피평가부서', '피평가Unit', 
     '존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합 점수',
-    '정제된_텍스트', '감정_분류', '감정_강도_점수', '핵심_키워드'
+    '정제된_텍스트', '감정_분류', '핵심_키워드'
 ]
 
 # 📝 결측값 처리 설정
@@ -292,7 +292,7 @@ def load_data():
     return df
 
 # --- 2. 개선된 HTML 생성 ---
-def build_html_v2(data_json):
+def build_html(data_json):
     """개선된 구조와 번호 체계를 적용한 대화형 HTML 생성"""
     return f"""
 <!DOCTYPE html>
@@ -369,17 +369,15 @@ def build_html_v2(data_json):
 </head>
 <body>
     <div class="header">
-        <h1>📊 서울아산병원 협업 평가 대시보드 </h1>
+        <h1> 서울아산병원 협업 평가 대시보드 </h1>
         <p style="margin: 10px 0 0 0; opacity: 0.9;">설문 데이터: 2022년 ~ 2025년 상반기(2025년 7월 9일 기준) </p>
     </div>
     <div class="container">
         
-        <!-- Part 1: 전체 현황 (Overview) -->
-        <div class="part-title">📈 Part 1: 전체 현황 (Overview)</div>
         
         <div class="section">
             <h2>[전체] 연도별 문항 점수</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">병원 전체의 기본 트렌드를 파악합니다.</p>
+            <p style="color: #6c757d; margin-bottom: 20px;">우리 병원의 점수 트렌드를 파악합니다.</p>
             <div class="filters">
                 <div class="filter-group">
                     <label>문항 선택</label>
@@ -399,7 +397,7 @@ def build_html_v2(data_json):
 
         <div class="section">
             <h2>[부문별] 연도별 문항 점수</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">부문별 성과 트렌드를 분석합니다.</p>
+            <p style="color: #6c757d; margin-bottom: 20px;">부문별 점수 트렌드를 파악합니다.</p>
             <div class="filters">
                 <div class="filter-group">
                     <label for="division-chart-filter">부문 선택</label>
@@ -423,7 +421,7 @@ def build_html_v2(data_json):
 
         <div class="section">
             <h2>연도별 부문 비교</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">특정 연도의 부문간 상대적 성과를 비교합니다.</p>
+            <p style="color: #6c757d; margin-bottom: 20px;">특정 연도의 부문간 점수를 비교합니다.</p>
             <div class="filters">
                 <div class="filter-group">
                     <label for="comparison-year-filter">연도 선택</label>
@@ -447,12 +445,10 @@ def build_html_v2(data_json):
 
         <div class="part-divider"></div>
         
-        <!-- Part 2: 성과 분석 (Performance) -->
-        <div class="part-title">🏆 Part 2: 성과 분석 (Performance)</div>
         
         <div class="section">
             <h2>부문별 팀 점수 순위</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">우수 및 개선이 필요한 부서를 식별합니다.</p>
+            <p style="color: #6c757d; margin-bottom: 20px;">부문 내 부서간 점수를 파악합니다.</p>
             <div class="filters">
                 <div class="filter-group">
                     <label for="team-ranking-year-filter">연도 선택</label>
@@ -468,12 +464,10 @@ def build_html_v2(data_json):
 
         <div class="part-divider"></div>
         
-        <!-- Part 3: 상세 분석 (Deep Dive) -->
-        <div class="part-title">🔍 Part 3: 상세 분석 (Deep Dive)</div>
         
         <div class="section">
             <h2>부서/Unit 상세 분석</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">특정 부서나 Unit의 상세한 성과와 피드백을 분석합니다.</p>
+            <p style="color: #6c757d; margin-bottom: 20px;">부서와 Unit이 받은 점수 및 후기를 파악합니다.</p>
             
             <!-- 공통 필터 -->
             <div class="filters">
@@ -508,24 +502,8 @@ def build_html_v2(data_json):
                 <div id="sentiment-chart-container" class="chart-container"></div>
             </div>
             
-            <!-- 5.3 감정 강도 -->
-            <div class="subsection">
-                <h3>감정 강도 분석</h3>
-                <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #6a89cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
-                    <p style="margin: 0; color: #495057; font-size: 0.95em;">
-                        <strong>📊 이 차트는 무엇인가요?</strong><br>
-                        협업 후기의 감정이 얼마나 강한지를 1점(매우 약함)부터 10점(매우 강함)까지 수치로 나타낸 것입니다.<br><br>
-                        <strong>💡 해석 방법:</strong><br>
-                        • <span style="color: #28a745;"><strong>높은 점수(7-10점)</strong></span>: 매우 만족하거나 매우 불만족한 강한 감정<br>
-                        • <span style="color: #ffc107;"><strong>중간 점수(4-6점)</strong></span>: 보통 수준의 감정<br>
-                        • <span style="color: #6c757d;"><strong>낮은 점수(1-3점)</strong></span>: 담담하고 객관적인 평가<br><br>
-                        <em>예시: "정말 훌륭한 협업이었다"(9점) vs "괜찮은 협업이었다"(5점)</em>
-                    </p>
-                </div>
-                <div id="emotion-intensity-trend-container" class="chart-container"></div>
-            </div>
 
-            <!-- 5.4 키워드 분석 -->
+            <!-- 5.3 키워드 분석 -->
             <div class="subsection">
                 <h3>핵심 키워드 분석</h3>
                 <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #6a89cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
@@ -546,7 +524,7 @@ def build_html_v2(data_json):
                 <div id="keyword-reviews-container"></div>
             </div>
             
-            <!-- 5.5 협업 후기 -->
+            <!-- 5.4 협업 후기 -->
             <div class="subsection">
                 <h3>협업 후기 <span id="reviews-count-display" style="color: #666; font-size: 0.9em;"></span></h3>
                 <div class="filters">
@@ -569,12 +547,10 @@ def build_html_v2(data_json):
 
         <div class="part-divider"></div>
         
-        <!-- Part 4: 협업 네트워크 분석 (Collaboration Network Analysis) -->
-        <div class="part-title">🔗 Part 4: 협업 네트워크 분석 (Collaboration Network Analysis)</div>
         
         <div class="section">
             <h2>협업 네트워크 분석</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">🔍 부서/Unit간 협업 관계와 중요성을 종합적으로 분석합니다.</p>
+            <p style="color: #6c757d; margin-bottom: 20px;">🔍 우리 부서와 협업을 하는 부서/Unit과의 관계를 종합적으로 분석합니다.</p>
             
             <!-- 공통 필터 -->
             <div class="filters">
@@ -624,10 +600,10 @@ def build_html_v2(data_json):
                 <div style="background: #e8f4fd; padding: 15px; border-left: 4px solid #0066cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
                     <p style="margin: 0; color: #495057; font-size: 0.95em;">
                         <strong>📊 관계 분류 기준:</strong><br>
-                        • <span style="color: #28a745;"><strong>우수 (75점 이상)</strong></span>: 매우 공정적인 협업 관계<br>
+                        • <span style="color: #28a745;"><strong>우수 (75점 이상)</strong></span>: 생산적인 협업 관계<br>
                         • <span style="color: #ffc107;"><strong>양호 (60-74점)</strong></span>: 안정적인 협업 관계<br>
                         • <span style="color: #fd7e14;"><strong>주의 (50-59점)</strong></span>: 개선이 필요한 관계<br>
-                        • <span style="color: #dc3545;"><strong>문제 (50점 미만)</strong></span>: 시급한 개선이 필요한 관계
+                        • <span style="color: #dc3545;"><strong>문제 (50점 미만)</strong></span>: 전반적인 점검이 필요한 관계
                     </p>
                 </div>
                 <div id="collaboration-status-chart-container" class="chart-container"></div>
@@ -670,9 +646,9 @@ def build_html_v2(data_json):
                     <p style="margin: 0; color: #495057; font-size: 0.95em;">
                         <strong>📈 개선도 파악 기준:</strong><br>
                         • <span style="color: #28a745;"><strong>연평균 +3점 이상 증가</strong></span>: 눈에 띄는 개선<br>
-                        • <span style="color: #ffc107;"><strong>연평균 +2점 이상 증가</strong></span>: 안정적 개선<br>
-                        • <span style="color: #6c757d;"><strong>연평균 -3점 이상 감소</strong></span>: 악화 추세<br>
-                        • <span style="color: #dc3545;"><strong>연평균 -5점 이상 감소</strong></span>: 악화 주의 감수
+                        • <span style="color: #ffc107;"><strong>연평균 +2점 이상 증가</strong></span>: 안정적인 개선<br>
+                        • <span style="color: #6c757d;"><strong>연평균 -3점 이상 감소</strong></span>: 주의 필요<br>
+                        • <span style="color: #dc3545;"><strong>연평균 -5점 이상 감소</strong></span>: 분석 및 개선 필요
                     </p>
                 </div>
                 <div id="collaboration-trend-chart-container" class="chart-container"></div>
@@ -697,7 +673,7 @@ def build_html_v2(data_json):
                         <thead>
                             <tr>
                                 <th style="width: 80px;">연도</th>
-                                <th style="width: 120px;">협업 파트너</th>
+                                <th style="width: 120px;">협업 부서</th>
                                 <th>후기 내용</th>
                             </tr>
                         </thead>
@@ -709,7 +685,7 @@ def build_html_v2(data_json):
 
         <div class="section">
             <h2>부서 내 Unit 비교</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">같은 부서 내 Unit간 비교분석을 수행합니다.</p>
+            <p style="color: #6c757d; margin-bottom: 20px;">부서 내 Unit간 접수를 파악합니다.</p>
             <div class="filters">
                 <div class="filter-group">
                     <label for="unit-comparison-department-filter">부서 선택</label>
@@ -812,7 +788,6 @@ def build_html_v2(data_json):
             updateDrilldownChart(filteredData);
             updateSentimentChart(filteredData);
             updateReviewsTable(filteredData);
-            updateEmotionIntensityTrend();
             updateKeywordAnalysis(filteredData);
             updateYearlyComparisonChart();
         }}
@@ -1067,135 +1042,6 @@ def build_html_v2(data_json):
             Plotly.react(container, [trace], layout);
         }}
 
-        function updateEmotionIntensityTrend() {{
-            const container = document.getElementById('emotion-intensity-trend-container');
-            
-            // 상세 분석 섹션의 부서/Unit 필터만 사용 (연도는 무시하여 전체 트렌드 표시)
-            const selectedDept = document.getElementById('department-filter').value;
-            const selectedUnit = document.getElementById('unit-filter').value;
-            
-            // 감정 강도 데이터가 있는 항목만 필터링 (0도 유효한 값으로 처리)
-            let targetData = rawData.filter(item => {{
-                const intensity = item['감정_강도_점수'];
-                return intensity !== null && intensity !== undefined && intensity !== '' && !isNaN(parseFloat(intensity));
-            }});
-            
-            // 부서 필터 적용
-            if (selectedDept !== '전체') {{
-                targetData = targetData.filter(item => item['피평가부서'] === selectedDept);
-            }}
-            
-            // Unit 필터 적용
-            if (selectedUnit !== '전체') {{
-                targetData = targetData.filter(item => item['피평가Unit'] === selectedUnit);
-            }}
-            
-            if (targetData.length === 0) {{
-                let message = '감정 강도 데이터가 없습니다.';
-                if (selectedDept !== '전체' || selectedUnit !== '전체') {{
-                    message = '선택된 부서/Unit에 해당하는 감정 강도 데이터가 없습니다.';
-                }}
-                
-                Plotly.react(container, [], {{
-                    height: 400,
-                    annotations: [{{ text: message, xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
-                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
-                }});
-                return;
-            }}
-            
-            const yearlyData = {{}};
-            targetData.forEach(item => {{
-                const year = item['설문연도'];
-                const intensity = parseFloat(item['감정_강도_점수']);
-                const sentiment = item['감정_분류'] || '알 수 없음';
-                
-                if (!yearlyData[year]) {{
-                    yearlyData[year] = {{
-                        intensities: [],
-                        sentiments: {{ '긍정': [], '부정': [], '중립': [], '알 수 없음': [] }}
-                    }};
-                }}
-                
-                yearlyData[year].intensities.push(intensity);
-                if (yearlyData[year].sentiments[sentiment]) {{
-                    yearlyData[year].sentiments[sentiment].push(intensity);
-                }}
-            }});
-            
-            const years = Object.keys(yearlyData).sort();
-            
-            if (years.length === 0) {{
-                Plotly.react(container, [], {{
-                    height: 400,
-                    annotations: [{{ text: '표시할 연도별 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
-                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
-                }});
-                return;
-            }}
-            
-            const traces = [];
-            
-            const overallAvg = years.map(year => {{
-                const intensities = yearlyData[year].intensities;
-                return (intensities.reduce((sum, val) => sum + val, 0) / intensities.length).toFixed(2);
-            }});
-            
-            traces.push({{
-                x: years,
-                y: overallAvg,
-                type: 'scatter',
-                mode: 'lines+markers',
-                name: '전체 평균',
-                line: {{ color: '#1f77b4', width: 3 }},
-                marker: {{ size: 8 }},
-                hovertemplate: '연도: %{{x}}<br>전체 평균 강도: %{{y}}<extra></extra>'
-            }});
-            
-            const sentimentColors = {{ '긍정': '#28a745', '부정': '#dc3545', '중립': '#6c757d' }};
-            
-            Object.entries(sentimentColors).forEach(([sentiment, color]) => {{
-                const sentimentAvg = years.map(year => {{
-                    const sentimentIntensities = yearlyData[year].sentiments[sentiment];
-                    if (sentimentIntensities.length === 0) return null;
-                    return (sentimentIntensities.reduce((sum, val) => sum + val, 0) / sentimentIntensities.length).toFixed(2);
-                }});
-                
-                if (sentimentAvg.some(val => val !== null)) {{
-                    traces.push({{
-                        x: years,
-                        y: sentimentAvg,
-                        type: 'scatter',
-                        mode: 'lines+markers',
-                        name: `${{sentiment}} 평균`,
-                        line: {{ color: color, width: 2, dash: 'dot' }},
-                        marker: {{ size: 6 }},
-                        connectgaps: false,
-                        hovertemplate: `연도: %{{x}}<br>${{sentiment}} 평균 강도: %{{y}}<extra></extra>`
-                    }});
-                }}
-            }});
-            
-            let titleParts = [];
-            if (selectedDept !== '전체') {{ titleParts.push(selectedDept); }}
-            if (selectedUnit !== '전체') {{ titleParts.push(selectedUnit); }}
-            
-            const titlePrefix = titleParts.length > 0 ? titleParts.join(' > ') : '전체';
-            const title = `<b>${{titlePrefix}} 연도별 감정 강도 트렌드</b>`;
-            
-            const layout = {{
-                title: title,
-                height: 400,
-                xaxis: {{ title: '연도', type: 'category' }},
-                yaxis: {{ title: '평균 감정 강도', range: [1, 10] }},
-                font: layoutFont,
-                hovermode: 'x unified',
-                showlegend: true,
-                legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }}
-            }};
-            
-            Plotly.react(container, traces, layout);
-        }}
 
         function updateReviewsTable(data = null) {{
             const tbody = document.querySelector("#reviews-table tbody");
@@ -2110,7 +1956,6 @@ def build_html_v2(data_json):
             updateYearlyDivisionComparisonChart();
             updateTeamRankingChart();
             updateUnitComparisonChart();
-            updateEmotionIntensityTrend();
             updateNetworkAnalysis();
         }};
     </script>
@@ -2146,7 +1991,7 @@ def main():
         
         # 4. HTML 생성
         log_message("🎨 대시보드 HTML 생성 시작")
-        dashboard_html = build_html_v2(data_json)
+        dashboard_html = build_html(data_json)
         log_message("✅ 대시보드 HTML 생성 완료")
         
         # 5. 파일 저장
