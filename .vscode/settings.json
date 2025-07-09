@@ -11,5 +11,6 @@
         "**/__pycache__": true,
         "**/*.pyc": true,
         "**/venv": false
-    }
+    },
+    "livePreview.defaultPreviewPath": "/서울아산병원_협업평가_대시보드_v2_Refactored.html"
 } 
