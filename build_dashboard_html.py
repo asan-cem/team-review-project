@@ -497,28 +497,8 @@ def build_html(data_json):
                 
                 <!-- 부서 내 Unit 비교 -->
                 <div style="margin-top: 30px;">
-                    <div class="filters">
-                        <div class="filter-group">
-                            <label for="unit-comparison-department-filter">부서 선택</label>
-                            <select id="unit-comparison-department-filter"></select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="unit-comparison-year-filter">연도 선택</label>
-                            <select id="unit-comparison-year-filter"></select>
-                        </div>
-                        <div class="filter-group">
-                            <label>문항 선택</label>
-                            <div class="expander-container">
-                                <div class="expander-header" id="unit-comparison-score-header" onclick="toggleExpander('unit-comparison-score-expander')">
-                                    <span>문항 선택 (6개 선택됨)</span>
-                                    <span class="expander-arrow" id="unit-comparison-score-arrow">▼</span>
-                                </div>
-                                <div class="expander-content" id="unit-comparison-score-expander">
-                                    <div id="unit-comparison-score-filter"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <h4 style="color: #555; margin-bottom: 15px;">부서 내 Unit 비교</h4>
+                    <p style="color: #6c757d; margin-bottom: 20px; font-size: 0.9em;">부서 내 Unit간 점수를 파악합니다.</p>
                     <div id="unit-comparison-chart-container" class="chart-container"></div>
                 </div>
             </div>
@@ -790,6 +770,7 @@ def build_html(data_json):
             updateReviewsTable(filteredData);
             updateKeywordAnalysis(filteredData);
             updateYearlyComparisonChart();
+            updateUnitComparisonChart();
         }}
         
         function calculateAverages(data) {{
@@ -1323,31 +1304,20 @@ def build_html(data_json):
         }}
 
         function setupUnitComparisonChart() {{
-            const departmentSelect = document.getElementById('unit-comparison-department-filter');
-            const yearSelect = document.getElementById('unit-comparison-year-filter');
-            
-            const allDepartments = [...new Set(rawData.map(item => item['피평가부서']))].filter(d => d && d !== 'N/A').sort((a, b) => String(a).localeCompare(String(b), 'ko'));
-            departmentSelect.innerHTML = ['부서를 선택하세요', ...allDepartments].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
-            
-            yearSelect.innerHTML = ['전체', ...allYears].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
-            yearSelect.value = allYears[allYears.length - 1];
-            
-            departmentSelect.addEventListener('change', updateUnitComparisonChart);
-            yearSelect.addEventListener('change', updateUnitComparisonChart);
-            
-            createCheckboxFilter('unit-comparison-score-filter', scoreCols, 'unit-comparison-score', updateUnitComparisonChart);
+            // Unit comparison chart uses main filters from detailed analysis section
+            // No separate filters needed
         }}
 
         function updateUnitComparisonChart() {{
             const container = document.getElementById('unit-comparison-chart-container');
-            const selectedDepartment = document.getElementById('unit-comparison-department-filter').value;
-            const selectedYear = document.getElementById('unit-comparison-year-filter').value;
-            const selectedScores = Array.from(document.querySelectorAll('input[name="unit-comparison-score"]:checked')).map(cb => cb.value);
+            const selectedDepartment = document.getElementById('department-filter').value;
+            const selectedYear = document.getElementById('year-filter').value;
+            const selectedScores = Array.from(document.querySelectorAll('input[name="drilldown-score"]:checked')).map(cb => cb.value);
 
-            if (selectedDepartment === '부서를 선택하세요') {{
+            if (selectedDepartment === '전체') {{
                 Plotly.react(container, [], {{
-                    height: 500,
-                    annotations: [{{ text: '비교할 부서를 선택해주세요.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    height: 400,
+                    annotations: [{{ text: 'Unit 간 비교를 위해 부서를 선택해 주세요.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
                     xaxis: {{visible: false}}, yaxis: {{visible: false}}
                 }});
                 return;
@@ -1355,7 +1325,7 @@ def build_html(data_json):
 
             if (selectedScores.length === 0) {{
                 Plotly.react(container, [], {{
-                    height: 500,
+                    height: 400,
                     annotations: [{{ text: '표시할 문항을 선택해주세요.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
                     xaxis: {{visible: false}}, yaxis: {{visible: false}}
                 }});
@@ -1369,7 +1339,7 @@ def build_html(data_json):
 
             if (unitsInDepartment.length === 0) {{
                 Plotly.react(container, [], {{
-                    height: 500,
+                    height: 400,
                     annotations: [{{ text: '선택된 조건에 해당하는 Unit이 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
                     xaxis: {{visible: false}}, yaxis: {{visible: false}}
                 }});
@@ -1387,7 +1357,7 @@ def build_html(data_json):
 
             const yearTitle = selectedYear === '전체' ? '전체 연도' : selectedYear;
             const layout = {{
-                title: `<b>[${{selectedDepartment}}] Unit별 문항 점수 비교 (${{yearTitle}})</b>`, barmode: 'group', height: 500,
+                title: `<b>[${{selectedDepartment}}] Unit별 문항 점수 비교 (${{yearTitle}})</b>`, barmode: 'group', height: 400,
                 xaxis: {{ title: 'Unit' }}, yaxis: {{ title: '점수', range: [0, 100] }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
                 font: layoutFont, hovermode: 'closest'
