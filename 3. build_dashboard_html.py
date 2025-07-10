@@ -664,9 +664,9 @@ def build_html(data_json):
                 <div style="background: #e8f4fd; padding: 15px; border-left: 4px solid #0066cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
                     <p style="margin: 0; color: #495057; font-size: 0.95em;">
                         <strong>📊 이 차트는 무엇인가요?</strong><br>
-                        선택한 부서/Unit과 가장 많이 협업하는 부서를 보여줍니다.<br><br>
+                        우리 부서/Unit에 협업 평가를 준 부서를 보여줍니다.<br><br>
                         <strong>💡 활용 방법:</strong><br>
-                        • <span style="color: #28a745;"><strong>주요 협업 식별</strong></span>: 업무 연계가 가장 많은 부서 파악
+                        • <span style="color: #28a745;"><strong>주요 협업 관계 파악</strong></span>: 업무 연계가 가장 많은 부서 파악
                     </p>
                 </div>
                 <div id="collaboration-frequency-chart-container" class="chart-container"></div>
