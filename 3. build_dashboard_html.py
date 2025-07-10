@@ -419,6 +419,30 @@ def build_html(data_json):
         <h1> 서울아산병원 협업 평가 대시보드 </h1>
         <p style="margin: 10px 0 0 0; opacity: 0.9;">설문 데이터: 2022년 ~ 2025년 상반기(2025년 7월 9일 기준) </p>
     </div>
+    
+    <!-- 안내 문구 섹션 -->
+    <div style="max-width: 1400px; margin: 20px auto; padding: 0 20px;">
+        <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="color: #495057; margin: 0 0 15px 0; font-size: 1.1em;">📋 대시보드 이용 안내</h3>
+            
+            <div style="margin-bottom: 15px;">
+                <strong style="color: #495057;">📊 평가 문항 설명:</strong>
+                <ul style="margin: 8px 0 0 20px; color: #6c757d; font-size: 0.95em; line-height: 1.4;">
+                    <li><strong>존중배려:</strong> ○○은 타 부서의 입장을 존중하고 배려하여 협력해주며, 협업 관련 의견을 경청해준다.</li>
+                    <li><strong>정보공유:</strong> ○○은 업무상 필요한 정보에 대해 공유가 잘 이루어진다.</li>
+                    <li><strong>명확처리:</strong> ○○은 업무에 대한 명확한 담당자가 있고 업무를 일관성있게 처리해준다.</li>
+                    <li><strong>태도개선:</strong> ○○은 이전보다 업무 협력에 대한 태도나 의지가 개선되고 있다.</li>
+                    <li><strong>전반만족:</strong> 전반적으로 ○○과의 협업에 대해 만족한다.</li>
+                </ul>
+            </div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 12px;">
+                <strong style="color: #856404;">⚠️ 통계적 해석 주의사항:</strong>
+                <span style="color: #856404; font-size: 0.95em;">응답건수(표본수)가 30건 미만인 경우 통계적 해석에 유의하시기 바랍니다.</span>
+            </div>
+        </div>
+    </div>
+    
     <div class="container">
         
         
@@ -651,15 +675,6 @@ def build_html(data_json):
             <!-- 2.2 협업 관계 현황 -->
             <div class="subsection">
                 <h3>협업 관계 현황</h3>
-                <div style="background: #e8f4fd; padding: 15px; border-left: 4px solid #0066cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
-                    <p style="margin: 0; color: #495057; font-size: 0.95em;">
-                        <strong>📊 관계 분류 기준:</strong><br>
-                        • <span style="color: #28a745;"><strong>우수 (75점 이상)</strong></span>: 생산적인 협업 관계<br>
-                        • <span style="color: #ffc107;"><strong>양호 (60-74점)</strong></span>: 안정적인 협업 관계<br>
-                        • <span style="color: #fd7e14;"><strong>주의 (50-59점)</strong></span>: 개선이 필요한 관계<br>
-                        • <span style="color: #dc3545;"><strong>문제 (50점 미만)</strong></span>: 전반적인 점검이 필요한 관계
-                    </p>
-                </div>
                 <div id="collaboration-status-chart-container" class="chart-container"></div>
                 <div class="collaboration-status-dropdowns">
                     <div class="status-dropdown excellent">
@@ -696,15 +711,6 @@ def build_html(data_json):
             <!-- 2.3 협업 관계 변화 트렌드 -->
             <div class="subsection">
                 <h3>협업 관계 변화 트렌드</h3>
-                <div style="background: #e8f4fd; padding: 15px; border-left: 4px solid #0066cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
-                    <p style="margin: 0; color: #495057; font-size: 0.95em;">
-                        <strong>📈 개선도 파악 기준:</strong><br>
-                        • <span style="color: #28a745;"><strong>연평균 +3점 이상 증가</strong></span>: 눈에 띄는 개선<br>
-                        • <span style="color: #ffc107;"><strong>연평균 +2점 이상 증가</strong></span>: 안정적인 개선<br>
-                        • <span style="color: #6c757d;"><strong>연평균 -3점 이상 감소</strong></span>: 주의 필요<br>
-                        • <span style="color: #dc3545;"><strong>연평균 -5점 이상 감소</strong></span>: 분석 및 개선 필요
-                    </p>
-                </div>
                 <div id="collaboration-trend-chart-container" class="chart-container"></div>
             </div>
 
