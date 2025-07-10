@@ -864,7 +864,7 @@ def build_html(data_json):
             const titlePrefix = titleParts.length > 0 ? titleParts.join(' > ') : '부서, Unit';
             const yearSuffix = selectedYear === '전체' ? ' (전체 연도)' : ` (${{selectedYear}})`;
             const title = `<b>${{titlePrefix}} 문항 점수${{yearSuffix}}</b>`;
-            const layout = {{ title: title, yaxis: {{ title: '점수', range: [0, 100] }}, font: layoutFont, hovermode: 'closest' }};
+            const layout = {{ title: title, yaxis: {{ title: '점수', range: [0, 100] }}, font: layoutFont, hovermode: 'closest', margin: {{ l: 60, r: 60, t: 60, b: 60 }} }};
             Plotly.react(container, chartData, layout);
         }}
         
@@ -900,7 +900,8 @@ def build_html(data_json):
                 yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero', tickformat: 'd' }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
                 font: layoutFont,
-                hovermode: 'closest'
+                hovermode: 'closest',
+                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
             }};
             Plotly.react(container, traces, layout);
         }}
@@ -949,7 +950,8 @@ def build_html(data_json):
                 yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero', tickformat: 'd' }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
                 font: layoutFont,
-                hovermode: 'closest'
+                hovermode: 'closest',
+                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
             }};
             Plotly.react(container, traces, layout);
         }}
@@ -991,7 +993,8 @@ def build_html(data_json):
                 font: layoutFont,
                 height: 500,
                 barmode: 'group',
-                hovermode: 'closest'
+                hovermode: 'closest',
+                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
             }};
             Plotly.react(container, trace, layout);
         }}
@@ -1064,7 +1067,8 @@ def build_html(data_json):
                 yaxis: {{ title: '응답 수', rangemode: 'tozero', range: [0, Math.max(...counts) * 1.15] }},
                 font: layoutFont,
                 hovermode: 'closest',
-                showlegend: false
+                showlegend: false,
+                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
             }};
 
             Plotly.react(container, [trace], layout);
@@ -1150,7 +1154,7 @@ def build_html(data_json):
             const layout = {{
                 title: `<b>${{title}}</b>`,
                 height: 400,
-                margin: {{ l: 150 }},
+                margin: {{ l: 120, r: 40, t: 60, b: 60 }},
                 xaxis: {{ title: '언급 횟수' }},
                 yaxis: {{ automargin: true }}
             }};
@@ -1285,7 +1289,8 @@ def build_html(data_json):
                     x: 0.02, y: parseFloat(yearlyOverallAverage), showarrow: false,
                     font: {{ color: 'red', size: 12 }}, bgcolor: 'rgba(255,255,255,0.8)',
                     bordercolor: 'red', borderwidth: 1
-                }}]
+                }}],
+                margin: {{ l: 60, r: 60, t: 60, b: 100 }}
             }};
 
             Plotly.react(container, [trace, avgLine], layout);
@@ -1344,7 +1349,8 @@ def build_html(data_json):
                 yaxis: {{ title: '점수', range: [0, 100] }},
                 yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero', tickformat: 'd' }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
-                font: layoutFont, hovermode: 'closest'
+                font: layoutFont, hovermode: 'closest',
+                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
             }};
             
             Plotly.react(container, traces, layout);
@@ -1407,7 +1413,8 @@ def build_html(data_json):
                 title: `<b>[${{selectedDepartment}}] Unit별 문항 점수 비교 (${{yearTitle}})</b>`, barmode: 'group', height: 400,
                 xaxis: {{ title: 'Unit' }}, yaxis: {{ title: '점수', range: [0, 100] }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
-                font: layoutFont, hovermode: 'closest'
+                font: layoutFont, hovermode: 'closest',
+                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
             }};
 
             Plotly.react(container, traces, layout);
@@ -1660,7 +1667,7 @@ def build_html(data_json):
             const layout = {{
                 title: '<b>부서 리스트</b>',
                 height: dynamicHeight,
-                margin: {{ l: 200, r: 20, t: 50, b: 50 }},
+                margin: {{ l: 150, r: 40, t: 60, b: 60 }},
                 xaxis: {{ title: '협업 횟수' }},
                 yaxis: {{ 
                     automargin: true,
@@ -1769,7 +1776,8 @@ def build_html(data_json):
                 height: 400,
                 xaxis: {{ title: '상태' }},
                 yaxis: {{ title: '부서 수', rangemode: 'tozero', range: [0, Math.max(...statusValues) * 1.2] }},
-                font: layoutFont
+                font: layoutFont,
+                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
             }};
             
             Plotly.react(container, [trace], layout);
@@ -1919,7 +1927,7 @@ def build_html(data_json):
                 yaxis: {{ title: '종합점수', range: [0, 100] }},
                 font: layoutFont,
                 legend: {{ orientation: 'v', x: 1.02, y: 1 }},
-                margin: {{ r: 150 }}
+                margin: {{ l: 60, r: 120, t: 60, b: 60 }}
             }};
             
             Plotly.react(container, traces, layout);
