@@ -1575,7 +1575,7 @@ def build_html(data_json):
                 const evaluator = item['평가부서'];
                 const evaluated = item['피평가부서'];
                 if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A') {{
-                    const key = `${{evaluator}} ↔ ${{evaluated}}`;
+                    const key = `${{evaluator}} → ${{evaluated}}`;
                     collaborationCounts[key] = (collaborationCounts[key] || 0) + 1;
                 }}
             }});
