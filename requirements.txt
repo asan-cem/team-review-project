@@ -8,3 +8,13 @@ streamlit
 plotly
 psutil
 reportlab
+
+# Google Colab environment synchronization
+gspread>=6.0.0
+google-auth-oauthlib
+google-auth-httplib2
+pathlib
+unicodedata2
+datetime
+re
+time
