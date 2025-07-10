@@ -898,10 +898,10 @@ def build_html(data_json):
                 xaxis: {{ type: 'category', title: '설문 연도' }},
                 yaxis: {{ title: '점수', range: [0, 100] }},
                 yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero', tickformat: 'd' }},
-                legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
+                legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.05, xanchor: 'right', x: 1 }},
                 font: layoutFont,
                 hovermode: 'closest',
-                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
+                margin: {{ l: 60, r: 60, t: 100, b: 60 }}
             }};
             Plotly.react(container, traces, layout);
         }}
@@ -948,10 +948,10 @@ def build_html(data_json):
                 xaxis: {{ type: 'category', title: '설문 연도' }},
                 yaxis: {{ title: '점수', range: [0, 100] }},
                 yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero', tickformat: 'd' }},
-                legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
+                legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.05, xanchor: 'right', x: 1 }},
                 font: layoutFont,
                 hovermode: 'closest',
-                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
+                margin: {{ l: 60, r: 60, t: 100, b: 60 }}
             }};
             Plotly.react(container, traces, layout);
         }}
@@ -1348,9 +1348,9 @@ def build_html(data_json):
                 xaxis: {{ type: 'category', title: '설문 연도' }},
                 yaxis: {{ title: '점수', range: [0, 100] }},
                 yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero', tickformat: 'd' }},
-                legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
+                legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.05, xanchor: 'right', x: 1 }},
                 font: layoutFont, hovermode: 'closest',
-                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
+                margin: {{ l: 60, r: 60, t: 100, b: 60 }}
             }};
             
             Plotly.react(container, traces, layout);
@@ -1412,9 +1412,9 @@ def build_html(data_json):
             const layout = {{
                 title: `<b>[${{selectedDepartment}}] Unit별 문항 점수 비교 (${{yearTitle}})</b>`, barmode: 'group', height: 400,
                 xaxis: {{ title: 'Unit' }}, yaxis: {{ title: '점수', range: [0, 100] }},
-                legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
+                legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.05, xanchor: 'right', x: 1 }},
                 font: layoutFont, hovermode: 'closest',
-                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
+                margin: {{ l: 60, r: 60, t: 100, b: 60 }}
             }};
 
             Plotly.react(container, traces, layout);
@@ -1927,7 +1927,7 @@ def build_html(data_json):
                 yaxis: {{ title: '종합점수', range: [0, 100] }},
                 font: layoutFont,
                 legend: {{ orientation: 'v', x: 1.02, y: 1 }},
-                margin: {{ l: 60, r: 120, t: 60, b: 60 }}
+                margin: {{ l: 60, r: 140, t: 80, b: 60 }}
             }};
             
             Plotly.react(container, traces, layout);
