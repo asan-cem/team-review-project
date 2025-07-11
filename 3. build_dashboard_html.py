@@ -681,31 +681,55 @@ def build_html(data_json):
                 <div class="collaboration-status-dropdowns">
                     <div class="status-dropdown excellent">
                         <h5>🏆 우수 (75점 이상)</h5>
-                        <select id="excellent-dept-dropdown">
-                            <option value="">부서를 선택하세요</option>
-                        </select>
-                        <div class="dept-count" id="excellent-count">0개 부서</div>
+                        <div class="expander-container">
+                            <div class="expander-header" id="excellent-dept-header" onclick="toggleExpander('excellent-dept-expander')">
+                                <span>부서 선택 (0개 선택됨)</span>
+                                <span class="expander-arrow" id="excellent-dept-arrow">▼</span>
+                            </div>
+                            <div class="expander-content" id="excellent-dept-expander">
+                                <div id="excellent-dept-filter"></div>
+                            </div>
+                        </div>
+                        <div class="dept-count" id="excellent-count">0개 관계</div>
                     </div>
                     <div class="status-dropdown good">
                         <h5>✅ 양호 (60-74점)</h5>
-                        <select id="good-dept-dropdown">
-                            <option value="">부서를 선택하세요</option>
-                        </select>
-                        <div class="dept-count" id="good-count">0개 부서</div>
+                        <div class="expander-container">
+                            <div class="expander-header" id="good-dept-header" onclick="toggleExpander('good-dept-expander')">
+                                <span>부서 선택 (0개 선택됨)</span>
+                                <span class="expander-arrow" id="good-dept-arrow">▼</span>
+                            </div>
+                            <div class="expander-content" id="good-dept-expander">
+                                <div id="good-dept-filter"></div>
+                            </div>
+                        </div>
+                        <div class="dept-count" id="good-count">0개 관계</div>
                     </div>
                     <div class="status-dropdown caution">
                         <h5>⚠️ 주의 (50-59점)</h5>
-                        <select id="caution-dept-dropdown">
-                            <option value="">부서를 선택하세요</option>
-                        </select>
-                        <div class="dept-count" id="caution-count">0개 부서</div>
+                        <div class="expander-container">
+                            <div class="expander-header" id="caution-dept-header" onclick="toggleExpander('caution-dept-expander')">
+                                <span>부서 선택 (0개 선택됨)</span>
+                                <span class="expander-arrow" id="caution-dept-arrow">▼</span>
+                            </div>
+                            <div class="expander-content" id="caution-dept-expander">
+                                <div id="caution-dept-filter"></div>
+                            </div>
+                        </div>
+                        <div class="dept-count" id="caution-count">0개 관계</div>
                     </div>
                     <div class="status-dropdown problem">
                         <h5>🚨 문제 (50점 미만)</h5>
-                        <select id="problem-dept-dropdown">
-                            <option value="">부서를 선택하세요</option>
-                        </select>
-                        <div class="dept-count" id="problem-count">0개 부서</div>
+                        <div class="expander-container">
+                            <div class="expander-header" id="problem-dept-header" onclick="toggleExpander('problem-dept-expander')">
+                                <span>부서 선택 (0개 선택됨)</span>
+                                <span class="expander-arrow" id="problem-dept-arrow">▼</span>
+                            </div>
+                            <div class="expander-content" id="problem-dept-expander">
+                                <div id="problem-dept-filter"></div>
+                            </div>
+                        </div>
+                        <div class="dept-count" id="problem-count">0개 관계</div>
                     </div>
                 </div>
             </div>
@@ -872,7 +896,7 @@ def build_html(data_json):
             const titlePrefix = titleParts.length > 0 ? titleParts.join(' > ') : '부서, Unit';
             const yearSuffix = selectedYear === '전체' ? ' (전체 연도)' : ` (${{selectedYear}})`;
             const title = `<b>${{titlePrefix}} 문항 점수${{yearSuffix}}</b>`;
-            const layout = {{ title: title, yaxis: {{ title: '점수', range: [0, 100] }}, font: layoutFont, hovermode: 'closest', margin: {{ l: 60, r: 60, t: 60, b: 60 }} }};
+            const layout = {{ title: title, yaxis: {{ title: '점수', range: [0, 100] }}, font: layoutFont, hovermode: 'closest', margin: {{ l: 60, r: 60, t: 80, b: 60 }} }};
             Plotly.react(container, chartData, layout);
         }}
         
@@ -909,7 +933,7 @@ def build_html(data_json):
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.05, xanchor: 'right', x: 1 }},
                 font: layoutFont,
                 hovermode: 'closest',
-                margin: {{ l: 60, r: 60, t: 100, b: 60 }}
+                margin: {{ l: 60, r: 60, t: 120, b: 60 }}
             }};
             Plotly.react(container, traces, layout);
         }}
@@ -959,7 +983,7 @@ def build_html(data_json):
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.05, xanchor: 'right', x: 1 }},
                 font: layoutFont,
                 hovermode: 'closest',
-                margin: {{ l: 60, r: 60, t: 100, b: 60 }}
+                margin: {{ l: 60, r: 60, t: 120, b: 60 }}
             }};
             Plotly.react(container, traces, layout);
         }}
@@ -1002,7 +1026,7 @@ def build_html(data_json):
                 height: 500,
                 barmode: 'group',
                 hovermode: 'closest',
-                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
+                margin: {{ l: 60, r: 60, t: 80, b: 60 }}
             }};
             Plotly.react(container, trace, layout);
         }}
@@ -1076,7 +1100,7 @@ def build_html(data_json):
                 font: layoutFont,
                 hovermode: 'closest',
                 showlegend: false,
-                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
+                margin: {{ l: 60, r: 60, t: 80, b: 60 }}
             }};
 
             Plotly.react(container, [trace], layout);
@@ -1162,7 +1186,7 @@ def build_html(data_json):
             const layout = {{
                 title: `<b>${{title}}</b>`,
                 height: 400,
-                margin: {{ l: 120, r: 40, t: 60, b: 60 }},
+                margin: {{ l: 120, r: 40, t: 80, b: 60 }},
                 xaxis: {{ title: '언급 횟수' }},
                 yaxis: {{ automargin: true }}
             }};
@@ -1298,7 +1322,7 @@ def build_html(data_json):
                     font: {{ color: 'red', size: 12 }}, bgcolor: 'rgba(255,255,255,0.8)',
                     bordercolor: 'red', borderwidth: 1
                 }}],
-                margin: {{ l: 60, r: 60, t: 60, b: 100 }}
+                margin: {{ l: 60, r: 60, t: 80, b: 100 }}
             }};
 
             Plotly.react(container, [trace, avgLine], layout);
@@ -1358,7 +1382,7 @@ def build_html(data_json):
                 yaxis2: {{ title: '응답 수', overlaying: 'y', side: 'right', showgrid: false, rangemode: 'tozero', tickformat: 'd' }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.05, xanchor: 'right', x: 1 }},
                 font: layoutFont, hovermode: 'closest',
-                margin: {{ l: 60, r: 60, t: 100, b: 60 }}
+                margin: {{ l: 60, r: 60, t: 120, b: 60 }}
             }};
             
             Plotly.react(container, traces, layout);
@@ -1422,7 +1446,7 @@ def build_html(data_json):
                 xaxis: {{ title: 'Unit' }}, yaxis: {{ title: '점수', range: [0, 100] }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.05, xanchor: 'right', x: 1 }},
                 font: layoutFont, hovermode: 'closest',
-                margin: {{ l: 60, r: 60, t: 100, b: 60 }}
+                margin: {{ l: 60, r: 60, t: 120, b: 60 }}
             }};
 
             Plotly.react(container, traces, layout);
@@ -1540,11 +1564,7 @@ def build_html(data_json):
             minCollabSelect.addEventListener('change', updateNetworkAnalysis);
             sentimentSelect.addEventListener('change', updateNetworkReviews);
             
-            // 협업 관계 현황 드롭다운 이벤트 리스너 추가
-            document.getElementById('excellent-dept-dropdown').addEventListener('change', updateCollaborationTrendChart);
-            document.getElementById('good-dept-dropdown').addEventListener('change', updateCollaborationTrendChart);
-            document.getElementById('caution-dept-dropdown').addEventListener('change', updateCollaborationTrendChart);
-            document.getElementById('problem-dept-dropdown').addEventListener('change', updateCollaborationTrendChart);
+            // 협업 관계 현황 체크박스 이벤트 리스너는 updateStatusDropdowns 함수에서 동적으로 추가됨
         }}
 
         function updateNetworkDepartments() {{
@@ -1681,7 +1701,7 @@ def build_html(data_json):
             const layout = {{
                 title: '<b>부서 리스트</b>',
                 height: dynamicHeight,
-                margin: {{ l: 150, r: 40, t: 60, b: 60 }},
+                margin: {{ l: 150, r: 40, t: 80, b: 60 }},
                 xaxis: {{ title: '협업 횟수' }},
                 yaxis: {{ 
                     automargin: true,
@@ -1791,7 +1811,7 @@ def build_html(data_json):
                 xaxis: {{ title: '상태' }},
                 yaxis: {{ title: '부서 수', rangemode: 'tozero', range: [0, Math.max(...statusValues) * 1.2] }},
                 font: layoutFont,
-                margin: {{ l: 60, r: 60, t: 60, b: 60 }}
+                margin: {{ l: 60, r: 60, t: 80, b: 60 }}
             }};
             
             Plotly.react(container, [trace], layout);
@@ -1802,33 +1822,71 @@ def build_html(data_json):
         
         function updateStatusDropdowns(statusData) {{
             const statusMappings = {{
-                '우수': {{ dropdown: 'excellent-dept-dropdown', count: 'excellent-count' }},
-                '양호': {{ dropdown: 'good-dept-dropdown', count: 'good-count' }},
-                '주의': {{ dropdown: 'caution-dept-dropdown', count: 'caution-count' }},
-                '문제': {{ dropdown: 'problem-dept-dropdown', count: 'problem-count' }}
+                '우수': {{ filterId: 'excellent-dept-filter', countId: 'excellent-count', headerId: 'excellent-dept-header', groupName: 'excellent-dept' }},
+                '양호': {{ filterId: 'good-dept-filter', countId: 'good-count', headerId: 'good-dept-header', groupName: 'good-dept' }},
+                '주의': {{ filterId: 'caution-dept-filter', countId: 'caution-count', headerId: 'caution-dept-header', groupName: 'caution-dept' }},
+                '문제': {{ filterId: 'problem-dept-filter', countId: 'problem-count', headerId: 'problem-dept-header', groupName: 'problem-dept' }}
             }};
             
             Object.entries(statusMappings).forEach(([status, elements]) => {{
-                const dropdown = document.getElementById(elements.dropdown);
-                const countElement = document.getElementById(elements.count);
+                const container = document.getElementById(elements.filterId);
+                const countElement = document.getElementById(elements.countId);
+                const headerElement = document.getElementById(elements.headerId);
+                const groupName = elements.groupName;
                 
-                // 드롭다운 초기화
-                dropdown.innerHTML = '<option value="">부서를 선택하세요</option>';
+                // 컨테이너 초기화
+                container.innerHTML = '';
                 
                 if (statusData[status] && statusData[status].length > 0) {{
-                    // 관계별로 옵션 추가
+                    // 전체 선택 체크박스 추가
+                    const selectAllDiv = document.createElement('div');
+                    selectAllDiv.className = 'checkbox-item';
+                    selectAllDiv.innerHTML = `<input type="checkbox" id="${{groupName}}-select-all"><label for="${{groupName}}-select-all"><b>전체 선택</b></label>`;
+                    container.appendChild(selectAllDiv);
+                    
+                    // 관계별로 체크박스 추가
                     statusData[status]
                         .sort((a, b) => b.avgScore - a.avgScore) // 점수 높은 순으로 정렬
                         .forEach(item => {{
-                            const option = document.createElement('option');
-                            option.value = item.relationship;
-                            option.textContent = `${{item.relationship}} (평균: ${{item.avgScore}}점, ${{item.count}}회)`;
-                            dropdown.appendChild(option);
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'checkbox-item';
+                            itemDiv.innerHTML = `<input type="checkbox" id="${{groupName}}-${{item.relationship}}" name="${{groupName}}" value="${{item.relationship}}"><label for="${{groupName}}-${{item.relationship}}" title="${{item.relationship}} (평균: ${{item.avgScore}}점, ${{item.count}}회)">${{item.relationship}}</label>`;
+                            container.appendChild(itemDiv);
                         }});
                     
+                    // 전체 선택 기능
+                    const selectAllCheckbox = container.querySelector(`#${{groupName}}-select-all`);
+                    const itemCheckboxes = container.querySelectorAll(`input[name="${{groupName}}"]`);
+                    
+                    function updateSelectAllState() {{
+                        const allChecked = [...itemCheckboxes].every(cb => cb.checked);
+                        const someChecked = [...itemCheckboxes].some(cb => cb.checked);
+                        selectAllCheckbox.checked = allChecked;
+                        selectAllCheckbox.indeterminate = someChecked && !allChecked;
+                        
+                        // 헤더 업데이트
+                        const checkedCount = [...itemCheckboxes].filter(cb => cb.checked).length;
+                        headerElement.querySelector('span').textContent = `부서 선택 (${{checkedCount}}개 선택됨)`;
+                    }}
+                    
+                    selectAllCheckbox.addEventListener('change', (e) => {{
+                        itemCheckboxes.forEach(checkbox => {{ checkbox.checked = e.target.checked; }});
+                        updateSelectAllState();
+                        updateCollaborationTrendChart();
+                    }});
+                    
+                    itemCheckboxes.forEach(checkbox => {{
+                        checkbox.addEventListener('change', () => {{
+                            updateSelectAllState();
+                            updateCollaborationTrendChart();
+                        }});
+                    }});
+                    
+                    updateSelectAllState();
                     countElement.textContent = `${{statusData[status].length}}개 관계`;
                 }} else {{
                     countElement.textContent = '0개 관계';
+                    headerElement.querySelector('span').textContent = '부서 선택 (0개 선택됨)';
                 }}
             }});
         }}
@@ -1839,28 +1897,29 @@ def build_html(data_json):
             
             // 선택된 부서들 수집
             const selectedDepartments = [];
-            const dropdowns = [
-                {{ id: 'excellent-dept-dropdown', status: '우수' }},
-                {{ id: 'good-dept-dropdown', status: '양호' }},
-                {{ id: 'caution-dept-dropdown', status: '주의' }},
-                {{ id: 'problem-dept-dropdown', status: '문제' }}
-            ];
+            const statusMappings = {{
+                '우수': 'excellent-dept',
+                '양호': 'good-dept',
+                '주의': 'caution-dept',
+                '문제': 'problem-dept'
+            }};
             
-            dropdowns.forEach(dropdown => {{
-                const selectedValue = document.getElementById(dropdown.id).value;
-                if (selectedValue) {{
+            Object.entries(statusMappings).forEach(([status, groupName]) => {{
+                const checkedBoxes = document.querySelectorAll(`input[name="${{groupName}}"]:checked`);
+                checkedBoxes.forEach(checkbox => {{
+                    const relationshipValue = checkbox.value;
                     // 드롭다운 값 파싱: "평가부서 → 피평가부서" 형태
-                    const match = selectedValue.match(/^(.+?) → (.+?)$/);
+                    const match = relationshipValue.match(/^(.+?) → (.+?)$/);
                     if (match) {{
                         const [, evaluator, evaluated] = match;
                         selectedDepartments.push({{
                             evaluator: evaluator.trim(),
                             evaluated: evaluated.trim(),
-                            status: dropdown.status,
+                            status: status,
                             relationKey: `${{evaluator.trim()}}-${{evaluated.trim()}}`
                         }});
                     }}
-                }}
+                }});
             }});
             
             // 선택된 부서가 없으면 빈 차트 표시
@@ -1953,7 +2012,7 @@ def build_html(data_json):
                 yaxis: {{ title: '종합점수', range: [0, 100] }},
                 font: layoutFont,
                 legend: {{ orientation: 'v', x: 1.02, y: 1 }},
-                margin: {{ l: 60, r: 200, t: 80, b: 60 }}
+                margin: {{ l: 60, r: 200, t: 100, b: 60 }}
             }};
             
             Plotly.react(container, traces, layout);
