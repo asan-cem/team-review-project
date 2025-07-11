@@ -466,6 +466,8 @@ def build_html(data_json):
             <div id="hospital-yearly-chart-container" class="chart-container"></div>
         </div>
 
+        <div class="part-divider"></div>
+
         <div class="section">
             <h2>[부문별] 연도별 문항 점수</h2>
             <p style="color: #6c757d; margin-bottom: 20px;">부문별 점수 트렌드를 파악합니다.</p>
@@ -1537,6 +1539,12 @@ def build_html(data_json):
             unitSelect.addEventListener('change', updateNetworkAnalysis);
             minCollabSelect.addEventListener('change', updateNetworkAnalysis);
             sentimentSelect.addEventListener('change', updateNetworkReviews);
+            
+            // 협업 관계 현황 드롭다운 이벤트 리스너 추가
+            document.getElementById('excellent-dept-dropdown').addEventListener('change', updateCollaborationTrendChart);
+            document.getElementById('good-dept-dropdown').addEventListener('change', updateCollaborationTrendChart);
+            document.getElementById('caution-dept-dropdown').addEventListener('change', updateCollaborationTrendChart);
+            document.getElementById('problem-dept-dropdown').addEventListener('change', updateCollaborationTrendChart);
         }}
 
         function updateNetworkDepartments() {{
@@ -1829,68 +1837,73 @@ def build_html(data_json):
             const container = document.getElementById('collaboration-trend-chart-container');
             const minCollabCount = parseInt(document.getElementById('min-collaboration-filter').value);
             
-            // 모든 필터 적용 (연도 필터 포함)
+            // 선택된 부서들 수집
+            const selectedDepartments = [];
+            const dropdowns = [
+                {{ id: 'excellent-dept-dropdown', status: '우수' }},
+                {{ id: 'good-dept-dropdown', status: '양호' }},
+                {{ id: 'caution-dept-dropdown', status: '주의' }},
+                {{ id: 'problem-dept-dropdown', status: '문제' }}
+            ];
+            
+            dropdowns.forEach(dropdown => {{
+                const selectedValue = document.getElementById(dropdown.id).value;
+                if (selectedValue) {{
+                    // 드롭다운 값 파싱: "평가부서 → 피평가부서" 형태
+                    const match = selectedValue.match(/^(.+?) → (.+?)$/);
+                    if (match) {{
+                        const [, evaluator, evaluated] = match;
+                        selectedDepartments.push({{
+                            evaluator: evaluator.trim(),
+                            evaluated: evaluated.trim(),
+                            status: dropdown.status,
+                            relationKey: `${{evaluator.trim()}}-${{evaluated.trim()}}`
+                        }});
+                    }}
+                }}
+            }});
+            
+            // 선택된 부서가 없으면 빈 차트 표시
+            if (selectedDepartments.length === 0) {{
+                Plotly.react(container, [], {{
+                    height: 400,
+                    annotations: [{{
+                        text: '우수/양호/주의/문제 드롭다운에서 부서를 선택하세요.',
+                        xref: 'paper', yref: 'paper', x: 0.5, y: 0.5,
+                        showarrow: false, font: {{size: 16, color: '#888'}}
+                    }}],
+                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
+                }});
+                return;
+            }}
+            
+            // 현재 필터 적용
             const selectedYear = document.getElementById('network-year-filter').value;
             const selectedDivision = document.getElementById('network-division-filter').value;
             const selectedDepartment = document.getElementById('network-department-filter').value;
             const selectedUnit = document.getElementById('network-unit-filter').value;
             
-            let baseFilteredData = [...rawData];
-            if (selectedYear !== '전체') {{ baseFilteredData = baseFilteredData.filter(item => String(item['설문시행연도']) === String(selectedYear)); }}
-            if (selectedDivision !== '전체') {{ baseFilteredData = baseFilteredData.filter(item => item['피평가부문'] === selectedDivision); }}
-            if (selectedDepartment !== '전체') {{ baseFilteredData = baseFilteredData.filter(item => item['피평가부서'] === selectedDepartment); }}
-            if (selectedUnit !== '전체') {{ baseFilteredData = baseFilteredData.filter(item => item['피평가Unit'] === selectedUnit); }}
+            // 전체 연도 리스트
+            const allYears = [...new Set(rawData.map(item => item['설문시행연도']))].sort();
             
-            if (baseFilteredData.length === 0) {{
-                Plotly.react(container, [], {{
-                    height: 400,
-                    annotations: [{{ text: '선택된 조건에 해당하는 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
-                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
-                }});
-                return;
-            }}
-            
-            // 협업 관계별 카운트 계산 (평가부서-피평가부서)
-            const collaborationRelationCounts = {{}};
-            baseFilteredData.forEach(item => {{
-                const evaluator = item['평가부서'];
-                const evaluated = item['피평가부서'];
-                if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A') {{
-                    const relationKey = `${{evaluator}}-${{evaluated}}`;
-                    collaborationRelationCounts[relationKey] = (collaborationRelationCounts[relationKey] || 0) + 1;
-                }}
-            }});
-            
-            // 최소 협업 횟수 조건을 만족하는 협업 관계 필터링
-            const filteredRelations = Object.entries(collaborationRelationCounts)
-                .filter(([_, count]) => count >= minCollabCount)
-                .sort((a, b) => b[1] - a[1])
-                .map(([relation, _]) => relation);
-            
-            if (filteredRelations.length === 0) {{
-                Plotly.react(container, [], {{
-                    height: 400,
-                    annotations: [{{ text: `최소 ${{minCollabCount}}회 이상 협업한 관계가 없습니다.`, xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
-                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
-                }});
-                return;
-            }}
-            
-            // 필터링된 부서 리스트의 연도별 선형 차트 생성
+            // 선택된 부서들의 트렌드 라인 생성
             const traces = [];
-            const colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+            const statusColors = {{
+                '우수': '#28a745',
+                '양호': '#17a2b8', 
+                '주의': '#ffc107',
+                '문제': '#dc3545'
+            }};
             
-            filteredRelations.forEach((relation, index) => {{
-                const [evaluator, evaluated] = relation.split('-');
-                
-                // 전체 연도 범위에서 해당 협업 관계의 연도별 점수 계산
+            selectedDepartments.forEach((dept, index) => {{
+                // 해당 협업 관계의 연도별 점수 계산
                 const relationYearlyScores = allYears.map(year => {{
-                    // 전체 원본 데이터에서 해당 연도의 특정 협업 관계 데이터 추출
                     const yearRelationData = rawData.filter(item => 
                         item['설문시행연도'] === year && 
-                        item['평가부서'] === evaluator && 
-                        item['피평가부서'] === evaluated &&
-                        // 현재 선택된 필터 조건도 적용 (연도 제외)
+                        item['평가부서'] === dept.evaluator && 
+                        item['피평가부서'] === dept.evaluated &&
+                        // 현재 필터 조건 적용
+                        (selectedYear === '전체' || String(item['설문시행연도']) === String(selectedYear)) &&
                         (selectedDivision === '전체' || item['피평가부문'] === selectedDivision) &&
                         (selectedDepartment === '전체' || item['피평가부서'] === selectedDepartment) &&
                         (selectedUnit === '전체' || item['피평가Unit'] === selectedUnit)
@@ -1901,18 +1914,21 @@ def build_html(data_json):
                     return parseFloat(avgScore.toFixed(1));
                 }});
                 
-                // 데이터가 있는 협업 관계만 표시
+                // 데이터가 있는 경우에만 트레이스 추가
                 if (!relationYearlyScores.every(score => score === null)) {{
                     traces.push({{
                         x: allYears,
                         y: relationYearlyScores,
                         type: 'scatter',
                         mode: 'lines+markers',
-                        name: `${{evaluator}}(평가부서) - ${{evaluated}}(피평가부서)`,
-                        line: {{ color: colors[index % colors.length], width: 2 }},
-                        marker: {{ size: 6 }},
+                        name: `${{dept.evaluator}} → ${{dept.evaluated}} (${{dept.status}})`,
+                        line: {{ 
+                            color: statusColors[dept.status], 
+                            width: 3 
+                        }},
+                        marker: {{ size: 8 }},
                         connectgaps: false,
-                        hovertemplate: `${{evaluator}} → ${{evaluated}}<br>연도: %{{x}}<br>평균 점수: %{{y}}점<extra></extra>`
+                        hovertemplate: `${{dept.evaluator}} → ${{dept.evaluated}}<br>연도: %{{x}}<br>평균 점수: %{{y}}점<br>상태: ${{dept.status}}<extra></extra>`
                     }});
                 }}
             }});
@@ -1920,20 +1936,24 @@ def build_html(data_json):
             if (traces.length === 0) {{
                 Plotly.react(container, [], {{
                     height: 400,
-                    annotations: [{{ text: '표시할 트렌드 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
+                    annotations: [{{
+                        text: '선택된 부서의 트렌드 데이터가 없습니다.',
+                        xref: 'paper', yref: 'paper', x: 0.5, y: 0.5,
+                        showarrow: false, font: {{size: 16, color: '#888'}}
+                    }}],
                     xaxis: {{visible: false}}, yaxis: {{visible: false}}
                 }});
                 return;
             }}
             
             const layout = {{
-                title: '<b>협업 관계 변화 트렌드</b>',
+                title: '<b>선택된 부서의 협업 관계 변화 트렌드</b>',
                 height: 400,
                 xaxis: {{ title: '연도', type: 'category' }},
                 yaxis: {{ title: '종합점수', range: [0, 100] }},
                 font: layoutFont,
                 legend: {{ orientation: 'v', x: 1.02, y: 1 }},
-                margin: {{ l: 60, r: 140, t: 80, b: 60 }}
+                margin: {{ l: 60, r: 200, t: 80, b: 60 }}
             }};
             
             Plotly.react(container, traces, layout);

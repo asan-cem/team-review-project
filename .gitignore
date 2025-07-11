@@ -2,14 +2,5 @@
 venv/
 __pycache__/
 *.pyc
-
-# Generated files
-dashboard_interactive_v7.html
-*.csv
 venv-backup/
-node_modules
-respect/
-# Analysis output files (exclude rawdata folder)
-*.xlsx
-!rawdata/*.xlsx
 .env
