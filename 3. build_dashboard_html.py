@@ -473,7 +473,7 @@ def build_html(data_json):
             <p style="color: #6c757d; margin-bottom: 20px;">부문별 점수 트렌드를 파악합니다.</p>
             <div class="filters">
                 <div class="filter-group">
-                    <label for="division-chart-filter">문항 선택</label>
+                    <label for="division-chart-filter">부문 선택</label>
                     <select id="division-chart-filter"></select>
                 </div>
                 <div class="filter-group">
@@ -1470,7 +1470,7 @@ def build_html(data_json):
             const headerId = groupName.replace('-filter', '-header');
             const headerSpan = document.querySelector(`#${{headerId}} span:first-child`);
             if (headerSpan) {{
-                if (groupName.includes('division')) {{
+                if (groupName.includes('division-filter')) {{
                     headerSpan.textContent = `부문 선택 (${{selectedCount}}개 선택됨)`;
                 }} else {{
                     headerSpan.textContent = `문항 선택 (${{selectedCount}}개 선택됨)`;
