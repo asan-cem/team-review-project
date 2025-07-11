@@ -1955,8 +1955,8 @@ def build_html(data_json):
             }};
             
             selectedDepartments.forEach((dept, index) => {{
-                // 해당 협업 관계의 연도별 점수 계산
-                const relationYearlyScores = allYears.map(year => {{
+                // 해당 협업 관계의 연도별 점수 및 응답수 계산
+                const relationYearlyData = allYears.map(year => {{
                     const yearRelationData = rawData.filter(item => 
                         item['설문시행연도'] === year && 
                         item['평가부서'] === dept.evaluator && 
@@ -1970,8 +1970,14 @@ def build_html(data_json):
                     
                     if (yearRelationData.length === 0) return null;
                     const avgScore = yearRelationData.reduce((sum, item) => sum + (item['종합점수'] || 0), 0) / yearRelationData.length;
-                    return parseFloat(avgScore.toFixed(1));
+                    return {{ 
+                        score: parseFloat(avgScore.toFixed(1)), 
+                        count: yearRelationData.length 
+                    }};
                 }});
+                
+                const relationYearlyScores = relationYearlyData.map(data => data ? data.score : null);
+                const relationYearlyCounts = relationYearlyData.map(data => data ? data.count : null);
                 
                 // 데이터가 있는 경우에만 트레이스 추가
                 if (!relationYearlyScores.every(score => score === null)) {{
@@ -1980,14 +1986,15 @@ def build_html(data_json):
                         y: relationYearlyScores,
                         type: 'scatter',
                         mode: 'lines+markers',
-                        name: `${{dept.evaluator}} → ${{dept.evaluated}} (${{dept.status}})`,
+                        name: `${{dept.evaluator}} → ${{dept.evaluated}}`,
                         line: {{ 
                             color: statusColors[dept.status], 
                             width: 3 
                         }},
                         marker: {{ size: 8 }},
                         connectgaps: false,
-                        hovertemplate: `${{dept.evaluator}} → ${{dept.evaluated}}<br>연도: %{{x}}<br>평균 점수: %{{y}}점<br>상태: ${{dept.status}}<extra></extra>`
+                        customdata: relationYearlyCounts,
+                        hovertemplate: `${{dept.evaluator}} → ${{dept.evaluated}}<br>연도: %{{x}}<br>평균 점수: %{{y}}점<br>응답수: %{{customdata}}건<extra></extra>`
                     }});
                 }}
             }});
