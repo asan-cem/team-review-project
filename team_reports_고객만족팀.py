@@ -376,23 +376,24 @@ def calculate_aggregated_data(df):
             }
             aggregated["division_yearly"]["커뮤니케이션실"][str(year)]["응답수"] = len(year_data)
     
-    # 3. 연도별 부문 비교 (커뮤니케이션실 vs 전체 평균)
+    # 3. 연도별 부문 비교 (모든 부문 데이터 포함)
     for year in df['설문시행연도'].unique():
         if pd.notna(year):
             year_str = str(year)
             year_data = df[df['설문시행연도'] == year]
-            comm_year_data = year_data[year_data['피평가부문'] == '커뮤니케이션실']
             
-            aggregated["division_comparison"][year_str] = {
-                "커뮤니케이션실": {
-                    col: float(comm_year_data[col].mean()) if len(comm_year_data) > 0 and col in comm_year_data.columns else 0.0
-                    for col in SCORE_COLUMNS
-                },
-                "전체평균": {
-                    col: float(year_data[col].mean()) if col in year_data.columns else 0.0
-                    for col in SCORE_COLUMNS
-                }
-            }
+            aggregated["division_comparison"][year_str] = {}
+            
+            # 모든 부문별 평균 계산
+            for division in df['피평가부문'].unique():
+                if pd.notna(division) and division != 'N/A':
+                    div_year_data = year_data[year_data['피평가부문'] == division]
+                    if len(div_year_data) > 0:
+                        aggregated["division_comparison"][year_str][division] = {
+                            col: float(div_year_data[col].mean()) if col in div_year_data.columns else 0.0
+                            for col in SCORE_COLUMNS
+                        }
+                        aggregated["division_comparison"][year_str][division]["응답수"] = len(div_year_data)
     
     # 4. 부문별 팀 점수 순위 - 커뮤니케이션실 부서들만
     for year in comm_data['설문시행연도'].unique():
@@ -407,7 +408,7 @@ def calculate_aggregated_data(df):
                     avg_score = dept_data['종합점수'].mean() if len(dept_data) > 0 else 0.0
                     dept_scores.append({
                         "department": dept,
-                        "score": float(avg_score),
+                        "score": round(float(avg_score), 1),  # 소수점 첫째 자리로 반올림
                         "count": len(dept_data)
                     })
             
@@ -949,7 +950,10 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
         
         const scoreCols = ['존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합점수'];
         const allYears = [...new Set(rawData.map(item => item['설문시행연도']))].sort();
-        const allDivisions = ["커뮤니케이션실"];  // 고정값으로 설정
+        // 부문 비교용: 집계 데이터에서 모든 부문 가져오기
+        const allDivisions = Object.keys(aggregatedData.division_comparison).length > 0 
+            ? [...new Set(Object.values(aggregatedData.division_comparison).flatMap(yearData => Object.keys(yearData)))].sort((a, b) => a.localeCompare(b, 'ko'))
+            : ["커뮤니케이션실"];
         const layoutFont = {{ size: 14 }};
         
         // 보안 정보 콘솔 출력
@@ -1185,7 +1189,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
                 return;
             }}
 
-            // 🔒 보안 강화: 미리 계산된 부문 비교 집계 데이터 사용
+            // 🔒 보안 강화: 미리 계산된 부문 비교 집계 데이터 사용 (모든 부문 포함)
             const comparisonData = aggregatedData.division_comparison[selectedYear] || {{}};
             
             const divisions = selectedDivisions.filter(div => comparisonData[div]).sort((a,b) => a.localeCompare(b, 'ko'));
@@ -1429,8 +1433,8 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
             
             // 해당 부문에 속한 팀들만 필터링 (커뮤니케이션실 소속 부서들)
             const teamRankings = teamRankingData.filter(team => {{
-                // 고객만족팀, 디자인·콘텐츠팀, 홍보팀이 커뮤니케이션실 소속
-                const commDepts = ['고객만족팀', '디자인·콘텐츠팀', '홍보팀'];
+                // 고객만족팀, 디자인ㆍ콘텐츠팀, 홍보팀이 커뮤니케이션실 소속
+                const commDepts = ['고객만족팀', '디자인ㆍ콘텐츠팀', '홍보팀'];
                 return commDepts.includes(team.department);
             }});
 
@@ -1447,13 +1451,13 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
             const departments = teamRankings.map(item => item.department);
             const scores = teamRankings.map(item => parseFloat(item.score));
             const colors = teamRankings.map(item => divisionColors['커뮤니케이션실']);  // 커뮤니케이션실 고정
-            const hoverTexts = teamRankings.map(item => `부서: ${{item.department}}<br>순위: ${{item.rank}}위<br>점수: ${{item.score}}<br>응답수: ${{item.count}}건`);
+            const hoverTexts = teamRankings.map(item => `부서: ${{item.department}}<br>순위: ${{item.rank}}위<br>점수: ${{item.score.toFixed(1)}}<br>응답수: ${{item.count}}건`);
 
             // 🔒 보안 강화: 미리 계산된 전체 평균 사용
             const yearlyOverallAverage = aggregatedData.hospital_yearly[selectedYear] ? aggregatedData.hospital_yearly[selectedYear]['종합점수'].toFixed(1) : '0.0';
 
             const trace = {{
-                x: departments, y: scores, type: 'bar', text: scores.map(score => score.toString()),
+                x: departments, y: scores, type: 'bar', text: scores.map(score => score.toFixed(1)),
                 textposition: 'outside', textfont: {{ size: 12 }}, marker: {{ color: colors }},
                 hovertemplate: '%{{hovertext}}<extra></extra>', hovertext: hoverTexts
             }};
