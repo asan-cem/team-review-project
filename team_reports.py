@@ -1231,10 +1231,14 @@ def build_html(data_json):
             yearSelect.innerHTML = allYears.map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
             yearSelect.value = allYears[allYears.length - 1];
             
-            divisionSelect.innerHTML = ['부문을 선택하세요', ...allDivisions].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            // 고정값: 커뮤니케이션실만 선택 가능
+            divisionSelect.innerHTML = `<option value="커뮤니케이션실">커뮤니케이션실</option>`;
+            divisionSelect.value = "커뮤니케이션실";
             
             yearSelect.addEventListener('change', updateTeamRankingChart);
             divisionSelect.addEventListener('change', updateTeamRankingChart);
+            // 초기 차트 표시
+            updateTeamRankingChart();
         }}
 
         function updateTeamRankingChart() {{
@@ -1242,15 +1246,7 @@ def build_html(data_json):
             const selectedYear = document.getElementById('team-ranking-year-filter').value;
             const selectedDivision = document.getElementById('team-ranking-division-filter').value;
 
-            // 부문이 선택되지 않은 경우 메시지 표시
-            if (selectedDivision === '부문을 선택하세요') {{
-                Plotly.react(container, [], {{
-                    height: 400,
-                    annotations: [{{ text: '부문을 선택하세요', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 18, color: '#6c757d'}} }}],
-                    xaxis: {{visible: false}}, yaxis: {{visible: false}}
-                }});
-                return;
-            }}
+            // 커뮤니케이션실로 고정되어 있으므로 선택 확인 불필요
 
             let yearData = rawData.filter(item => item['설문시행연도'] === selectedYear);
             yearData = yearData.filter(item => item['피평가부문'] === selectedDivision);
