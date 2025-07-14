@@ -1727,7 +1727,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
             
             // 초기 네트워크 분석 표시
             updateNetworkDepartments();
-            updateNetworkAnalysis();
         }}
 
         function updateNetworkDepartments() {{
@@ -1740,11 +1739,8 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
             departmentSelect.innerHTML = `<option value="고객만족팀">고객만족팀</option>`;
             departmentSelect.value = "고객만족팀";
             
-            // Unit 드롭다운 리셋
-            unitSelect.innerHTML = '<option value="전체">전체</option>';
-            unitSelect.value = '전체';
-            
-            updateNetworkAnalysis();
+            // 부서 필터가 변경되었으므로, Unit 필터를 업데이트하고 분석을 새로고침합니다.
+            updateNetworkUnits();
         }}
 
         function updateNetworkUnits() {{
