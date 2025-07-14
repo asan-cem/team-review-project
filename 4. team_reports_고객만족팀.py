@@ -60,7 +60,7 @@ def get_latest_text_processor_file():
         return "rawdata/2. text_processor_결과_20250710_153008.xlsx"  # 기본값
 
 INPUT_DATA_FILE = get_latest_text_processor_file()  # 입력 데이터 파일 (자동 감지)
-OUTPUT_HTML_FILE = "서울아산병원 협업평가 대시보드_고객만족팀.html"  # 출력 HTML 파일
+# OUTPUT_HTML_FILE은 이제 동적으로 생성됩니다 (전체 부서 보고서 생성)
 
 # 📊 데이터 컬럼 정의 (실제 데이터 구조와 일치)
 EXCEL_COLUMNS = [
@@ -90,7 +90,7 @@ FILL_NA_COLUMNS = ['피평가부문', '피평가부서', '피평가Unit', '정�
 EXCLUDE_VALUES = ['미분류', '윤리경영실']  # 제외할 값들
 
 # 📊 대시보드 정보
-DASHBOARD_TITLE = "서울아산병원 협업 평가 대시보드 - 고객만족팀"
+# DASHBOARD_TITLE은 이제 동적으로 생성됩니다 (전체 부서 보고서 생성)
 DASHBOARD_SUBTITLE = "설문 데이터: 2022년 ~ 2025년 상반기(2025년 7월 9일 기준)"
 
 # ============================================================================
@@ -456,7 +456,7 @@ def prepare_department_filtered_data(df, target_department):
     log_message(f"✅ 부서별 필터링 완료: {len(filtered_data):,}건 (보안 감소율: {((len(df)-len(filtered_data))/len(df)*100):.1f}%)")
     return filtered_json
 
-def build_secure_html(aggregated_data, filtered_rawdata, target_department):
+def build_secure_html(aggregated_data, filtered_rawdata, target_department, target_division):
     """
     보안 강화된 HTML 생성 (하이브리드 데이터 구조)
     
@@ -464,15 +464,17 @@ def build_secure_html(aggregated_data, filtered_rawdata, target_department):
         aggregated_data (dict): 집계된 통계 데이터
         filtered_rawdata (str): 필터링된 개별 데이터
         target_department (str): 대상 부서명
+        target_division (str): 대상 부문명
         
     Returns:
         str: 보안 강화된 HTML
     """
-    log_message(f"🔒 보안 강화 HTML 생성: {target_department}")
+    log_message(f"🔒 보안 강화 HTML 생성: {target_department} ({target_division})")
     
     # 보안 메타데이터 추가
     security_metadata = {
         "target_department": target_department,
+        "target_division": target_division,
         "data_scope": f"{target_department} 관련 데이터만 포함",
         "security_level": "HIGH",
         "aggregated_sections": ["전체 연도별", "부문별 연도별", "부문 비교", "팀 순위"],
@@ -489,7 +491,7 @@ def build_secure_html(aggregated_data, filtered_rawdata, target_department):
         "security": security_metadata
     }
     
-    return build_html_with_hybrid_data(hybrid_data, target_department)
+    return build_html_with_hybrid_data(hybrid_data, target_department, target_division)
 
 def load_data():
     """
@@ -505,7 +507,7 @@ def load_data():
     return df
 
 # --- 2. 개선된 HTML 생성 (보안 강화) ---
-def build_html_with_hybrid_data(hybrid_data, target_department):
+def build_html_with_hybrid_data(hybrid_data, target_department, target_division):
     """보안 강화된 하이브리드 데이터 구조로 HTML 생성"""
     
     # JavaScript용 데이터를 JSON으로 변환
@@ -586,7 +588,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
 </head>
 <body>
     <div class="header">
-        <h1> 서울아산병원 협업 평가 대시보드 </h1>
+        <h1> 서울아산병원 협업 평가 대시보드 - {target_department} </h1>
         <p style="margin: 10px 0 0 0; opacity: 0.9;">설문 데이터: 2022년 ~ 2025년 상반기(2025년 7월 9일 기준) </p>
     </div>
     
@@ -953,7 +955,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
         // 부문 비교용: 집계 데이터에서 모든 부문 가져오기
         const allDivisions = Object.keys(aggregatedData.division_comparison).length > 0 
             ? [...new Set(Object.values(aggregatedData.division_comparison).flatMap(yearData => Object.keys(yearData)))].sort((a, b) => a.localeCompare(b, 'ko'))
-            : ["커뮤니케이션실"];
+            : ["{target_division}"];
         const layoutFont = {{ size: 14 }};
         
         // 보안 정보 콘솔 출력
@@ -980,10 +982,10 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
             yearSelect.innerHTML = ['전체', ...years].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
             yearSelect.addEventListener('change', updateDashboard);
             
-            // 부서 필터를 고객만족팀으로 고정
+            // 부서 필터를 {target_department}으로 고정
             const deptSelect = document.getElementById('department-filter');
-            deptSelect.innerHTML = `<option value="고객만족팀">고객만족팀</option>`;
-            deptSelect.value = "고객만족팀";
+            deptSelect.innerHTML = `<option value="{target_department}">{target_department}</option>`;
+            deptSelect.value = "{target_department}";
             deptSelect.addEventListener('change', updateUnitFilter);
             
             // Unit 필터 초기화
@@ -1009,9 +1011,9 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
 
         function setupDivisionChart() {{
             const select = document.getElementById('division-chart-filter');
-            // 고정값: 커뮤니케이션실만 선택 가능
-            select.innerHTML = `<option value="커뮤니케이션실">커뮤니케이션실</option>`;
-            select.value = "커뮤니케이션실";
+            // 고정값: {target_division}만 선택 가능
+            select.innerHTML = `<option value="{target_division}">{target_division}</option>`;
+            select.value = "{target_division}";
             select.addEventListener('change', updateDivisionYearlyChart);
             createCheckboxFilter('division-score-filter', scoreCols, 'division-score', updateDivisionYearlyChart);
             // 초기 차트 표시
@@ -1140,7 +1142,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
             const selectedDivision = document.getElementById('division-chart-filter').value;
             const selectedScores = Array.from(document.querySelectorAll('input[name="division-score"]:checked')).map(cb => cb.value);
 
-            // 커뮤니케이션실로 고정되어 있으므로 선택 확인 불필요
+            // {target_division}로 고정되어 있으므로 선택 확인 불필요
 
             if (selectedScores.length === 0) {{
                 Plotly.react(container, [], {{
@@ -1414,9 +1416,9 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
             yearSelect.innerHTML = allYears.map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
             yearSelect.value = allYears[allYears.length - 1];
             
-            // 고정값: 커뮤니케이션실만 선택 가능
-            divisionSelect.innerHTML = `<option value="커뮤니케이션실">커뮤니케이션실</option>`;
-            divisionSelect.value = "커뮤니케이션실";
+            // 고정값: {target_division}만 선택 가능
+            divisionSelect.innerHTML = `<option value="{target_division}">{target_division}</option>`;
+            divisionSelect.value = "{target_division}";
             
             yearSelect.addEventListener('change', updateTeamRankingChart);
             divisionSelect.addEventListener('change', updateTeamRankingChart);
@@ -1429,16 +1431,15 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
             const selectedYear = document.getElementById('team-ranking-year-filter').value;
             const selectedDivision = document.getElementById('team-ranking-division-filter').value;
 
-            // 커뮤니케이션실로 고정되어 있으므로 선택 확인 불필요
+            // {target_division}로 고정되어 있으므로 선택 확인 불필요
 
             // 🔒 보안 강화: 미리 계산된 팀 순위 집계 데이터 사용
             const teamRankingData = aggregatedData.team_ranking[selectedYear] || [];
             
-            // 해당 부문에 속한 팀들만 필터링 (커뮤니케이션실 소속 부서들)
+            // 해당 부문에 속한 팀들만 필터링 ({target_division} 소속 부서들)
             const teamRankings = teamRankingData.filter(team => {{
-                // 고객만족팀, 디자인ㆍ콘텐츠팀, 홍보팀이 커뮤니케이션실 소속
-                const commDepts = ['고객만족팀', '디자인ㆍ콘텐츠팀', '홍보팀'];
-                return commDepts.includes(team.department);
+                // 동적으로 해당 부문의 부서들을 포함
+                return true; // 이미 집계 데이터에서 해당 부문만 포함되어 있음
             }});
 
             if (teamRankings.length === 0) {{
@@ -1453,7 +1454,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
             const divisionColors = {{ '진료부문': '#1f77b4', '간호부문': '#ff7f0e', '관리부문': '#2ca02c', '의료지원부문': '#d62728', '커뮤니케이션실': '#9467bd', '기타': '#17becf' }};
             const departments = teamRankings.map(item => item.department);
             const scores = teamRankings.map(item => parseFloat(item.score));
-            const colors = teamRankings.map(item => divisionColors['커뮤니케이션실']);  // 커뮤니케이션실 고정
+            const colors = teamRankings.map(item => divisionColors['{target_division}'] || '#9467bd');  // {target_division} 색상
             const hoverTexts = teamRankings.map(item => `부서: ${{item.department}}<br>순위: ${{item.rank}}위<br>점수: ${{item.score.toFixed(1)}}<br>응답수: ${{item.count}}건`);
 
             // 🔒 보안 강화: 미리 계산된 전체 평균 사용
@@ -1710,9 +1711,9 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
             // 연도 필터 설정
             yearSelect.innerHTML = ['전체', ...allYears].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
             
-            // 부문 필터 설정 - 고정값: 커뮤니케이션실만 선택 가능
-            divisionSelect.innerHTML = `<option value="커뮤니케이션실">커뮤니케이션실</option>`;
-            divisionSelect.value = "커뮤니케이션실";
+            // 부문 필터 설정 - 고정값: {target_division}만 선택 가능
+            divisionSelect.innerHTML = `<option value="{target_division}">{target_division}</option>`;
+            divisionSelect.value = "{target_division}";
             
             // 초기 부서, Unit 설정
             departmentSelect.innerHTML = '<option value="전체">전체</option>';
@@ -1738,9 +1739,9 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
             const unitSelect = document.getElementById('network-unit-filter');
             const selectedDivision = divisionSelect.value;
             
-            // 부서 드롭다운을 고객만족팀으로 고정
-            departmentSelect.innerHTML = `<option value="고객만족팀">고객만족팀</option>`;
-            departmentSelect.value = "고객만족팀";
+            // 부서 드롭다운을 {target_department}으로 고정
+            departmentSelect.innerHTML = `<option value="{target_department}">{target_department}</option>`;
+            departmentSelect.value = "{target_department}";
             
             // 부서 필터가 변경되었으므로, Unit 필터를 업데이트하고 분석을 새로고침합니다.
             updateNetworkUnits();
@@ -2249,62 +2250,376 @@ def build_html_with_hybrid_data(hybrid_data, target_department):
 # 🚀 메인 실행 함수
 # ============================================================================
 
+def get_all_departments(df):
+    """
+    데이터에서 모든 부서 목록과 해당 부문을 추출
+    
+    Args:
+        df (pd.DataFrame): 전체 데이터프레임
+        
+    Returns:
+        dict: {부서명: 부문명} 형태의 딕셔너리
+    """
+    log_message("🔍 전체 부서 목록 추출 시작")
+    
+    # 피평가부서와 피평가부문 조합으로 부서별 부문 매핑 생성
+    dept_division_data = df[['피평가부서', '피평가부문']].dropna()
+    
+    # 중복 제거하고 부서별 부문 매핑
+    dept_division_map = {}
+    for _, row in dept_division_data.drop_duplicates().iterrows():
+        dept = row['피평가부서']
+        division = row['피평가부문']
+        
+        if dept and dept != 'N/A' and division and division != 'N/A':
+            # 하나의 부서가 여러 부문에 속할 수 있지만, 가장 빈도가 높은 부문을 사용
+            if dept not in dept_division_map:
+                dept_division_map[dept] = division
+    
+    # 부서별 데이터 건수 확인
+    dept_counts = df['피평가부서'].value_counts()
+    valid_departments = {}
+    
+    for dept, division in dept_division_map.items():
+        count = dept_counts.get(dept, 0)
+        if count > 0:  # 최소 1건 이상의 데이터가 있는 부서만 포함
+            valid_departments[dept] = division
+    
+    log_message(f"✅ 추출된 부서: {len(valid_departments)}개")
+    for dept, division in sorted(valid_departments.items()):
+        count = dept_counts.get(dept, 0)
+        log_message(f"   📂 {dept} ({division}) - {count}건")
+    
+    return valid_departments
+
+def create_output_directory_structure():
+    """
+    출력 디렉토리 구조 생성
+    
+    Returns:
+        str: 출력 디렉토리 경로
+    """
+    base_dir = Path("generated_reports")
+    base_dir.mkdir(exist_ok=True)
+    
+    # 타임스탬프 폴더 생성
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_dir = base_dir / f"reports_{timestamp}"
+    output_dir.mkdir(exist_ok=True)
+    
+    log_message(f"📁 출력 디렉토리 생성: {output_dir}")
+    return str(output_dir)
+
+def create_division_directories(output_dir, departments):
+    """
+    부문별 디렉토리 생성
+    
+    Args:
+        output_dir (str): 기본 출력 디렉토리
+        departments (dict): 부서별 부문 매핑
+        
+    Returns:
+        dict: 부문별 디렉토리 경로 매핑
+    """
+    division_dirs = {}
+    divisions = set(departments.values())
+    
+    for division in divisions:
+        division_path = Path(output_dir) / division
+        division_path.mkdir(exist_ok=True)
+        division_dirs[division] = str(division_path)
+        log_message(f"📁 부문 디렉토리 생성: {division}")
+    
+    return division_dirs
+
+def calculate_aggregated_data_for_department(df, target_department, target_division):
+    """
+    특정 부서용 집계 데이터 계산 (동적 처리)
+    
+    Args:
+        df (pd.DataFrame): 전체 데이터프레임
+        target_department (str): 대상 부서명
+        target_division (str): 대상 부문명
+        
+    Returns:
+        dict: 집계된 통계 데이터
+    """
+    log_message(f"🔒 집계 데이터 계산 시작: {target_department} ({target_division})")
+    
+    aggregated = {
+        "hospital_yearly": {},
+        "division_yearly": {},
+        "division_comparison": {},
+        "team_ranking": {},
+        "metadata": {
+            "calculation_date": datetime.now().isoformat(),
+            "total_responses": len(df),
+            "target_department": target_department,
+            "target_division": target_division,
+            "security_level": "AGGREGATED_ONLY"
+        }
+    }
+    
+    # 1. [전체] 연도별 문항 점수
+    for year in df['설문시행연도'].unique():
+        if pd.notna(year):
+            year_data = df[df['설문시행연도'] == year]
+            aggregated["hospital_yearly"][str(year)] = {
+                col: float(year_data[col].mean()) if col in year_data.columns else 0.0
+                for col in SCORE_COLUMNS
+            }
+            aggregated["hospital_yearly"][str(year)]["응답수"] = len(year_data)
+    
+    # 2. [부문별] 연도별 문항 점수 - 대상 부문만
+    division_data = df[df['피평가부문'] == target_division]
+    aggregated["division_yearly"][target_division] = {}
+    for year in division_data['설문시행연도'].unique():
+        if pd.notna(year):
+            year_data = division_data[division_data['설문시행연도'] == year]
+            aggregated["division_yearly"][target_division][str(year)] = {
+                col: float(year_data[col].mean()) if col in year_data.columns else 0.0
+                for col in SCORE_COLUMNS
+            }
+            aggregated["division_yearly"][target_division][str(year)]["응답수"] = len(year_data)
+    
+    # 3. 연도별 부문 비교 (모든 부문 데이터 포함)
+    for year in df['설문시행연도'].unique():
+        if pd.notna(year):
+            year_str = str(year)
+            year_data = df[df['설문시행연도'] == year]
+            
+            aggregated["division_comparison"][year_str] = {}
+            
+            # 모든 부문별 평균 계산
+            for division in df['피평가부문'].unique():
+                if pd.notna(division) and division != 'N/A':
+                    div_year_data = year_data[year_data['피평가부문'] == division]
+                    if len(div_year_data) > 0:
+                        aggregated["division_comparison"][year_str][division] = {
+                            col: float(div_year_data[col].mean()) if col in div_year_data.columns else 0.0
+                            for col in SCORE_COLUMNS
+                        }
+                        aggregated["division_comparison"][year_str][division]["응답수"] = len(div_year_data)
+    
+    # 4. 부문별 팀 점수 순위 - 대상 부문 부서들만
+    for year in division_data['설문시행연도'].unique():
+        if pd.notna(year):
+            year_str = str(year)
+            year_data = division_data[division_data['설문시행연도'] == year]
+            dept_scores = []
+            
+            for dept in year_data['피평가부서'].unique():
+                if pd.notna(dept):
+                    dept_data = year_data[year_data['피평가부서'] == dept]
+                    avg_score = dept_data['종합점수'].mean() if len(dept_data) > 0 else 0.0
+                    dept_scores.append({
+                        "department": dept,
+                        "score": round(float(avg_score), 1),
+                        "count": len(dept_data)
+                    })
+            
+            # 점수 순으로 정렬하고 순위 부여
+            dept_scores.sort(key=lambda x: x["score"], reverse=True)
+            for i, dept in enumerate(dept_scores):
+                dept["rank"] = i + 1
+            
+            aggregated["team_ranking"][year_str] = dept_scores
+    
+    log_message(f"✅ 집계 데이터 계산 완료: {len(aggregated['hospital_yearly'])}년치 데이터")
+    return aggregated
+
+def generate_department_report(df, department, division, output_path, progress_info):
+    """
+    개별 부서 보고서 생성
+    
+    Args:
+        df (pd.DataFrame): 전체 데이터프레임
+        department (str): 대상 부서명
+        division (str): 해당 부서의 부문명
+        output_path (str): 출력 파일 경로
+        progress_info (dict): 진행 상황 정보
+        
+    Returns:
+        dict: 생성 결과 정보
+    """
+    try:
+        log_message(f"🔄 {department} 보고서 생성 시작 ({progress_info['current']}/{progress_info['total']})")
+        
+        # 1. 집계 데이터 계산 (부서별 맞춤)
+        aggregated_data = calculate_aggregated_data_for_department(df, department, division)
+        
+        # 2. 부서별 필터링된 데이터 준비
+        filtered_rawdata = prepare_department_filtered_data(df, department)
+        
+        # 3. HTML 생성
+        html_content = build_secure_html(aggregated_data, filtered_rawdata, department, division)
+        
+        # 4. 파일 저장
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        
+        log_message(f"✅ {department} 보고서 생성 완료")
+        
+        return {
+            'department': department,
+            'division': division,
+            'status': 'success',
+            'file_path': output_path,
+            'error': None
+        }
+        
+    except Exception as e:
+        log_message(f"❌ {department} 보고서 생성 실패: {str(e)}", "ERROR")
+        
+        return {
+            'department': department,
+            'division': division,
+            'status': 'failed',
+            'file_path': output_path,
+            'error': str(e)
+        }
+
+def generate_summary_report(results, output_dir, start_time):
+    """
+    생성 결과 요약 보고서 생성
+    
+    Args:
+        results (list): 생성 결과 리스트
+        output_dir (str): 출력 디렉토리
+        start_time (datetime): 시작 시간
+    """
+    end_time = datetime.now()
+    duration = end_time - start_time
+    
+    # 결과 분석
+    successful = [r for r in results if r['status'] == 'success']
+    failed = [r for r in results if r['status'] == 'failed']
+    
+    # 부문별 통계
+    division_stats = {}
+    for result in successful:
+        division = result['division']
+        if division not in division_stats:
+            division_stats[division] = 0
+        division_stats[division] += 1
+    
+    # 요약 보고서 생성
+    summary_content = f"""# 서울아산병원 협업 평가 대시보드 전체 부서 생성 결과
+
+## 📊 생성 요약
+- **생성 일시**: {start_time.strftime('%Y년 %m월 %d일 %H:%M:%S')}
+- **소요 시간**: {duration}
+- **전체 부서**: {len(results)}개
+- **성공**: {len(successful)}개
+- **실패**: {len(failed)}개
+
+## 🏢 부문별 생성 현황
+"""
+    
+    for division, count in sorted(division_stats.items()):
+        summary_content += f"- **{division}**: {count}개 부서\n"
+    
+    if successful:
+        summary_content += f"\n## ✅ 성공한 부서 ({len(successful)}개)\n"
+        for result in successful:
+            summary_content += f"- {result['department']} ({result['division']})\n"
+    
+    if failed:
+        summary_content += f"\n## ❌ 실패한 부서 ({len(failed)}개)\n"
+        for result in failed:
+            summary_content += f"- {result['department']} ({result['division']}): {result['error']}\n"
+    
+    summary_content += f"\n## 📁 생성된 파일 목록\n"
+    for result in successful:
+        summary_content += f"- {result['file_path']}\n"
+    
+    # 요약 파일 저장
+    summary_path = Path(output_dir) / "생성_결과_요약.md"
+    with open(summary_path, 'w', encoding='utf-8') as f:
+        f.write(summary_content)
+    
+    log_message(f"📋 생성 결과 요약 저장: {summary_path}")
+
 def main():
     """
-    메인 실행 함수 - 전체 프로세스 조율
+    메인 실행 함수 - 전체 부서 보고서 자동 생성
     """
+    start_time = datetime.now()
+    
     try:
         # 시작 메시지
         print("=" * 70)
-        print(f"🚀 {DASHBOARD_TITLE} 생성 시작")
-        print(f"📅 실행 시간: {datetime.now().strftime('%Y년 %m월 %d일 %H:%M:%S')}")
+        print("🚀 서울아산병원 협업 평가 대시보드 전체 부서 생성 시작")
+        print(f"📅 실행 시간: {start_time.strftime('%Y년 %m월 %d일 %H:%M:%S')}")
         print("=" * 70)
         
         # 1. 데이터 로드 및 전처리
+        log_message("1️⃣ 데이터 로드 및 전처리 시작")
         df = load_data()
-        log_message("✅ 데이터 로드 및 전처리 완료")
         
         # 2. 데이터 요약 정보 출력
         summary = get_data_summary(df)
         log_message(f"📊 데이터 요약: {summary['총_응답수']:,}건, 평균 점수: {summary['평균_종합점수']}점")
         
-        # 3. 보안 강화된 데이터 준비
-        target_department = "고객만족팀"  # 고정값
+        # 3. 전체 부서 목록 추출
+        log_message("2️⃣ 전체 부서 목록 추출")
+        departments = get_all_departments(df)
         
-        log_message("🔒 집계 데이터 계산 시작")
-        aggregated_data = calculate_aggregated_data(df)
+        if not departments:
+            log_message("❌ 생성할 부서가 없습니다.", "ERROR")
+            return False
         
-        log_message(f"🔒 부서별 필터링 시작: {target_department}")
-        filtered_rawdata = prepare_department_filtered_data(df, target_department)
+        # 4. 출력 디렉토리 구조 생성
+        log_message("3️⃣ 출력 디렉토리 구조 생성")
+        output_dir = create_output_directory_structure()
+        division_dirs = create_division_directories(output_dir, departments)
         
-        # 4. 보안 강화된 HTML 생성
-        log_message("🎨 보안 강화된 대시보드 HTML 생성 시작")
-        dashboard_html = build_secure_html(aggregated_data, filtered_rawdata, target_department)
-        log_message("✅ 보안 강화된 대시보드 HTML 생성 완료")
+        # 5. 부서별 보고서 생성
+        log_message("4️⃣ 부서별 보고서 생성 시작")
         
-        # 5. 파일 저장
-        log_message("💾 HTML 파일 저장 시작")
-        with open(OUTPUT_HTML_FILE, "w", encoding="utf-8") as f:
-            f.write(dashboard_html)
-        log_message(f"✅ HTML 파일 저장 완료: {OUTPUT_HTML_FILE}")
+        results = []
+        total_departments = len(departments)
         
-        # 완료 메시지
+        for idx, (department, division) in enumerate(departments.items(), 1):
+            # 진행 상황 정보
+            progress_info = {
+                'current': idx,
+                'total': total_departments,
+                'percentage': (idx / total_departments) * 100
+            }
+            
+            # 출력 파일 경로 생성
+            division_dir = division_dirs[division]
+            filename = f"서울아산병원 협업평가 대시보드_{department}.html"
+            output_path = str(Path(division_dir) / filename)
+            
+            # 부서별 보고서 생성
+            result = generate_department_report(df, department, division, output_path, progress_info)
+            results.append(result)
+            
+            # 진행률 표시
+            log_message(f"📊 진행률: {progress_info['percentage']:.1f}% ({idx}/{total_departments})")
+        
+        # 6. 생성 결과 요약
+        log_message("5️⃣ 생성 결과 요약")
+        generate_summary_report(results, output_dir, start_time)
+        
+        # 7. 최종 결과 출력
+        successful = len([r for r in results if r['status'] == 'success'])
+        failed = len([r for r in results if r['status'] == 'failed'])
+        
         print("\n" + "=" * 70)
-        print("🎉 대시보드 생성 완료!")
+        print("🎉 전체 부서 보고서 생성 완료!")
         print("=" * 70)
-        print(f"📄 출력 파일: {OUTPUT_HTML_FILE}")
-        print(f"📊 데이터 건수: {summary['총_응답수']:,}건")
-        print(f"📅 데이터 기간: {summary['데이터_기간']}")
-        print(f"🏢 부문 수: {len(summary['부문별_응답수'])}개")
-        print(f"📈 평균 종합점수: {summary['평균_종합점수']}점")
-        
+        print(f"📊 성공: {successful}개, 실패: {failed}개")
+        print(f"📁 출력 위치: {output_dir}")
+        print(f"⏱️ 소요 시간: {datetime.now() - start_time}")
         print("=" * 70)
         
-        return True
+        return failed == 0  # 실패가 없으면 True
         
     except Exception as e:
-        # 오류 처리
-        log_message(f"❌ 대시보드 생성 중 오류 발생: {str(e)}", "ERROR")
+        log_message(f"❌ 전체 프로세스 오류: {str(e)}", "ERROR")
         
         # 상세한 오류 정보 출력
         print("\n" + "=" * 70)
