@@ -1542,8 +1542,9 @@ def build_html(data_json):
             // 연도 필터 설정
             yearSelect.innerHTML = ['전체', ...allYears].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
             
-            // 부문 필터 설정
-            divisionSelect.innerHTML = ['전체', ...allDivisions].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            // 부문 필터 설정 - 고정값: 커뮤니케이션실만 선택 가능
+            divisionSelect.innerHTML = `<option value="커뮤니케이션실">커뮤니케이션실</option>`;
+            divisionSelect.value = "커뮤니케이션실";
             
             // 초기 부서, Unit 설정
             departmentSelect.innerHTML = '<option value="전체">전체</option>';
@@ -1558,6 +1559,10 @@ def build_html(data_json):
             sentimentSelect.addEventListener('change', updateNetworkReviews);
             
             // 협업 관계 현황 체크박스 이벤트 리스너는 updateStatusDropdowns 함수에서 동적으로 추가됨
+            
+            // 초기 네트워크 분석 표시
+            updateNetworkDepartments();
+            updateNetworkAnalysis();
         }}
 
         function updateNetworkDepartments() {{
