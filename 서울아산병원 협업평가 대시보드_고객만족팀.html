@@ -489,6 +489,13 @@
 
             unitSelect.innerHTML = ['전체', ...units].map(opt => `<option value="${opt}">${opt}</option>`).join('');
             unitSelect.value = '전체';
+            
+            // Unit 필터에 change 이벤트 리스너 추가
+            unitSelect.removeEventListener('change', updateDashboard); // 기존 리스너 제거
+            unitSelect.addEventListener('change', updateDashboard);
+            
+            // 대시보드 업데이트
+            updateDashboard();
         }
 
         function setupDivisionChart() {
@@ -528,7 +535,6 @@
             updateReviewsTable(filteredData);
             updateKeywordAnalysis(filteredData);
             updateYearlyComparisonChart();
-            updateUnitComparisonChart();
         }
         
         function calculateAverages(data) {
