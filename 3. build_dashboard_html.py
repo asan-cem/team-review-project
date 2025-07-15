@@ -71,7 +71,7 @@ EXCEL_COLUMNS = [
     '○○은 업무에 대한 명확한 담당자가 있고 업무를 일관성있게 처리해준다.',
     '○○은 이전보다 업무 협력에 대한 태도나 의지가 개선되고 있다.',
     '전반적으로 ○○과의 협업에 대해 만족한다.',
-    '종합점수', '극단값', '결측값', '협업 내용', '협업 내용.1', '협업 후기', '정제된_텍스트', 
+    '종합점수', '극단값', '결측값', '협업 유형', '협업 후기', '정제된_텍스트', 
     '비식별_처리', '감정_분류', '감정_강도_점수', '핵심_키워드', '의료_맥락', '신뢰도_점수'
 ]
 
@@ -297,9 +297,111 @@ def clean_data(df):
     log_message(f"✅ 데이터 정제 완료: {original_count:,}행 → {final_count:,}행")
     return df
 
+def calculate_aggregated_data(df):
+    """
+    섹션 1-4용 집계 데이터 미리 계산 (보안 강화)
+    원본 개별 응답 데이터 대신 계산된 통계만 저장
+    
+    Args:
+        df (pd.DataFrame): 전체 데이터프레임
+        
+    Returns:
+        dict: 집계된 통계 데이터
+    """
+    log_message("🔒 집계 데이터 계산 시작 (보안 강화)")
+    
+    aggregated = {
+        "hospital_yearly": {},
+        "division_yearly": {},
+        "division_comparison": {},
+        "team_ranking": {},
+        "metadata": {
+            "calculation_date": datetime.now().isoformat(),
+            "total_responses": len(df),
+            "security_level": "AGGREGATED_ONLY"
+        }
+    }
+    
+    # 1. [전체] 연도별 문항 점수
+    for year in df['설문시행연도'].unique():
+        if pd.notna(year):
+            year_data = df[df['설문시행연도'] == year]
+            aggregated["hospital_yearly"][str(year)] = {
+                col: float(year_data[col].mean()) if col in year_data.columns else 0.0
+                for col in SCORE_COLUMNS
+            }
+            aggregated["hospital_yearly"][str(year)]["응답수"] = len(year_data)
+    
+    # 2. [부문별] 연도별 문항 점수 - 모든 부문
+    for division in df['피평가부문'].unique():
+        if pd.notna(division) and division != 'N/A':
+            div_data = df[df['피평가부문'] == division]
+            aggregated["division_yearly"][division] = {}
+            for year in div_data['설문시행연도'].unique():
+                if pd.notna(year):
+                    year_data = div_data[div_data['설문시행연도'] == year]
+                    aggregated["division_yearly"][division][str(year)] = {
+                        col: float(year_data[col].mean()) if col in year_data.columns else 0.0
+                        for col in SCORE_COLUMNS
+                    }
+                    aggregated["division_yearly"][division][str(year)]["응답수"] = len(year_data)
+    
+    # 3. 연도별 부문 비교 (모든 부문 데이터 포함)
+    for year in df['설문시행연도'].unique():
+        if pd.notna(year):
+            year_str = str(year)
+            year_data = df[df['설문시행연도'] == year]
+            
+            aggregated["division_comparison"][year_str] = {}
+            
+            # 모든 부문별 평균 계산
+            for division in df['피평가부문'].unique():
+                if pd.notna(division) and division != 'N/A':
+                    div_year_data = year_data[year_data['피평가부문'] == division]
+                    if len(div_year_data) > 0:
+                        aggregated["division_comparison"][year_str][division] = {
+                            col: float(div_year_data[col].mean()) if col in div_year_data.columns else 0.0
+                            for col in SCORE_COLUMNS
+                        }
+                        aggregated["division_comparison"][year_str][division]["응답수"] = len(div_year_data)
+    
+    # 4. 부문별 팀 점수 순위 - 모든 부문별로 계산
+    for division in df['피평가부문'].unique():
+        if pd.notna(division) and division != 'N/A':
+            div_data = df[df['피평가부문'] == division]
+            for year in div_data['설문시행연도'].unique():
+                if pd.notna(year):
+                    year_str = str(year)
+                    year_data = div_data[div_data['설문시행연도'] == year]
+                    dept_scores = []
+                    
+                    for dept in year_data['피평가부서'].unique():
+                        if pd.notna(dept):
+                            dept_data = year_data[year_data['피평가부서'] == dept]
+                            avg_score = dept_data['종합점수'].mean() if len(dept_data) > 0 else 0.0
+                            dept_scores.append({
+                                "department": dept,
+                                "division": division,
+                                "score": round(float(avg_score), 1),
+                                "count": len(dept_data)
+                            })
+                    
+                    # 점수 순으로 정렬하고 순위 부여
+                    dept_scores.sort(key=lambda x: x["score"], reverse=True)
+                    for i, dept in enumerate(dept_scores):
+                        dept["rank"] = i + 1
+                    
+                    # 부문별로 구분하여 저장
+                    if year_str not in aggregated["team_ranking"]:
+                        aggregated["team_ranking"][year_str] = {}
+                    aggregated["team_ranking"][year_str][division] = dept_scores
+    
+    log_message(f"✅ 집계 데이터 계산 완료: {len(aggregated['hospital_yearly'])}년치 데이터")
+    return aggregated
+
 def prepare_json_data(df):
     """
-    대시보드용 JSON 데이터 준비
+    대시보드용 JSON 데이터 준비 (상세 분석용 원시 데이터)
     
     Args:
         df (pd.DataFrame): 정제된 데이터프레임
@@ -327,20 +429,32 @@ def prepare_json_data(df):
 
 def load_data():
     """
-    전체 데이터 로드 및 전처리 프로세스 (기존 함수와 호환성 유지)
+    전체 데이터 로드 및 전처리 프로세스 - 집계 데이터와 원시 데이터 반환
     
     Returns:
-        pd.DataFrame: 전처리된 데이터프레임
+        tuple: (aggregated_data, raw_data_json)
+            - aggregated_data: 섹션 1-4용 집계 데이터
+            - raw_data_json: 섹션 5-6용 원시 데이터 JSON
     """
+    log_message("🚀 데이터 로드 및 전처리 시작")
+    
     # 새로운 개선된 함수들을 사용하여 데이터 처리
     df = load_excel_data()
     df = preprocess_data_types(df)
     df = clean_data(df)
-    return df
+    
+    # 집계 데이터 계산 (섹션 1-4용)
+    aggregated_data = calculate_aggregated_data(df)
+    
+    # 원시 데이터 JSON 준비 (섹션 5-6용)
+    raw_data_json = prepare_json_data(df)
+    
+    log_message("✅ 데이터 처리 완료: 집계 데이터 + 원시 데이터")
+    return aggregated_data, raw_data_json
 
 # --- 2. 개선된 HTML 생성 ---
-def build_html(data_json):
-    """개선된 구조와 번호 체계를 적용한 대화형 HTML 생성"""
+def build_html(aggregated_data, raw_data_json):
+    """개선된 구조와 번호 체계를 적용한 대화형 HTML 생성 - 집계 데이터와 원시 데이터 분리"""
     return f"""
 <!DOCTYPE html>
 <html lang="ko">
@@ -772,10 +886,15 @@ def build_html(data_json):
 
     </div>
     <script>
-        const rawData = {data_json};
+        // 집계 데이터 (섹션 1-4용) - 보안 강화
+        const aggregatedData = {json.dumps(aggregated_data, ensure_ascii=False)};
+        
+        // 원시 데이터 (섹션 5-6용) - 상세 분석용
+        const rawData = {raw_data_json};
+        
         const scoreCols = ['존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합점수'];
-        const allYears = [...new Set(rawData.map(item => item['설문시행연도']))].sort();
-        const allDivisions = [...new Set(rawData.map(item => item['피평가부문']))].filter(d => d && d !== 'N/A').sort((a, b) => String(a).localeCompare(String(b), 'ko'));
+        const allYears = Object.keys(aggregatedData.hospital_yearly).sort();
+        const allDivisions = Object.keys(aggregatedData.division_yearly).sort((a, b) => String(a).localeCompare(String(b), 'ko'));
         const layoutFont = {{ size: 14 }};
 
         const departmentUnitMap = rawData.reduce((acc, item) => {{
@@ -918,11 +1037,11 @@ def build_html(data_json):
             const traces = [];
 
             selectedScores.forEach(col => {{
-                const y_values = years.map(year => calculateAverages(rawData.filter(d => d['설문시행연도'] === year))[col].toFixed(1));
+                const y_values = years.map(year => aggregatedData.hospital_yearly[year] ? aggregatedData.hospital_yearly[year][col].toFixed(1) : '0.0');
                 traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>연도: %{{x}}<extra></extra>' }});
             }});
             
-            const yearly_counts = years.map(year => rawData.filter(d => d['설문시행연도'] === year).length);
+            const yearly_counts = years.map(year => aggregatedData.hospital_yearly[year] ? aggregatedData.hospital_yearly[year]['응답수'] : 0);
             traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', line: {{ shape: 'spline', smoothing: 0.3, width: 3 }}, text: yearly_counts.map(count => `${{count.toLocaleString()}}건`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}건<br>연도: %{{x}}<extra></extra>' }});
 
             const layout = {{
@@ -963,16 +1082,16 @@ def build_html(data_json):
                 return;
             }}
 
-            const divisionData = rawData.filter(item => item['피평가부문'] === selectedDivision);
-            const years = [...new Set(divisionData.map(item => item['설문시행연도']))].sort();
+            const divisionYearlyData = aggregatedData.division_yearly[selectedDivision] || {{}};
+            const years = Object.keys(divisionYearlyData).sort();
             const traces = [];
 
             selectedScores.forEach(col => {{
-                const y_values = years.map(year => calculateAverages(divisionData.filter(d => d['설문시행연도'] === year))[col].toFixed(1));
+                const y_values = years.map(year => divisionYearlyData[year] ? divisionYearlyData[year][col].toFixed(1) : '0.0');
                 traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>연도: %{{x}}<extra></extra>' }});
             }});
             
-            const yearly_counts = years.map(year => divisionData.filter(d => d['설문시행연도'] === year).length);
+            const yearly_counts = years.map(year => divisionYearlyData[year] ? divisionYearlyData[year]['응답수'] : 0);
             traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', line: {{ shape: 'spline', smoothing: 0.3, width: 3 }}, text: yearly_counts.map(count => `${{count.toLocaleString()}}건`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}건<br>연도: %{{x}}<extra></extra>' }});
 
             const layout = {{
@@ -994,11 +1113,9 @@ def build_html(data_json):
             const selectedYear = document.getElementById('comparison-year-filter').value;
             const selectedDivisions = Array.from(document.querySelectorAll('input[name="comparison-division"]:checked')).map(cb => cb.value);
 
-            let yearData = rawData.filter(item => item['설문시행연도'] === selectedYear);
+            const yearComparisonData = aggregatedData.division_comparison[selectedYear] || {{}};
 
-            if (selectedDivisions.length > 0) {{
-                yearData = yearData.filter(item => selectedDivisions.includes(item['피평가부문']));
-            }} else {{
+            if (selectedDivisions.length === 0) {{
                 Plotly.react(container, [], {{
                     height: 500,
                     annotations: [{{ text: '비교할 부문을 선택해주세요.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
@@ -1007,17 +1124,10 @@ def build_html(data_json):
                 return;
             }}
 
-            const divisionScores = {{}};
-            yearData.forEach(item => {{
-                const division = item['피평가부문'];
-                if (division === 'N/A') return;
-                if (!divisionScores[division]) {{ divisionScores[division] = {{ sum: 0, count: 0 }}; }}
-                divisionScores[division].sum += item['종합점수'] || 0;
-                divisionScores[division].count++;
-            }});
-
-            const divisions = Object.keys(divisionScores).sort((a,b) => a.localeCompare(b, 'ko'));
-            const avgScores = divisions.map(div => (divisionScores[div].sum / divisionScores[div].count).toFixed(1));
+            // 선택된 부문들의 데이터만 필터링
+            const filteredDivisions = selectedDivisions.filter(div => yearComparisonData[div]);
+            const divisions = filteredDivisions.sort((a,b) => a.localeCompare(b, 'ko'));
+            const avgScores = divisions.map(div => yearComparisonData[div]['종합점수'].toFixed(1));
 
             const trace = [{{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
             const layout = {{
@@ -1256,30 +1366,16 @@ def build_html(data_json):
                 return;
             }}
 
-            let yearData = rawData.filter(item => item['설문시행연도'] === selectedYear);
-            yearData = yearData.filter(item => item['피평가부문'] === selectedDivision);
+            const teamRankingData = aggregatedData.team_ranking[selectedYear] && aggregatedData.team_ranking[selectedYear][selectedDivision] ? 
+                aggregatedData.team_ranking[selectedYear][selectedDivision] : [];
 
-            const teamScores = {{}};
-            yearData.forEach(item => {{
-                const department = item['피평가부서'];
-                const division = item['피평가부문'];
-                const score = item['종합점수'];
-                
-                if (department && department !== 'N/A' && division && division !== 'N/A' && score != null) {{
-                    if (!teamScores[department]) {{ teamScores[department] = {{ scores: [], division: division, unit: item['피평가Unit'] }}; }}
-                    teamScores[department].scores.push(score);
-                }}
-            }});
-
-            const teamRankings = Object.entries(teamScores)
-                .map(([department, data]) => ({{
-                    department: department,
-                    division: data.division,
-                    unit: data.unit,
-                    avgScore: (data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length).toFixed(1),
-                    count: data.scores.length
-                }}))
-                .sort((a, b) => parseFloat(b.avgScore) - parseFloat(a.avgScore));
+            const teamRankings = teamRankingData.map(team => ({{
+                department: team.department,
+                division: team.division,
+                unit: 'N/A', // Unit 정보는 집계 데이터에 없음
+                avgScore: team.score.toString(),
+                count: team.count
+            }}));
 
             if (teamRankings.length === 0) {{
                 Plotly.react(container, [], {{
@@ -2105,19 +2201,22 @@ def main():
         print("=" * 70)
         
         # 1. 데이터 로드 및 전처리
-        df = load_data()
+        df = load_excel_data()
+        df = preprocess_data_types(df)
+        df = clean_data(df)
         log_message("✅ 데이터 로드 및 전처리 완료")
         
         # 2. 데이터 요약 정보 출력
         summary = get_data_summary(df)
         log_message(f"📊 데이터 요약: {summary['총_응답수']:,}건, 평균 점수: {summary['평균_종합점수']}점")
         
-        # 3. JSON 데이터 준비
-        data_json = prepare_json_data(df)
+        # 3. 집계 데이터와 원시 데이터 준비
+        aggregated_data = calculate_aggregated_data(df)
+        raw_data_json = prepare_json_data(df)
         
         # 4. HTML 생성
         log_message("🎨 대시보드 HTML 생성 시작")
-        dashboard_html = build_html(data_json)
+        dashboard_html = build_html(aggregated_data, raw_data_json)
         log_message("✅ 대시보드 HTML 생성 완료")
         
         # 5. 파일 저장
