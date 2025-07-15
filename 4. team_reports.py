@@ -2119,8 +2119,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                         item['설문시행연도'] === year && 
                         item['평가부서'] === dept.evaluator && 
                         item['피평가부서'] === dept.evaluated &&
-                        // 현재 필터 조건 적용
-                        (selectedYear === '전체' || String(item['설문시행연도']) === String(selectedYear)) &&
+                        // 트렌드 차트에서는 연도 필터를 제외하고 다른 필터만 적용
                         (selectedDivision === '전체' || item['피평가부문'] === selectedDivision) &&
                         (selectedDepartment === '전체' || item['피평가부서'] === selectedDepartment) &&
                         (selectedUnit === '전체' || item['피평가Unit'] === selectedUnit)
@@ -2171,7 +2170,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             }}
             
             const layout = {{
-                title: '<b>선택된 부서의 협업 관계 변화 트렌드</b>',
+                title: '<b>선택된 부서의 협업 관계 변화 트렌드 (2022~2025)</b>',
                 height: 400,
                 xaxis: {{ title: '연도', type: 'category' }},
                 yaxis: {{ title: '종합점수', range: [0, 100] }},
