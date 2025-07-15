@@ -16,6 +16,7 @@ import re
 import time
 import unicodedata
 import os
+import logging
 
 # Google Cloud libraries (available in local environment)
 import vertexai
@@ -35,6 +36,13 @@ class LocalGoogleSheetsAnalyzer:
         self.output_path = Path(output_path) if output_path else Path(base_path).parent
         self.department_mapping = {}
         self.department_standard_map = {}
+        self.enhanced_mapping = {}  # 부서명+Unit 조합별 매핑
+        self.labeling_stats = {
+            'dept_unit_match': 0,
+            'dept_only_match': 0, 
+            'dept_not_found': 0,
+            'unit_mismatch': 0
+        }
 
         self.question_columns = [
             '○○은 타 부서의 입장을 존중하고 배려하여 협력해주며. 협업 관련 의견을 경청해준다.',
@@ -57,20 +65,211 @@ class LocalGoogleSheetsAnalyzer:
         except Exception as e:
             print(f"❌ 부서명 표준화 매핑 파일 로드 오류: {e}")
 
+    def normalize_string(self, text):
+        """문자열 정규화 (대소문자, 띄어쓰기, 특수문자 통일)"""
+        if pd.isna(text) or text == '':
+            return ''
+        
+        # 문자열로 변환
+        text = str(text).strip()
+        
+        # 특수문자 정규화 (ㆍ, ·, •, -, _ 를 모두 공백으로)
+        text = re.sub(r'[ㆍ·•\-_]', ' ', text)
+        
+        # 연속된 공백을 하나로
+        text = re.sub(r'\s+', ' ', text)
+        
+        # 대소문자 통일 (소문자로)
+        text = text.lower()
+        
+        return text.strip()
+
+    def is_empty_unit(self, unit_value):
+        """Unit이 빈 값인지 확인"""
+        if pd.isna(unit_value):
+            return True
+        
+        unit_str = str(unit_value).strip().lower()
+        return unit_str in ['', 'n/a', 'na', 'null', 'none']
+
     def load_department_mapping(self):
-        """부서-부문 매핑 로드"""
+        """부서-부문 매핑 로드 (개선된 버전)"""
         if not self.mapping_file_path or not Path(self.mapping_file_path).exists(): 
             return
         try:
             mapping_df = pd.read_excel(self.mapping_file_path)
+            print(f"📋 매핑 파일 로드: {len(mapping_df)}개 레코드")
+            
+            # 기본 부서명 -> 부문 매핑 (정규화된 키 사용)
             if '부서명' in mapping_df.columns and '부문' in mapping_df.columns:
-                self.department_mapping = dict(zip(
-                    mapping_df.dropna(subset=['부서명', '부문'])['부서명'], 
-                    mapping_df.dropna(subset=['부서명', '부문'])['부문']
-                ))
-                print(f"✅ 부문 매핑 로드 완료: {len(self.department_mapping)}개")
+                dept_mapping = mapping_df.dropna(subset=['부서명', '부문']).copy()
+                # 정규화된 부서명을 키로 사용
+                for _, row in dept_mapping.iterrows():
+                    norm_dept = self.normalize_string(row['부서명'])
+                    if norm_dept:  # 빈 문자열이 아닌 경우만
+                        self.department_mapping[norm_dept] = row['부문']
+                print(f"✅ 기본 부문 매핑 로드 완료: {len(self.department_mapping)}개")
+            
+            # 향상된 부서명+Unit -> 부문 매핑
+            if all(col in mapping_df.columns for col in ['부서명', '부문', '소속UNIT']):
+                for _, row in mapping_df.iterrows():
+                    dept_name = row['부서명']
+                    division = row['부문'] 
+                    unit_name = row['소속UNIT']
+                    
+                    if pd.notna(dept_name) and pd.notna(division):
+                        # 정규화된 부서명
+                        norm_dept = self.normalize_string(dept_name)
+                        
+                        # Unit이 있는 경우와 없는 경우 모두 저장
+                        if not self.is_empty_unit(unit_name):
+                            norm_unit = self.normalize_string(unit_name)
+                            key = f"{norm_dept}|{norm_unit}"
+                            self.enhanced_mapping[key] = {
+                                'division': division,
+                                'original_dept': dept_name,
+                                'original_unit': unit_name,
+                                'match_type': 'dept_unit'
+                            }
+                        
+                        # 부서명만으로도 매핑 가능하도록 저장 (Unit 없는 경우용)
+                        if norm_dept not in [k.split('|')[0] for k in self.enhanced_mapping.keys() if '|' in k]:
+                            dept_only_key = f"{norm_dept}|"
+                            self.enhanced_mapping[dept_only_key] = {
+                                'division': division,
+                                'original_dept': dept_name, 
+                                'original_unit': None,
+                                'match_type': 'dept_only'
+                            }
+                
+                print(f"✅ 향상된 부문 매핑 로드 완료: {len(self.enhanced_mapping)}개")
+                
         except Exception as e:
             print(f"❌ 부문 매핑 파일 로드 오류: {e}")
+
+    def enhanced_department_labeling(self, dept_name, unit_name):
+        """향상된 부서-부문 라벨링 함수
+        
+        라벨링 규칙:
+        1. 부서명과 소속UNIT이 모두 일치하는 경우 → 해당 부문으로 라벨링 (dept_unit_match)
+        2. 부서명은 일치하지만 소속UNIT이 없는 경우 → 해당 부문으로 라벨링 (dept_only_match)
+        3. 부서명은 일치하지만 소속UNIT이 매핑에 없는 경우 → '미분류'로 라벨링 (unit_mismatch)
+        4. 부서명이 매핑 파일에 없는 경우 → '미분류'로 라벨링 (dept_not_found)
+        """
+        if pd.isna(dept_name) or dept_name == '':
+            self.labeling_stats['dept_not_found'] += 1
+            return '미분류', 'dept_not_found'
+        
+        norm_dept = self.normalize_string(dept_name)
+        norm_unit = self.normalize_string(unit_name) if not self.is_empty_unit(unit_name) else ''
+        
+        # 1. 부서명+Unit 모두 일치하는 경우 확인
+        if norm_unit:  # Unit이 있는 경우
+            dept_unit_key = f"{norm_dept}|{norm_unit}"
+            if dept_unit_key in self.enhanced_mapping:
+                match_info = self.enhanced_mapping[dept_unit_key]
+                self.labeling_stats['dept_unit_match'] += 1
+                return match_info['division'], 'dept_unit_match'
+        
+        # 2. 부서명만 일치하는 경우 확인
+        # 먼저 기본 부서 매핑 확인 (Unit이 없는 경우만)
+        if norm_dept in self.department_mapping:
+            if not norm_unit:
+                # Unit이 없는 경우 - 기본 부서 매핑 사용
+                division = self.department_mapping[norm_dept]
+                self.labeling_stats['dept_only_match'] += 1
+                return division, 'dept_only_match'
+            else:
+                # Unit이 있는 경우 - 향상된 매핑에서 찾아보기
+                dept_unit_key = f"{norm_dept}|{norm_unit}"
+                if dept_unit_key not in self.enhanced_mapping:
+                    # Unit이 매핑에 없는 경우 미분류 처리
+                    self.labeling_stats['unit_mismatch'] += 1
+                    return '미분류', 'unit_mismatch'
+        
+        # 3. 향상된 매핑에서 부서명 기반 확인
+        dept_only_keys = [k for k in self.enhanced_mapping.keys() if k.startswith(f"{norm_dept}|")]
+        
+        if dept_only_keys:
+            # Unit이 없는 경우 - 부서명만으로 매핑
+            if not norm_unit:
+                dept_only_key = f"{norm_dept}|"
+                if dept_only_key in self.enhanced_mapping:
+                    match_info = self.enhanced_mapping[dept_only_key]
+                    self.labeling_stats['dept_only_match'] += 1
+                    return match_info['division'], 'dept_only_match'
+            
+            # Unit이 있지만 매핑에 없는 경우 - 미분류
+            else:
+                # 해당 부서의 다른 Unit들이 있는지 확인
+                dept_with_units = [k for k in dept_only_keys if k != f"{norm_dept}|"]
+                if dept_with_units:
+                    self.labeling_stats['unit_mismatch'] += 1
+                    return '미분류', 'unit_mismatch'
+        
+        # 4. 부서명이 매핑에 없는 경우
+        self.labeling_stats['dept_not_found'] += 1
+        return '미분류', 'dept_not_found'
+
+    def generate_labeling_report(self, df):
+        """라벨링 검증 리포트 생성"""
+        total_records = len(df)
+        
+        # 부문 컬럼 확인 ('부문' 또는 '피평가대상 부문')
+        division_col = None
+        if '피평가대상 부문' in df.columns:
+            division_col = '피평가대상 부문'
+        elif '부문' in df.columns:
+            division_col = '부문'
+        else:
+            print("❌ 부문 컬럼을 찾을 수 없습니다.")
+            return {}
+        
+        unclassified_count = (df[division_col] == '미분류').sum()
+        classified_count = total_records - unclassified_count
+        
+        print("\n" + "="*50)
+        print("=== 부문 라벨링 검증 리포트 ===")
+        print("="*50)
+        print(f"- 전체 데이터: {total_records:,}건")
+        print(f"- 정상 매핑: {classified_count:,}건 ({classified_count/total_records*100:.1f}%)")
+        print(f"- 미분류: {unclassified_count:,}건 ({unclassified_count/total_records*100:.1f}%)")
+        
+        # 미분류 케이스 상위 10개 부서
+        if unclassified_count > 0:
+            unclassified_df = df[df[division_col] == '미분류']
+            dept_unit_combinations = []
+            
+            for _, row in unclassified_df.iterrows():
+                dept = row.get('피평가대상 부서명', '')
+                unit = row.get('피평가대상 UNIT명', '')
+                if not self.is_empty_unit(unit):
+                    combo = f"{dept} {unit}"
+                else:
+                    combo = dept
+                dept_unit_combinations.append(combo)
+            
+            if dept_unit_combinations:
+                unclassified_summary = pd.Series(dept_unit_combinations).value_counts().head(10)
+                print(f"\n[미분류 상위 10개 부서/Unit 조합]")
+                for i, (combo, count) in enumerate(unclassified_summary.items(), 1):
+                    print(f"{i}. {combo}: {count:,}건")
+        
+        # 매핑 규칙별 처리 건수
+        print(f"\n[매핑 규칙별 처리 건수]")
+        print(f"- 부서명+Unit 모두 일치: {self.labeling_stats['dept_unit_match']:,}건")
+        print(f"- 부서명만 일치(Unit 없음): {self.labeling_stats['dept_only_match']:,}건")
+        print(f"- 부서명 있지만 Unit 매핑 없음 → 미분류: {self.labeling_stats['unit_mismatch']:,}건")
+        print(f"- 부서명 매핑 없음 → 미분류: {self.labeling_stats['dept_not_found']:,}건")
+        print("="*50)
+        
+        return {
+            'total': total_records,
+            'classified': classified_count,
+            'unclassified': unclassified_count,
+            'classification_rate': classified_count/total_records*100,
+            'stats': self.labeling_stats.copy()
+        }
 
     def load_and_process_data(self, file_identifiers):
         """데이터 로드 및 처리"""
@@ -117,6 +316,12 @@ class LocalGoogleSheetsAnalyzer:
         
         processed_df = self._preprocess_data(integrated_df)
         self._print_processing_summary(processed_df, {})
+        
+        # 라벨링 검증 리포트 생성
+        if '피평가대상 부문' in processed_df.columns or '부문' in processed_df.columns:
+            if hasattr(self, 'labeling_stats'):  # 향상된 매핑이 사용된 경우에만
+                self.generate_labeling_report(processed_df)
+        
         return processed_df, {}
 
     def _preprocess_data(self, df):
@@ -169,13 +374,64 @@ class LocalGoogleSheetsAnalyzer:
             return '극단값' if pd.notna(row.get('종합점수')) and row['종합점수'] == 0 else '정상'
         df['극단값'] = df.apply(check_extreme_value, axis=1)
 
-        # Map departments to divisions
+        # Enhanced department to division mapping
         if '피평가대상 부서명' in df.columns:
-            df['부문'] = df['피평가대상 부서명'].map(self.department_mapping).fillna('미분류')
-            print("🏢 피평가대상 부문 매핑 완료")
+            print("🏢 피평가대상 부문 매핑 시작 (향상된 매핑 사용)...")
+            
+            # 통계 초기화
+            self.labeling_stats = {
+                'dept_unit_match': 0,
+                'dept_only_match': 0, 
+                'dept_not_found': 0,
+                'unit_mismatch': 0
+            }
+            
+            # 향상된 라벨링 적용
+            dept_col = '피평가대상 부서명'
+            unit_col = '피평가대상 UNIT명' if '피평가대상 UNIT명' in df.columns else None
+            
+            divisions = []
+            match_types = []
+            
+            for _, row in df.iterrows():
+                dept_name = row[dept_col]
+                unit_name = row[unit_col] if unit_col else None
+                
+                division, match_type = self.enhanced_department_labeling(dept_name, unit_name)
+                divisions.append(division)
+                match_types.append(match_type)
+            
+            df['부문'] = divisions
+            df['매핑_유형'] = match_types  # 디버깅용 컬럼
+            print("🏢 피평가대상 부문 매핑 완료 (향상된 매핑)")
 
         if '평가_부서명' in df.columns:
-            df['평가_부문'] = df['평가_부서명'].map(self.department_mapping).fillna('미분류')
+            print("🏢 평가자 부문 매핑 시작...")
+            # 평가자도 동일한 방식으로 처리
+            dept_col = '평가_부서명'
+            unit_col = '평가_Unit명' if '평가_Unit명' in df.columns else None
+            
+            # 별도 통계를 위해 임시 저장
+            temp_stats = self.labeling_stats.copy()
+            self.labeling_stats = {
+                'dept_unit_match': 0,
+                'dept_only_match': 0, 
+                'dept_not_found': 0,
+                'unit_mismatch': 0
+            }
+            
+            divisions = []
+            for _, row in df.iterrows():
+                dept_name = row[dept_col]
+                unit_name = row[unit_col] if unit_col else None
+                
+                division, _ = self.enhanced_department_labeling(dept_name, unit_name)
+                divisions.append(division)
+            
+            df['평가_부문'] = divisions
+            
+            # 원래 통계 복원 (피평가대상 기준으로 리포트 생성)
+            self.labeling_stats = temp_stats
             print("🏢 평가자 부문 매핑 완료")
 
         return df
@@ -197,6 +453,7 @@ class LocalGoogleSheetsAnalyzer:
         desired_columns = [
             'response_id', '설문시행연도', '평가_부서명', '평가_부서명_원본', '평가_Unit명', '평가_부문',
             '피평가대상 부서명', '피평가대상_부서명_원본', '피평가대상 UNIT명', '피평가대상 부문',
+            '매핑_유형',  # 새로 추가된 디버깅용 컬럼
             '○○은 타 부서의 입장을 존중하고 배려하여 협력해주며. 협업 관련 의견을 경청해준다.',
             '○○은 업무상 필요한 정보에 대해 공유가 잘 이루어진다.',
             '○○은 업무에 대한 명확한 담당자가 있고 업무를 일관성있게 처리해준다.',
