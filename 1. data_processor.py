@@ -402,7 +402,6 @@ class LocalGoogleSheetsAnalyzer:
                 match_types.append(match_type)
             
             df['부문'] = divisions
-            df['매핑_유형'] = match_types  # 디버깅용 컬럼
             print("🏢 피평가대상 부문 매핑 완료 (향상된 매핑)")
 
         if '평가_부서명' in df.columns:
@@ -453,7 +452,6 @@ class LocalGoogleSheetsAnalyzer:
         desired_columns = [
             'response_id', '설문시행연도', '평가_부서명', '평가_부서명_원본', '평가_Unit명', '평가_부문',
             '피평가대상 부서명', '피평가대상_부서명_원본', '피평가대상 UNIT명', '피평가대상 부문',
-            '매핑_유형',  # 새로 추가된 디버깅용 컬럼
             '○○은 타 부서의 입장을 존중하고 배려하여 협력해주며. 협업 관련 의견을 경청해준다.',
             '○○은 업무상 필요한 정보에 대해 공유가 잘 이루어진다.',
             '○○은 업무에 대한 명확한 담당자가 있고 업무를 일관성있게 처리해준다.',
