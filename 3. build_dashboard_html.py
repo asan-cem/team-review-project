@@ -976,7 +976,7 @@ def build_html(aggregated_data, raw_data_json):
             }}
 
             const averages = calculateAverages(data);
-            const chartData = [{{ x: selectedScores, y: selectedScores.map(col => averages[col].toFixed(1)), type: 'bar', text: selectedScores.map(col => averages[col].toFixed(1)), textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#72B0AB' }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
+            const chartData = [{{ x: selectedScores, y: selectedScores.map(col => averages[col].toFixed(1)), type: 'bar', text: selectedScores.map(col => averages[col].toFixed(1)), textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#FFF6F5', line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
             const selectedYear = document.getElementById('year-filter').value;
             const selectedDept = document.getElementById('department-filter').value;
             const selectedUnit = document.getElementById('unit-filter').value;
@@ -1009,10 +1009,10 @@ def build_html(aggregated_data, raw_data_json):
             const years = allYears;
             const traces = [];
 
-            const barColors = ['#72B0AB', '#BCDDDC', '#FFEDD1', '#FDC1B4', '#FE9179'];
+            const barColors = ['#FFF6F5', '#72B0AB', '#BCDDDC', '#FFEDD1', '#FDC1B4', '#FE9179'];
             selectedScores.forEach((col, index) => {{
                 const y_values = years.map(year => aggregatedData.hospital_yearly[year] ? aggregatedData.hospital_yearly[year][col].toFixed(1) : '0.0');
-                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: barColors[index % barColors.length] }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>연도: %{{x}}<extra></extra>' }});
+                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: barColors[index % barColors.length], line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>연도: %{{x}}<extra></extra>' }});
             }});
             
             const yearly_counts = years.map(year => aggregatedData.hospital_yearly[year] ? aggregatedData.hospital_yearly[year]['응답수'] : 0);
@@ -1060,10 +1060,10 @@ def build_html(aggregated_data, raw_data_json):
             const years = Object.keys(divisionYearlyData).sort();
             const traces = [];
 
-            const barColors = ['#72B0AB', '#BCDDDC', '#FFEDD1', '#FDC1B4', '#FE9179'];
+            const barColors = ['#FFF6F5', '#72B0AB', '#BCDDDC', '#FFEDD1', '#FDC1B4', '#FE9179'];
             selectedScores.forEach((col, index) => {{
                 const y_values = years.map(year => divisionYearlyData[year] ? divisionYearlyData[year][col].toFixed(1) : '0.0');
-                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: barColors[index % barColors.length] }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>연도: %{{x}}<extra></extra>' }});
+                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: barColors[index % barColors.length], line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>연도: %{{x}}<extra></extra>' }});
             }});
             
             const yearly_counts = years.map(year => divisionYearlyData[year] ? divisionYearlyData[year]['응답수'] : 0);
@@ -1104,7 +1104,7 @@ def build_html(aggregated_data, raw_data_json):
             const divisions = filteredDivisions.sort((a,b) => a.localeCompare(b, 'ko'));
             const avgScores = divisions.map(div => yearComparisonData[div]['종합점수'].toFixed(1));
 
-            const trace = [{{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#FDC1B4' }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
+            const trace = [{{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#FDC1B4', line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
             const layout = {{
                 title: `<b>${{selectedYear}} 부문별 점수 비교</b>`,
                 yaxis: {{ title: '점수', range: [0, 100] }},
@@ -1160,9 +1160,9 @@ def build_html(aggregated_data, raw_data_json):
 
             // 색상 매핑
             const colorMap = {{
-                '긍정': '#2E8B57',
-                '부정': '#DC143C', 
-                '중립': '#4682B4',
+                '긍정': '#72B0AB',
+                '부정': '#FE9179', 
+                '중립': '#FFF6F5',
                 '알 수 없음': '#808080'
             }};
             const colors = sentiments.map(sentiment => colorMap[sentiment] || '#808080');
@@ -1174,7 +1174,7 @@ def build_html(aggregated_data, raw_data_json):
                 text: counts.map((count, idx) => `${{count}}건 (${{percentages[idx]}}%)`),
                 textposition: 'outside',
                 textfont: {{ size: 12 }},
-                marker: {{ color: colors }},
+                marker: {{ color: colors, line: {{ color: '#000000', width: 1 }} }},
                 hovertemplate: '%{{x}}: %{{y}}건 (%{{text}})<extra></extra>'
             }};
 
@@ -1431,13 +1431,13 @@ def build_html(aggregated_data, raw_data_json):
             const years = [...new Set(targetData.map(item => item['설문시행연도']))].sort();
             const traces = [];
 
-            const barColors = ['#72B0AB', '#BCDDDC', '#FFEDD1', '#FDC1B4', '#FE9179'];
+            const barColors = ['#FFF6F5', '#72B0AB', '#BCDDDC', '#FFEDD1', '#FDC1B4', '#FE9179'];
             selectedScores.forEach((col, index) => {{
                 const y_values = years.map(year => {{
                     const yearData = targetData.filter(d => d['설문시행연도'] === year);
                     return yearData.length > 0 ? (yearData.reduce((sum, item) => sum + (item[col] || 0), 0) / yearData.length).toFixed(1) : 0;
                 }});
-                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: barColors[index % barColors.length] }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>연도: %{{x}}<extra></extra>' }});
+                traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: barColors[index % barColors.length], line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>연도: %{{x}}<extra></extra>' }});
             }});
             
             const yearly_counts = years.map(year => targetData.filter(d => d['설문시행연도'] === year).length);
@@ -1505,13 +1505,13 @@ def build_html(aggregated_data, raw_data_json):
             }}
 
             const traces = [];
-            const barColors = ['#72B0AB', '#BCDDDC', '#FFEDD1', '#FDC1B4', '#FE9179'];
+            const barColors = ['#FFF6F5', '#72B0AB', '#BCDDDC', '#FFEDD1', '#FDC1B4', '#FE9179'];
             selectedScores.forEach((col, index) => {{
                 const y_values = unitsInDepartment.map(unit => {{
                     const unitData = departmentData.filter(item => item['피평가Unit'] === unit);
                     return unitData.length > 0 ? (unitData.reduce((sum, item) => sum + (item[col] || 0), 0) / unitData.length).toFixed(1) : 0;
                 }});
-                traces.push({{ x: unitsInDepartment, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: barColors[index % barColors.length] }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>Unit: %{{x}}<extra></extra>' }});
+                traces.push({{ x: unitsInDepartment, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: barColors[index % barColors.length], line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>Unit: %{{x}}<extra></extra>' }});
             }});
 
             const yearTitle = selectedYear === '전체' ? '전체 연도' : selectedYear;
@@ -1761,7 +1761,7 @@ def build_html(aggregated_data, raw_data_json):
                 text: filteredCollaborations.map(([_, count]) => `${{count}}회`).reverse(),
                 textposition: 'outside',
                 textfont: {{ size: 12 }},
-                marker: {{ color: '#4a69bd' }},
+                marker: {{ color: '#355E58', line: {{ color: '#000000', width: 1 }} }},
                 hovertemplate: '협업 횟수: %{{x}}회<extra></extra>'
             }};
             
@@ -1853,7 +1853,7 @@ def build_html(aggregated_data, raw_data_json):
             
             const statusLabels = Object.keys(statusCounts);
             const statusValues = Object.values(statusCounts);
-            const statusColors = ['#28a745', '#ffc107', '#fd7e14', '#dc3545'];
+            const statusColors = ['#72B0AB', '#BCDDDC', '#FFEDD1', '#FDC1B4'];
             
             if (statusValues.every(val => val === 0)) {{
                 Plotly.react(container, [], {{
@@ -1872,7 +1872,7 @@ def build_html(aggregated_data, raw_data_json):
                 text: statusValues.map(val => `${{val}}개`),
                 textposition: 'outside',
                 textfont: {{ size: 12 }},
-                marker: {{ color: statusColors }},
+                marker: {{ color: statusColors, line: {{ color: '#000000', width: 1 }} }},
                 hovertemplate: '%{{x}}: %{{y}}개 부서<extra></extra>'
             }};
             
