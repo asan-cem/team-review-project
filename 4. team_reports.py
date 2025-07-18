@@ -879,7 +879,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                         <div class="dept-count" id="good-count">0개 관계</div>
                     </div>
                     <div class="status-dropdown caution">
-                        <h5>⚠️ 주의 (50-59점)</h5>
+                        <h5>🔄 개선 기회 (50-59점)</h5>
                         <div class="expander-container">
                             <div class="expander-header" id="caution-dept-header" onclick="toggleExpander('caution-dept-expander')">
                                 <span>부서 선택 (0개 선택됨)</span>
@@ -892,7 +892,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                         <div class="dept-count" id="caution-count">0개 관계</div>
                     </div>
                     <div class="status-dropdown problem">
-                        <h5>🚨 문제 (50점 미만)</h5>
+                        <h5>🎯 중점 개선 (50점 미만)</h5>
                         <div class="expander-container">
                             <div class="expander-header" id="problem-dept-header" onclick="toggleExpander('problem-dept-expander')">
                                 <span>부서 선택 (0개 선택됨)</span>
@@ -913,33 +913,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 <div id="collaboration-trend-chart-container" class="chart-container"></div>
             </div>
 
-            <!-- 2.4 협업 후기 -->
-            <div class="subsection">
-                <h3>협업 후기 <span id="network-reviews-count-display" style="color: #666; font-size: 0.9em;"></span></h3>
-                <div class="filters">
-                    <div class="filter-group">
-                        <label>감정 분류 필터</label>
-                        <select id="network-sentiment-filter">
-                            <option value="전체">전체 (긍정+부정+중립)</option>
-                            <option value="긍정">긍정</option>
-                            <option value="부정">부정</option>
-                            <option value="중립">중립</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="network-reviews-table-container">
-                    <table id="network-reviews-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 80px;">연도</th>
-                                <th style="width: 120px;">협업 부서</th>
-                                <th>후기 내용</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
     </div>
@@ -1706,7 +1679,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             const departmentSelect = document.getElementById('network-department-filter');
             const unitSelect = document.getElementById('network-unit-filter');
             const minCollabSelect = document.getElementById('min-collaboration-filter');
-            const sentimentSelect = document.getElementById('network-sentiment-filter');
             
             // 연도 필터 설정
             yearSelect.innerHTML = ['전체', ...allYears].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
@@ -1725,7 +1697,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             departmentSelect.addEventListener('change', updateNetworkUnits);
             unitSelect.addEventListener('change', updateNetworkAnalysis);
             minCollabSelect.addEventListener('change', updateNetworkAnalysis);
-            sentimentSelect.addEventListener('change', updateNetworkReviews);
             
             // 협업 관계 현황 체크박스 이벤트 리스너는 updateStatusDropdowns 함수에서 동적으로 추가됨
             
@@ -1798,7 +1769,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             updateCollaborationFrequencyChart();
             updateCollaborationStatusChart();
             updateCollaborationTrendChart();
-            updateNetworkReviews();
         }}
 
         function updateCollaborationFrequencyChart() {{
@@ -1902,12 +1872,12 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             }});
             
             // 최소 협업 횟수 이상인 관계만 필터링하고 점수별로 분류
-            const statusCounts = {{ '우수 (75점 이상)': 0, '양호 (60-74점)': 0, '주의 (50-59점)': 0, '문제 (50점 미만)': 0 }};
+            const statusCounts = {{ '우수 (75점 이상)': 0, '양호 (60-74점)': 0, '개선 기회 (50-59점)': 0, '중점 개선 (50점 미만)': 0 }};
             const statusDepartments = {{
                 '우수': [],
                 '양호': [],
-                '주의': [],
-                '문제': []
+                '개선 기회': [],
+                '중점 개선': []
             }};
             
             Object.entries(relationshipScores)
@@ -1930,11 +1900,11 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                         statusCounts['양호 (60-74점)']++;
                         statusDepartments['양호'].push(relationshipInfo);
                     }} else if (avgScore >= 50) {{
-                        statusCounts['주의 (50-59점)']++;
-                        statusDepartments['주의'].push(relationshipInfo);
+                        statusCounts['개선 기회 (50-59점)']++;
+                        statusDepartments['개선 기회'].push(relationshipInfo);
                     }} else {{
-                        statusCounts['문제 (50점 미만)']++;
-                        statusDepartments['문제'].push(relationshipInfo);
+                        statusCounts['중점 개선 (50점 미만)']++;
+                        statusDepartments['중점 개선'].push(relationshipInfo);
                     }}
                 }});
             
@@ -2085,7 +2055,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 Plotly.react(container, [], {{
                     height: 400,
                     annotations: [{{
-                        text: '우수/양호/주의/문제 드롭다운에서 부서를 선택하세요.',
+                        text: '우수/양호/개선 기회/중점 개선 드롭다운에서 부서를 선택하세요.',
                         xref: 'paper', yref: 'paper', x: 0.5, y: 0.5,
                         showarrow: false, font: {{size: 16, color: '#888'}}
                     }}],
@@ -2182,45 +2152,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             Plotly.react(container, traces, layout);
         }}
 
-        function updateNetworkReviews() {{
-            const tbody = document.querySelector('#network-reviews-table tbody');
-            const filteredData = getNetworkFilteredData();
-            const selectedSentiment = document.getElementById('network-sentiment-filter').value;
-            
-            let reviewData = filteredData;
-            if (selectedSentiment !== '전체') {{
-                reviewData = filteredData.filter(item => item['감정_분류'] === selectedSentiment);
-            }}
-            
-            const reviews = reviewData
-                .filter(item => item['정제된_텍스트'] && item['정제된_텍스트'] !== 'N/A')
-                .map(item => ({{
-                    year: String(item['설문시행연도']),
-                    partner: item['평가부서'] !== item['피평가부서'] ? item['평가부서'] : '동일부서',
-                    review: item['정제된_텍스트'],
-                    sentiment: item['감정_분류'] || '알 수 없음'
-                }}))
-                .sort((a, b) => {{
-                    // 1차 정렬: 연도별 (2025, 2024, 2023, 2022 순서)
-                    const yearA = parseInt(a.year);
-                    const yearB = parseInt(b.year);
-                    if (yearA !== yearB) return yearB - yearA;
-                    
-                    // 2차 정렬: 협업 파트너 가나다 순
-                    return a.partner.localeCompare(b.partner, 'ko');
-                }})
-                .slice(0, 40000); // 최대 40000개만 표시
-            
-            // 후기 개수 표시 업데이트
-            const countDisplay = document.getElementById('network-reviews-count-display');
-            if (countDisplay) {{
-                countDisplay.textContent = `(${{reviews.length}}건)`;
-            }}
-            
-            tbody.innerHTML = (reviews.length > 0) ?
-                reviews.map(r => `<tr><td>${{r.year}}</td><td>${{r.partner}}</td><td>${{r.review}} <span style="color: #666; font-size: 0.9em;">[${{r.sentiment}}]</span></td></tr>`).join('') :
-                '<tr><td colspan="3">해당 조건의 후기가 없습니다.</td></tr>';
-        }}
 
         window.onload = () => {{ 
             populateFilters(); 
