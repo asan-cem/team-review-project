@@ -789,71 +789,6 @@ def build_html(aggregated_data, raw_data_json):
                 <div id="collaboration-frequency-chart-container" class="chart-container"></div>
             </div>
 
-            <!-- 2.2 협업 관계 현황 -->
-            <div class="subsection">
-                <h3>협업 관계 현황</h3>
-                <div id="collaboration-status-chart-container" class="chart-container"></div>
-                <div class="collaboration-status-dropdowns">
-                    <div class="status-dropdown excellent">
-                        <h5>🏆 우수 (75점 이상)</h5>
-                        <div class="expander-container">
-                            <div class="expander-header" id="excellent-dept-header" onclick="toggleExpander('excellent-dept-expander')">
-                                <span>부서 선택 (0개 선택됨)</span>
-                                <span class="expander-arrow" id="excellent-dept-arrow">▼</span>
-                            </div>
-                            <div class="expander-content" id="excellent-dept-expander">
-                                <div id="excellent-dept-filter"></div>
-                            </div>
-                        </div>
-                        <div class="dept-count" id="excellent-count">0개 관계</div>
-                    </div>
-                    <div class="status-dropdown good">
-                        <h5>✅ 양호 (60-74점)</h5>
-                        <div class="expander-container">
-                            <div class="expander-header" id="good-dept-header" onclick="toggleExpander('good-dept-expander')">
-                                <span>부서 선택 (0개 선택됨)</span>
-                                <span class="expander-arrow" id="good-dept-arrow">▼</span>
-                            </div>
-                            <div class="expander-content" id="good-dept-expander">
-                                <div id="good-dept-filter"></div>
-                            </div>
-                        </div>
-                        <div class="dept-count" id="good-count">0개 관계</div>
-                    </div>
-                    <div class="status-dropdown caution">
-                        <h5>🔄 개선 기회 (50-59점)</h5>
-                        <div class="expander-container">
-                            <div class="expander-header" id="caution-dept-header" onclick="toggleExpander('caution-dept-expander')">
-                                <span>부서 선택 (0개 선택됨)</span>
-                                <span class="expander-arrow" id="caution-dept-arrow">▼</span>
-                            </div>
-                            <div class="expander-content" id="caution-dept-expander">
-                                <div id="caution-dept-filter"></div>
-                            </div>
-                        </div>
-                        <div class="dept-count" id="caution-count">0개 관계</div>
-                    </div>
-                    <div class="status-dropdown problem">
-                        <h5>🎯 중점 개선 (50점 미만)</h5>
-                        <div class="expander-container">
-                            <div class="expander-header" id="problem-dept-header" onclick="toggleExpander('problem-dept-expander')">
-                                <span>부서 선택 (0개 선택됨)</span>
-                                <span class="expander-arrow" id="problem-dept-arrow">▼</span>
-                            </div>
-                            <div class="expander-content" id="problem-dept-expander">
-                                <div id="problem-dept-filter"></div>
-                            </div>
-                        </div>
-                        <div class="dept-count" id="problem-count">0개 관계</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2.3 협업 관계 변화 트렌드 -->
-            <div class="subsection">
-                <h3>협업 관계 변화 트렌드</h3>
-                <div id="collaboration-trend-chart-container" class="chart-container"></div>
-            </div>
 
         </div>
 
@@ -1265,7 +1200,7 @@ def build_html(aggregated_data, raw_data_json):
                 x: data.map(d => d[1]).reverse(),
                 type: 'bar',
                 orientation: 'h',
-                marker: {{ color: sentiment === '긍정' ? '#28a745' : '#dc3545' }},
+                marker: {{ color: sentiment === '긍정' ? '#72B0AB' : '#FE9179', line: {{ color: '#000000', width: 1 }} }},
                 hovertemplate: '언급 횟수: %{{x}}<extra></extra>'
             }};
 
@@ -1361,10 +1296,10 @@ def build_html(aggregated_data, raw_data_json):
                 return;
             }}
 
-            const divisionColors = {{ '진료부문': '#1f77b4', '간호부문': '#ff7f0e', '관리부문': '#2ca02c', '의료지원부문': '#d62728', '기타': '#9467bd' }};
+            // 모든 부문 동일 색상 사용
             const departments = teamRankings.map(item => item.department);
             const scores = teamRankings.map(item => parseFloat(item.avgScore));
-            const colors = teamRankings.map(item => divisionColors[item.division] || '#17becf');
+            const colors = teamRankings.map(() => '#FDC1B4');
             const hoverTexts = teamRankings.map(item => `부서: ${{item.department}}<br>부문: ${{item.division}}<br>점수: ${{item.avgScore}}<br>응답수: ${{item.count}}건`);
 
             const allYearData = rawData.filter(item => item['설문시행연도'] === selectedYear);
@@ -1372,7 +1307,7 @@ def build_html(aggregated_data, raw_data_json):
 
             const trace = {{
                 x: departments, y: scores, type: 'bar', text: scores.map(score => score.toString()),
-                textposition: 'outside', textfont: {{ size: 12 }}, marker: {{ color: colors }},
+                textposition: 'outside', textfont: {{ size: 12 }}, marker: {{ color: colors, line: {{ color: '#000000', width: 1 }} }},
                 hovertemplate: '%{{hovertext}}<extra></extra>', hovertext: hoverTexts
             }};
 

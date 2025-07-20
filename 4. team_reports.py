@@ -1338,7 +1338,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 x: data.map(d => d[1]).reverse(),
                 type: 'bar',
                 orientation: 'h',
-                marker: {{ color: sentiment === '긍정' ? '#28a745' : '#dc3545' }},
+                marker: {{ color: sentiment === '긍정' ? '#72B0AB' : '#FE9179', line: {{ color: '#000000', width: 1 }} }},
                 hovertemplate: '언급 횟수: %{{x}}<extra></extra>'
             }};
 
@@ -1428,10 +1428,10 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 return;
             }}
 
-            const divisionColors = {{ '진료부문': '#1f77b4', '간호부문': '#ff7f0e', '관리부문': '#2ca02c', '의료지원부문': '#d62728', '커뮤니케이션실': '#9467bd', '기타': '#17becf' }};
+            // 모든 부문 동일 색상 사용
             const departments = teamRankings.map(item => item.department);
             const scores = teamRankings.map(item => parseFloat(item.score));
-            const colors = teamRankings.map(item => divisionColors['{target_division}'] || '#9467bd');  // {target_division} 색상
+            const colors = teamRankings.map(() => '#FDC1B4');
             const hoverTexts = teamRankings.map(item => `부서: ${{item.department}}<br>순위: ${{item.rank}}위<br>점수: ${{item.score.toFixed(1)}}<br>응답수: ${{item.count}}건`);
 
             // 🔒 보안 강화: 미리 계산된 전체 평균 사용
@@ -1439,7 +1439,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
 
             const trace = {{
                 x: departments, y: scores, type: 'bar', text: scores.map(score => score.toFixed(1)),
-                textposition: 'outside', textfont: {{ size: 12 }}, marker: {{ color: colors }},
+                textposition: 'outside', textfont: {{ size: 12 }}, marker: {{ color: colors, line: {{ color: '#000000', width: 1 }} }},
                 hovertemplate: '%{{hovertext}}<extra></extra>', hovertext: hoverTexts
             }};
 
