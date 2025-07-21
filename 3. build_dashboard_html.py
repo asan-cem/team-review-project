@@ -87,7 +87,8 @@ JSON_OUTPUT_COLUMNS = [
 
 # 📝 결측값 처리 설정
 FILL_NA_COLUMNS = ['피평가부문', '피평가부서', '피평가Unit', '정제된_텍스트']  # 'N/A'로 채울 컬럼들
-EXCLUDE_VALUES = ['미분류', '윤리경영실']  # 제외할 값들
+EXCLUDE_VALUES = ['미분류', '윤리경영실']  # 부문 기준 제외할 값들
+EXCLUDE_DEPARTMENTS = ['내분비외과']  # 부서 기준 제외할 값들
 
 # 📊 대시보드 정보
 DASHBOARD_TITLE = "서울아산병원 협업 평가 대시보드"
@@ -273,14 +274,28 @@ def clean_data(df):
     log_message("🧹 데이터 정제 시작")
     original_count = len(df)
     
-    # 1. 제외할 값들 필터링 (미분류 등)
+    # 1. 부문 기준 제외할 값들 필터링 (미분류 등)
     for exclude_value in EXCLUDE_VALUES:
         condition = (df['평가부문'] != exclude_value) & (df['피평가부문'] != exclude_value)
         df = df[condition]
     
-    excluded_count = original_count - len(df)
-    if excluded_count > 0:
-        log_message(f"🗑️ 제외된 데이터(미분류 등): {excluded_count}행 ({excluded_count/original_count*100:.1f}%)")
+    division_excluded_count = original_count - len(df)
+    if division_excluded_count > 0:
+        log_message(f"🗑️ 부문 기준 제외된 데이터: {division_excluded_count}행 ({division_excluded_count/original_count*100:.1f}%)")
+    
+    # 2. 부서 기준 제외할 값들 필터링 
+    current_count = len(df)
+    for exclude_dept in EXCLUDE_DEPARTMENTS:
+        condition = (df['평가부서'] != exclude_dept) & (df['피평가부서'] != exclude_dept)
+        df = df[condition]
+    
+    dept_excluded_count = current_count - len(df)
+    if dept_excluded_count > 0:
+        log_message(f"🗑️ 부서 기준 제외된 데이터: {dept_excluded_count}행 ({dept_excluded_count/current_count*100:.1f}%)")
+    
+    total_excluded_count = original_count - len(df)
+    if total_excluded_count > 0:
+        log_message(f"🗑️ 총 제외된 데이터: {total_excluded_count}행 ({total_excluded_count/original_count*100:.1f}%)")
     
     # 2. 종합점수 결측값 제거 (가장 중요한 지표)
     df = df.dropna(subset=['종합점수'])
