@@ -1131,7 +1131,17 @@ def build_html(aggregated_data, raw_data_json):
             const divisions = filteredDivisions.sort((a,b) => a.localeCompare(b, 'ko'));
             const avgScores = divisions.map(div => yearComparisonData[div]['종합점수'].toFixed(1));
 
-            const trace = [{{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#FDC1B4', line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
+            // 🔒 보안 강화: 미리 계산된 전체 평균 사용
+            const yearlyOverallAverage = aggregatedData.hospital_yearly[selectedYear] ? aggregatedData.hospital_yearly[selectedYear]['종합점수'].toFixed(1) : '0.0';
+
+            const trace = {{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#FDC1B4', line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }};
+            
+            const avgLine = {{
+                x: [divisions[0], divisions[divisions.length - 1]], y: [yearlyOverallAverage, yearlyOverallAverage],
+                type: 'scatter', mode: 'lines', line: {{ color: 'red', width: 2, dash: 'dash' }},
+                name: `${{selectedYear}} 종합 점수: ${{yearlyOverallAverage}}`, hoverinfo: 'skip'
+            }};
+            
             const layout = {{
                 title: `<b>${{selectedYear}} 부문별 점수 비교</b>`,
                 yaxis: {{ title: '점수', range: [0, 100] }},
@@ -1139,9 +1149,16 @@ def build_html(aggregated_data, raw_data_json):
                 height: 500,
                 barmode: 'group',
                 hovermode: 'closest',
+                showlegend: false,
+                annotations: [{{
+                    text: `${{selectedYear}} 종합 점수: ${{yearlyOverallAverage}}점`, xref: 'paper', yref: 'y',
+                    x: 0.02, y: parseFloat(yearlyOverallAverage), showarrow: false,
+                    font: {{ color: 'red', size: 12 }}, bgcolor: 'rgba(255,255,255,0.8)',
+                    bordercolor: 'red', borderwidth: 1
+                }}],
                 margin: {{ l: 60, r: 60, t: 80, b: 60 }}
             }};
-            Plotly.react(container, trace, layout);
+            Plotly.react(container, [trace, avgLine], layout);
         }}
 
         function updateSentimentChart(data) {{
@@ -1406,7 +1423,7 @@ def build_html(aggregated_data, raw_data_json):
             const avgLine = {{
                 x: [departments[0], departments[departments.length - 1]], y: [yearlyOverallAverage, yearlyOverallAverage],
                 type: 'scatter', mode: 'lines', line: {{ color: 'red', width: 2, dash: 'dash' }},
-                name: `${{selectedYear}} 전체 평균: ${{yearlyOverallAverage}}`, hoverinfo: 'skip'
+                name: `${{selectedYear}} 종합 점수: ${{yearlyOverallAverage}}`, hoverinfo: 'skip'
             }};
 
             const layout = {{
@@ -1416,7 +1433,7 @@ def build_html(aggregated_data, raw_data_json):
                 font: layoutFont, hovermode: 'closest', showlegend: false,
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
                 annotations: [{{
-                    text: `${{selectedYear}} 전체 평균: ${{yearlyOverallAverage}}점`, xref: 'paper', yref: 'y',
+                    text: `${{selectedYear}} 종합 점수: ${{yearlyOverallAverage}}점`, xref: 'paper', yref: 'y',
                     x: 0.02, y: parseFloat(yearlyOverallAverage), showarrow: false,
                     font: {{ color: 'red', size: 12 }}, bgcolor: 'rgba(255,255,255,0.8)',
                     bordercolor: 'red', borderwidth: 1
