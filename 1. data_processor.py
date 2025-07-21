@@ -52,21 +52,17 @@ class LocalGoogleSheetsAnalyzer:
             '전반적으로 ○○과의 협업에 대해 만족한다.'
         ]
 
-        # 제외할 부서 목록
-        self.excluded_departments = ['미분류', '윤리경영실', '내분비외과']
-
     def apply_department_exclusions(self, df):
         """제외 부서 필터링 적용"""
-        if not self.excluded_departments:
-            return df
+        excluded_departments = ['미분류', '윤리경영실', '내분비외과']
         
         original_count = len(df)
         exclusion_stats = {}
         
-        print(f"\n🚫 부서 제외 필터링 시작 (제외 대상: {self.excluded_departments})")
+        print(f"\n🚫 부서 제외 필터링 시작 (제외 대상: {excluded_departments})")
         
         # 각 제외 부서별로 건수 확인
-        for excluded_dept in self.excluded_departments:
+        for excluded_dept in excluded_departments:
             # 평가자 부서에서 제외되는 건수
             evaluator_count = (df['평가_부서명'] == excluded_dept).sum() if '평가_부서명' in df.columns else 0
             
@@ -92,10 +88,10 @@ class LocalGoogleSheetsAnalyzer:
         
         # 실제 필터링 적용
         if '평가_부서명' in df.columns:
-            df = df[~df['평가_부서명'].isin(self.excluded_departments)]
+            df = df[~df['평가_부서명'].isin(excluded_departments)]
         
         if '피평가대상 부서명' in df.columns:
-            df = df[~df['피평가대상 부서명'].isin(self.excluded_departments)]
+            df = df[~df['피평가대상 부서명'].isin(excluded_departments)]
         
         final_count = len(df)
         total_excluded = original_count - final_count
