@@ -737,7 +737,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             <div class="subsection">
                 <h3>부서/Unit 결과</h3>
                 <div id="metrics-container"></div>
-                <div id="drilldown-chart-container" class="chart-container"></div>
+                <div id="drilldown-chart-container" class="chart-container" style="display: none;"></div>
                 <div id="yearly-comparison-chart-container" class="chart-container"></div>
                 
             </div>
