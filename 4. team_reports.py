@@ -746,7 +746,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 <!-- 부서 내 Unit 비교 -->
                 <div style="margin-top: 30px;">
                     <h4 style="color: #555; margin-bottom: 15px;">부서 내 Unit 비교</h4>
-                    <p style="color: #6c757d; margin-bottom: 20px; font-size: 0.9em;">부서 내 Unit간 점수를 파악합니다.</p>
                     <div id="unit-comparison-chart-container" class="chart-container"></div>
                 </div>
             </div>
@@ -805,7 +804,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
         
         <div class="section">
             <h2>다빈도 평가 부서</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">🔍 우리 팀/Unit과 협업을 하는 팀/Unit과의 관계를 종합적으로 분석합니다.</p>
             
             <!-- 공통 필터 -->
             <div class="filters">
@@ -835,18 +833,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 </div>
             </div>
             
-            <!-- 2.1 협업을 많이 하는 부서 -->
             <div class="subsection">
-                <h3>협업을 많이 하는 부서</h3>
-                <div style="background: #e8f4fd; padding: 15px; border-left: 4px solid #0066cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
-                    <p style="margin: 0; color: #495057; font-size: 0.95em;">
-                        <strong>📊 이 차트는 무엇인가요?</strong><br>
-                        우리 부서/Unit에 협업 평가를 준 부서를 보여줍니다.<br>
-                        • <span style="color: #dc3545;">주의 사항</span>: Unit을 선택하면 차트에는 팀으로 보여지지만 실제로는 해당 Unit의 결과입니다.<br><br>
-                        <strong>💡 활용 방법:</strong><br>
-                        • <span style="color: #28a745;"><strong>주요 협업 관계 파악</strong></span>: 업무 연계가 가장 많은 부서 파악
-                    </p>
-                </div>
                 <div id="collaboration-frequency-chart-container" class="chart-container"></div>
             </div>
 
