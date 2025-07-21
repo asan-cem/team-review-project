@@ -87,8 +87,8 @@ JSON_OUTPUT_COLUMNS = [
 
 # 📝 결측값 처리 설정
 FILL_NA_COLUMNS = ['피평가부문', '피평가부서', '피평가Unit', '정제된_텍스트']  # 'N/A'로 채울 컬럼들
-EXCLUDE_VALUES = ['미분류', '윤리경영실']  # 부문 기준 제외할 값들
-EXCLUDE_DEPARTMENTS = ['내분비외과']  # 부서 기준 제외할 값들
+EXCLUDE_DEPARTMENTS = ['미분류', '윤리경영실']  # 부문 기준 제외할 값들
+EXCLUDE_TEAMS = ['내분비외과']  # 부서 기준 제외할 값들
 
 # 📊 대시보드 정보
 # DASHBOARD_TITLE은 이제 동적으로 생성됩니다 (전체 부서 보고서 생성)
@@ -275,8 +275,8 @@ def clean_data(df):
     original_count = len(df)
     
     # 1. 부문 기준 제외할 값들 필터링 (미분류 등)
-    for exclude_value in EXCLUDE_VALUES:
-        condition = (df['평가부문'] != exclude_value) & (df['피평가부문'] != exclude_value)
+    for exclude_dept in EXCLUDE_DEPARTMENTS:
+        condition = (df['평가부문'] != exclude_dept) & (df['피평가부문'] != exclude_dept)
         df = df[condition]
     
     division_excluded_count = original_count - len(df)
@@ -285,13 +285,13 @@ def clean_data(df):
     
     # 2. 부서 기준 제외할 값들 필터링 
     current_count = len(df)
-    for exclude_dept in EXCLUDE_DEPARTMENTS:
-        condition = (df['평가부서'] != exclude_dept) & (df['피평가부서'] != exclude_dept)
+    for exclude_team in EXCLUDE_TEAMS:
+        condition = (df['평가부서'] != exclude_team) & (df['피평가부서'] != exclude_team)
         df = df[condition]
     
-    dept_excluded_count = current_count - len(df)
-    if dept_excluded_count > 0:
-        log_message(f"🗑️ 부서 기준 제외된 데이터: {dept_excluded_count}행 ({dept_excluded_count/current_count*100:.1f}%)")
+    team_excluded_count = current_count - len(df)
+    if team_excluded_count > 0:
+        log_message(f"🗑️ 부서 기준 제외된 데이터: {team_excluded_count}행 ({team_excluded_count/current_count*100:.1f}%)")
     
     total_excluded_count = original_count - len(df)
     if total_excluded_count > 0:
