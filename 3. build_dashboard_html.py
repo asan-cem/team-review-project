@@ -621,7 +621,7 @@ def build_html(aggregated_data, raw_data_json):
         </div>
 
         <div class="section">
-            <h2>연도별 부문 비교</h2>
+            <h2>부문별 종합 점수</h2>
             <p style="color: #6c757d; margin-bottom: 20px;">특정 연도의 부문간 점수를 비교합니다.</p>
             <div class="filters">
                 <div class="filter-group">
@@ -648,7 +648,7 @@ def build_html(aggregated_data, raw_data_json):
         
         
         <div class="section">
-            <h2>부문별 팀 점수 순위</h2>
+            <h2>소속 부문 팀별 종합 점수</h2>
             <p style="color: #6c757d; margin-bottom: 20px;">부문 내 부서간 점수를 파악합니다.</p>
             <div class="filters">
                 <div class="filter-group">
@@ -667,8 +667,7 @@ def build_html(aggregated_data, raw_data_json):
         
         
         <div class="section">
-            <h2>부서/Unit 상세 분석</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">부서와 Unit이 받은 점수 및 후기를 파악합니다.</p>
+            <h2>부서/Unit 결과</h2>
             
             <!-- 공통 필터 -->
             <div class="filters">
@@ -706,7 +705,7 @@ def build_html(aggregated_data, raw_data_json):
             
             <!-- 5.2 감정 분석 -->
             <div class="subsection">
-                <h3>협업 주관식 피드백 감정 분석</h3>
+                <h3>평가 부서 의견</h3>
                 <div id="sentiment-chart-container" class="chart-container"></div>
             </div>
             
@@ -757,7 +756,7 @@ def build_html(aggregated_data, raw_data_json):
         
         
         <div class="section">
-            <h2>협업 네트워크 분석</h2>
+            <h2>다빈도 평가 부서</h2>
             <p style="color: #6c757d; margin-bottom: 20px;">🔍 우리 팀/Unit과 협업을 하는 팀/Unit과의 관계를 종합적으로 분석합니다.</p>
             
             <!-- 공통 필터 -->
@@ -779,7 +778,7 @@ def build_html(aggregated_data, raw_data_json):
                     <select id="network-unit-filter"></select>
                 </div>
                 <div class="filter-group">
-                    <label for="min-collaboration-filter">최소 협업 횟수</label>
+                    <label for="min-collaboration-filter">평가 횟수</label>
                     <select id="min-collaboration-filter">
                         <option value="5">5회 이상</option>
                         <option value="10" selected>10회 이상</option>

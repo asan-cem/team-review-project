@@ -714,7 +714,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
         
         
         <div class="section">
-            <h2>부서/Unit 상세 분석</h2>
+            <h2>부서/Unit 결과</h2>
             <p style="color: #6c757d; margin-bottom: 20px;">부서와 Unit이 받은 점수 및 후기를 파악합니다.</p>
             
             <!-- 공통 필터 -->
@@ -753,7 +753,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             
             <!-- 5.2 감정 분석 -->
             <div class="subsection">
-                <h3>협업 주관식 피드백 감정 분석</h3>
+                <h3>평가 부서 의견</h3>
                 <div id="sentiment-chart-container" class="chart-container"></div>
             </div>
             
@@ -804,7 +804,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
         
         
         <div class="section">
-            <h2>협업 네트워크 분석</h2>
+            <h2>다빈도 평가 부서</h2>
             <p style="color: #6c757d; margin-bottom: 20px;">🔍 우리 팀/Unit과 협업을 하는 팀/Unit과의 관계를 종합적으로 분석합니다.</p>
             
             <!-- 공통 필터 -->
@@ -826,7 +826,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                     <select id="network-unit-filter"></select>
                 </div>
                 <div class="filter-group">
-                    <label for="min-collaboration-filter">최소 협업 횟수</label>
+                    <label for="min-collaboration-filter">평가 횟수</label>
                     <select id="min-collaboration-filter">
                         <option value="5">5회 이상</option>
                         <option value="10" selected>10회 이상</option>
