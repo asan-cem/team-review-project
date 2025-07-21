@@ -705,11 +705,29 @@ def build_html(aggregated_data, raw_data_json):
             <div class="subsection">
                 <h3>평가 부서 의견</h3>
                 <div id="sentiment-chart-container" class="chart-container"></div>
+                
+                <!-- 협업 후기 -->
+                <div style="margin-top: 30px;">
+                    <h4>협업 후기 <span id="reviews-count-display" style="color: #666; font-size: 0.9em;"></span></h4>
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>감정 분류 필터</label>
+                            <div class="expander-container">
+                                <div class="expander-header" id="review-sentiment-header" onclick="toggleExpander('review-sentiment-expander')">
+                                    <span>감정 선택 (4개 선택됨)</span>
+                                    <span class="expander-arrow" id="review-sentiment-arrow">▼</span>
+                                </div>
+                                <div class="expander-content" id="review-sentiment-expander">
+                                    <div id="review-sentiment-filter"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="reviews-table-container"><table id="reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody></tbody></table></div>
+                </div>
             </div>
-            
-
             <!-- 5.4 키워드 분석 -->
-            <div class="subsection">
+            <div class="subsection" style="display: none;">
                 <h3>핵심 키워드 분석</h3>
                 <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #6a89cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
                     <p style="margin: 0; color: #495057; font-size: 0.95em;">
@@ -728,26 +746,7 @@ def build_html(aggregated_data, raw_data_json):
                 </div>
                 <div id="keyword-reviews-container"></div>
             </div>
-            
-            <!-- 5.5 협업 후기 -->
-            <div class="subsection">
-                <h3>협업 후기 <span id="reviews-count-display" style="color: #666; font-size: 0.9em;"></span></h3>
-                <div class="filters">
-                    <div class="filter-group">
-                        <label>감정 분류 필터</label>
-                        <div class="expander-container">
-                            <div class="expander-header" id="review-sentiment-header" onclick="toggleExpander('review-sentiment-expander')">
-                                <span>감정 선택 (4개 선택됨)</span>
-                                <span class="expander-arrow" id="review-sentiment-arrow">▼</span>
-                            </div>
-                            <div class="expander-content" id="review-sentiment-expander">
-                                <div id="review-sentiment-filter"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="reviews-table-container"><table id="reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody></tbody></table></div>
-            </div>
+
         </div>
 
         <div class="part-divider"></div>
@@ -1207,7 +1206,7 @@ def build_html(aggregated_data, raw_data_json):
             }};
 
             const layout = {{
-                title: '<b>감정 분류별 응답 분포</b>',
+                title: '',
                 height: 400,
                 xaxis: {{ title: '감정 분류' }},
                 yaxis: {{ title: '응답 수', rangemode: 'tozero', range: [0, Math.max(...counts) * 1.15] }},
