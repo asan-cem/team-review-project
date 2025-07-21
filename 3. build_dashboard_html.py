@@ -880,6 +880,34 @@ def build_html(aggregated_data, raw_data_json):
                 <div id="collaboration-trend-chart-container" class="chart-container"></div>
             </div>
 
+            <!-- 2.4 협업 후기 -->
+            <div class="subsection">
+                <h3>협업 후기 <span id="network-reviews-count-display" style="color: #666; font-size: 0.9em;"></span></h3>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>감정 분류 필터</label>
+                        <select id="network-sentiment-filter">
+                            <option value="전체">전체 (긍정+부정+중립)</option>
+                            <option value="긍정">긍정</option>
+                            <option value="부정">부정</option>
+                            <option value="중립">중립</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="network-reviews-table-container">
+                    <table id="network-reviews-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">연도</th>
+                                <th style="width: 120px;">협업 부서</th>
+                                <th>후기 내용</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
 
         </div>
 
@@ -1644,6 +1672,7 @@ def build_html(aggregated_data, raw_data_json):
             const departmentSelect = document.getElementById('network-department-filter');
             const unitSelect = document.getElementById('network-unit-filter');
             const minCollabSelect = document.getElementById('min-collaboration-filter');
+            const sentimentSelect = document.getElementById('network-sentiment-filter');
             
             // 연도 필터 설정
             yearSelect.innerHTML = ['전체', ...allYears].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
@@ -1661,6 +1690,7 @@ def build_html(aggregated_data, raw_data_json):
             departmentSelect.addEventListener('change', updateNetworkUnits);
             unitSelect.addEventListener('change', updateNetworkAnalysis);
             minCollabSelect.addEventListener('change', updateNetworkAnalysis);
+            sentimentSelect.addEventListener('change', updateNetworkReviews);
             
             // 협업 관계 현황 체크박스 이벤트 리스너는 updateStatusDropdowns 함수에서 동적으로 추가됨
         }}
@@ -1738,6 +1768,7 @@ def build_html(aggregated_data, raw_data_json):
             updateCollaborationFrequencyChart();
             updateCollaborationStatusChart();
             updateCollaborationTrendChart();
+            updateNetworkReviews();
         }}
 
         function updateCollaborationFrequencyChart() {{
@@ -2119,6 +2150,46 @@ def build_html(aggregated_data, raw_data_json):
             }};
             
             Plotly.react(container, traces, layout);
+        }}
+
+        function updateNetworkReviews() {{
+            const tbody = document.querySelector('#network-reviews-table tbody');
+            const filteredData = getNetworkFilteredData();
+            const selectedSentiment = document.getElementById('network-sentiment-filter').value;
+            
+            let reviewData = filteredData;
+            if (selectedSentiment !== '전체') {{
+                reviewData = filteredData.filter(item => item['감정_분류'] === selectedSentiment);
+            }}
+            
+            const reviews = reviewData
+                .filter(item => item['정제된_텍스트'] && item['정제된_텍스트'] !== 'N/A')
+                .map(item => ({{
+                    year: String(item['설문시행연도']),
+                    partner: item['평가부서'] !== item['피평가부서'] ? item['평가부서'] : '동일부서',
+                    review: item['정제된_텍스트'],
+                    sentiment: item['감정_분류'] || '알 수 없음'
+                }}))
+                .sort((a, b) => {{
+                    // 1차 정렬: 연도별 (2025, 2024, 2023, 2022 순서)
+                    const yearA = parseInt(a.year);
+                    const yearB = parseInt(b.year);
+                    if (yearA !== yearB) return yearB - yearA;
+                    
+                    // 2차 정렬: 협업 파트너 가나다 순
+                    return a.partner.localeCompare(b.partner, 'ko');
+                }})
+                .slice(0, 40000); // 최대 40000개만 표시
+            
+            // 후기 개수 표시 업데이트
+            const countDisplay = document.getElementById('network-reviews-count-display');
+            if (countDisplay) {{
+                countDisplay.textContent = `(${{reviews.length}}건)`;
+            }}
+            
+            tbody.innerHTML = (reviews.length > 0) ?
+                reviews.map(r => `<tr><td>${{r.year}}</td><td>${{r.partner}}</td><td>${{r.review}} <span style="color: #666; font-size: 0.9em;">[${{r.sentiment}}]</span></td></tr>`).join('') :
+                '<tr><td colspan="3">해당 조건의 후기가 없습니다.</td></tr>';
         }}
 
 
