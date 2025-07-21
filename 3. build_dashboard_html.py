@@ -569,6 +569,16 @@ def build_html(aggregated_data, raw_data_json):
                 <strong style="color: #856404;">⚠️ 통계적 해석 주의사항:</strong>
                 <span style="color: #856404; font-size: 0.95em;">응답건수(표본수)가 30건 미만인 경우 통계적 해석에 유의하시기 바랍니다.</span>
             </div>
+            
+            <div style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 6px; padding: 12px; margin-top: 10px;">
+                <strong style="color: #004085;">📊 평가 데이터 해석 시 주의사항</strong><br>
+                <span style="color: #004085; font-size: 0.95em;">
+                현재 협업 평가 결과는 평가자가 구체적인 업무 영역을 정확히 파악하지 못해 업무 성격이 유사한 다른 부서로 평가하는 사례가 일부 발생하고 있습니다.<br>
+                이로 인해 일부 부서의 점수 및 협업 후기에는 실제 업무와 무관한 내용이 포함될 수 있으며,<br>
+                해당 결과 해석 시 이점을 고려해 주시기 바랍니다.<br><br>
+                <strong>🔄 개선 계획:</strong> 하반기 협업 평가 시행 후 각 부서별 업무 범위에 맞추어 기존 응답을 재정리할 예정입니다.
+                </span>
+            </div>
         </div>
     </div>
     
