@@ -1130,11 +1130,12 @@ def build_html(aggregated_data, raw_data_json):
             const filteredDivisions = selectedDivisions.filter(div => yearComparisonData[div]);
             const divisions = filteredDivisions.sort((a,b) => a.localeCompare(b, 'ko'));
             const avgScores = divisions.map(div => yearComparisonData[div]['종합점수'].toFixed(1));
+            const responseCounts = divisions.map(div => yearComparisonData[div]['응답수'] || 0);
 
             // 🔒 보안 강화: 미리 계산된 전체 평균 사용
             const yearlyOverallAverage = aggregatedData.hospital_yearly[selectedYear] ? aggregatedData.hospital_yearly[selectedYear]['종합점수'].toFixed(1) : '0.0';
 
-            const trace = {{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#FDC1B4', line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }};
+            const trace = {{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#FDC1B4', line: {{ color: '#000000', width: 1 }} }}, customdata: responseCounts, hovertemplate: '%{{x}}: %{{y}}점<br>응답수: %{{customdata}}건<extra></extra>' }};
             
             const avgLine = {{
                 x: [divisions[0], divisions[divisions.length - 1]], y: [yearlyOverallAverage, yearlyOverallAverage],
@@ -1775,10 +1776,12 @@ def build_html(aggregated_data, raw_data_json):
             }}
             
             // 협업 빈도 계산
+            const selectedUnit = document.getElementById('network-unit-filter').value;
             const collaborationCounts = {{}};
             filteredData.forEach(item => {{
                 const evaluator = item['평가부서'];
-                const evaluated = item['피평가부서'];
+                // Unit이 선택된 경우 Unit 이름 사용, 그렇지 않으면 부서 이름 사용
+                const evaluated = selectedUnit !== '전체' ? item['피평가Unit'] : item['피평가부서'];
                 if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A') {{
                     const key = `${{evaluator}} → ${{evaluated}}`;
                     collaborationCounts[key] = (collaborationCounts[key] || 0) + 1;
@@ -1847,10 +1850,12 @@ def build_html(aggregated_data, raw_data_json):
             }}
             
             // 협업 관계별 점수 계산
+            const selectedUnit = document.getElementById('network-unit-filter').value;
             const relationshipScores = {{}};
             filteredData.forEach(item => {{
                 const evaluator = item['평가부서'];
-                const evaluated = item['피평가부서'];
+                // Unit이 선택된 경우 Unit 이름 사용, 그렇지 않으면 부서 이름 사용
+                const evaluated = selectedUnit !== '전체' ? item['피평가Unit'] : item['피평가부서'];
                 const score = item['종합점수'];
                 if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A' && score != null) {{
                     const key = `${{evaluator}} → ${{evaluated}}`;
@@ -2074,15 +2079,16 @@ def build_html(aggregated_data, raw_data_json):
             selectedDepartments.forEach((dept, index) => {{
                 // 해당 협업 관계의 연도별 점수 및 응답수 계산
                 const relationYearlyData = allYears.map(year => {{
-                    const yearRelationData = rawData.filter(item => 
-                        item['설문시행연도'] === year && 
-                        item['평가부서'] === dept.evaluator && 
-                        item['피평가부서'] === dept.evaluated &&
-                        // 트렌드 차트에서는 연도 필터를 제외하고 다른 필터만 적용
-                        (selectedDivision === '전체' || item['피평가부문'] === selectedDivision) &&
-                        (selectedDepartment === '전체' || item['피평가부서'] === selectedDepartment) &&
-                        (selectedUnit === '전체' || item['피평가Unit'] === selectedUnit)
-                    );
+                    const yearRelationData = rawData.filter(item => {{
+                        const evaluatedTarget = selectedUnit !== '전체' ? item['피평가Unit'] : item['피평가부서'];
+                        return item['설문시행연도'] === year && 
+                            item['평가부서'] === dept.evaluator && 
+                            evaluatedTarget === dept.evaluated &&
+                            // 트렌드 차트에서는 연도 필터를 제외하고 다른 필터만 적용
+                            (selectedDivision === '전체' || item['피평가부문'] === selectedDivision) &&
+                            (selectedDepartment === '전체' || item['피평가부서'] === selectedDepartment) &&
+                            (selectedUnit === '전체' || item['피평가Unit'] === selectedUnit);
+                    }});
                     
                     if (yearRelationData.length === 0) return null;
                     const avgScore = yearRelationData.reduce((sum, item) => sum + (item['종합점수'] || 0), 0) / yearRelationData.length;

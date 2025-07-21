@@ -1097,12 +1097,12 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             
             const divisions = selectedDivisions.filter(div => comparisonData[div]).sort((a,b) => a.localeCompare(b, 'ko'));
             const avgScores = divisions.map(div => comparisonData[div]['종합점수'] ? comparisonData[div]['종합점수'].toFixed(1) : '0.0');
+            const responseCounts = divisions.map(div => comparisonData[div]['응답수'] || 0);
 
             // 🔒 보안 강화: 미리 계산된 전체 평균 사용
             const yearlyOverallAverage = aggregatedData.hospital_yearly[selectedYear] ? aggregatedData.hospital_yearly[selectedYear]['종합점수'].toFixed(1) : '0.0';
 
-            const barColors = ['#FFF6F5', '#72B0AB', '#BCDDDC', '#FFEDD1', '#FDC1B4', '#FE9179'];
-            const trace = {{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: divisions.map((_, index) => barColors[index % barColors.length]), line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }};
+            const trace = {{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#FDC1B4', line: {{ color: '#000000', width: 1 }} }}, customdata: responseCounts, hovertemplate: '%{{x}}: %{{y}}점<br>응답수: %{{customdata}}건<extra></extra>' }};
             
             const avgLine = {{
                 x: [divisions[0], divisions[divisions.length - 1]], y: [yearlyOverallAverage, yearlyOverallAverage],
@@ -1728,10 +1728,12 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             }}
             
             // 협업 빈도 계산
+            const selectedUnit = document.getElementById('network-unit-filter').value;
             const collaborationCounts = {{}};
             filteredData.forEach(item => {{
                 const evaluator = item['평가부서'];
-                const evaluated = item['피평가부서'];
+                // Unit이 선택된 경우 Unit 이름 사용, 그렇지 않으면 부서 이름 사용
+                const evaluated = selectedUnit !== '전체' ? item['피평가Unit'] : item['피평가부서'];
                 if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A') {{
                     const key = `${{evaluator}} → ${{evaluated}}`;
                     collaborationCounts[key] = (collaborationCounts[key] || 0) + 1;
