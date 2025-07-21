@@ -686,9 +686,9 @@ def build_html(aggregated_data, raw_data_json):
                 </div>
             </div>
             
-            <!-- 5.1 기본 지표 및 점수 트렌드 -->
+            <!-- 5.1 부서/Unit 결과 -->
             <div class="subsection">
-                <h3>기본 지표 및 점수 트렌드</h3>
+                <h3>부서/Unit 결과</h3>
                 <div id="metrics-container"></div>
                 <div id="drilldown-chart-container" class="chart-container"></div>
                 <div id="yearly-comparison-chart-container" class="chart-container"></div>
@@ -1133,7 +1133,7 @@ def build_html(aggregated_data, raw_data_json):
 
             const trace = [{{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#FDC1B4', line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
             const layout = {{
-                title: `<b>${{selectedYear}} 부문별 점수 비교</b>`,
+                title: `<b>${{selectedYear}} 부문별 종합 점수</b>`,
                 yaxis: {{ title: '점수', range: [0, 100] }},
                 font: layoutFont,
                 height: 500,
@@ -1410,7 +1410,7 @@ def build_html(aggregated_data, raw_data_json):
             }};
 
             const layout = {{
-                title: `<b>${{selectedYear}} 부문별 부서 점수 순위 (점수 높은 순)</b>`, height: 600,
+                title: `<b>${{selectedYear}} 소속 부문 팀별 종합 점수</b>`, height: 600,
                 xaxis: {{ title: '부서', tickangle: -45, automargin: true }},
                 yaxis: {{ title: '점수', range: [Math.min(...scores) - 5, Math.max(...scores) + 5] }},
                 font: layoutFont, hovermode: 'closest', showlegend: false,
