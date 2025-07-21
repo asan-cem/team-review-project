@@ -347,21 +347,7 @@ def calculate_aggregated_data(df):
             }
             aggregated["hospital_yearly"][str(year)]["응답수"] = len(year_data)
     
-    # 2. [부문별] 연도별 문항 점수 - 모든 부문
-    for division in df['피평가부문'].unique():
-        if pd.notna(division) and division != 'N/A':
-            div_data = df[df['피평가부문'] == division]
-            aggregated["division_yearly"][division] = {}
-            for year in div_data['설문시행연도'].unique():
-                if pd.notna(year):
-                    year_data = div_data[div_data['설문시행연도'] == year]
-                    aggregated["division_yearly"][division][str(year)] = {
-                        col: float(year_data[col].mean()) if col in year_data.columns else 0.0
-                        for col in SCORE_COLUMNS
-                    }
-                    aggregated["division_yearly"][division][str(year)]["응답수"] = len(year_data)
-    
-    # 3. 연도별 부문 비교 (모든 부문 데이터 포함)
+    # 2. 부문별 종합 점수 (연도별 부문 비교)
     for year in df['설문시행연도'].unique():
         if pd.notna(year):
             year_str = str(year)
@@ -379,6 +365,20 @@ def calculate_aggregated_data(df):
                             for col in SCORE_COLUMNS
                         }
                         aggregated["division_comparison"][year_str][division]["응답수"] = len(div_year_data)
+    
+    # 3. 소속 부문 결과 ([부문별] 연도별 문항 점수)
+    for division in df['피평가부문'].unique():
+        if pd.notna(division) and division != 'N/A':
+            div_data = df[df['피평가부문'] == division]
+            aggregated["division_yearly"][division] = {}
+            for year in div_data['설문시행연도'].unique():
+                if pd.notna(year):
+                    year_data = div_data[div_data['설문시행연도'] == year]
+                    aggregated["division_yearly"][division][str(year)] = {
+                        col: float(year_data[col].mean()) if col in year_data.columns else 0.0
+                        for col in SCORE_COLUMNS
+                    }
+                    aggregated["division_yearly"][division][str(year)]["응답수"] = len(year_data)
     
     # 4. 부문별 팀 점수 순위 - 모든 부문별로 계산
     for division in df['피평가부문'].unique():
@@ -598,29 +598,6 @@ def build_html(aggregated_data, raw_data_json):
         <div class="part-divider"></div>
 
         <div class="section">
-            <h2>소속 부문 결과</h2>
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="division-chart-filter">부문 선택</label>
-                    <select id="division-chart-filter"></select>
-                </div>
-                <div class="filter-group">
-                    <label>문항 선택</label>
-                    <div class="expander-container">
-                        <div class="expander-header" id="division-score-header" onclick="toggleExpander('division-score-expander')">
-                            <span>문항 선택 (6개 선택됨)</span>
-                            <span class="expander-arrow" id="division-score-arrow">▼</span>
-                        </div>
-                        <div class="expander-content" id="division-score-expander">
-                            <div id="division-score-filter"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div id="division-yearly-chart-container" class="chart-container"></div>
-        </div>
-
-        <div class="section">
             <h2>부문별 종합 점수</h2>
             <div class="filters">
                 <div class="filter-group">
@@ -641,6 +618,29 @@ def build_html(aggregated_data, raw_data_json):
                 </div>
             </div>
             <div id="comparison-chart-container" class="chart-container"></div>
+        </div>
+
+        <div class="section">
+            <h2>소속 부문 결과</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="division-chart-filter">부문 선택</label>
+                    <select id="division-chart-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label>문항 선택</label>
+                    <div class="expander-container">
+                        <div class="expander-header" id="division-score-header" onclick="toggleExpander('division-score-expander')">
+                            <span>문항 선택 (6개 선택됨)</span>
+                            <span class="expander-arrow" id="division-score-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="division-score-expander">
+                            <div id="division-score-filter"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="division-yearly-chart-container" class="chart-container"></div>
         </div>
 
         <div class="part-divider"></div>
@@ -686,29 +686,48 @@ def build_html(aggregated_data, raw_data_json):
                 </div>
             </div>
             
-            <!-- 5.1 부서/Unit 결과 -->
+            <!-- 5.1 부서/Unit 결과  -->
             <div class="subsection">
                 <h3>부서/Unit 결과</h3>
                 <div id="metrics-container"></div>
-                <div id="drilldown-chart-container" class="chart-container"></div>
+                <div id="drilldown-chart-container" class="chart-container" style="display: none;"></div>
                 <div id="yearly-comparison-chart-container" class="chart-container"></div>
                 
-                <!-- 부서 내 Unit 비교 -->
-                <div style="margin-top: 30px;">
-                    <h4 style="color: #555; margin-bottom: 15px;">부서 내 Unit 비교</h4>
-                    <div id="unit-comparison-chart-container" class="chart-container"></div>
-                </div>
             </div>
             
-            <!-- 5.2 감정 분석 -->
+            <!-- 5.2 부서 내 Unit 결과 -->
+            <div class="subsection">
+                <h3>부서 내 Unit 결과</h3>
+                <div id="unit-comparison-chart-container" class="chart-container"></div>
+            </div>
+            
+            <!-- 5.3 감정 분석 -->
             <div class="subsection">
                 <h3>평가 부서 의견</h3>
                 <div id="sentiment-chart-container" class="chart-container"></div>
+                
+                <!-- 협업 후기 -->
+                <div style="margin-top: 30px;">
+                    <h4>협업 후기 <span id="reviews-count-display" style="color: #666; font-size: 0.9em;"></span></h4>
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>감정 분류 필터</label>
+                            <div class="expander-container">
+                                <div class="expander-header" id="review-sentiment-header" onclick="toggleExpander('review-sentiment-expander')">
+                                    <span>감정 선택 (4개 선택됨)</span>
+                                    <span class="expander-arrow" id="review-sentiment-arrow">▼</span>
+                                </div>
+                                <div class="expander-content" id="review-sentiment-expander">
+                                    <div id="review-sentiment-filter"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="reviews-table-container"><table id="reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody></tbody></table></div>
+                </div>
             </div>
-            
-
-            <!-- 5.3 키워드 분석 -->
-            <div class="subsection">
+            <!-- 5.4 키워드 분석 -->
+            <div class="subsection" style="display: none;">
                 <h3>핵심 키워드 분석</h3>
                 <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #6a89cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
                     <p style="margin: 0; color: #495057; font-size: 0.95em;">
@@ -727,26 +746,7 @@ def build_html(aggregated_data, raw_data_json):
                 </div>
                 <div id="keyword-reviews-container"></div>
             </div>
-            
-            <!-- 5.4 협업 후기 -->
-            <div class="subsection">
-                <h3>협업 후기 <span id="reviews-count-display" style="color: #666; font-size: 0.9em;"></span></h3>
-                <div class="filters">
-                    <div class="filter-group">
-                        <label>감정 분류 필터</label>
-                        <div class="expander-container">
-                            <div class="expander-header" id="review-sentiment-header" onclick="toggleExpander('review-sentiment-expander')">
-                                <span>감정 선택 (4개 선택됨)</span>
-                                <span class="expander-arrow" id="review-sentiment-arrow">▼</span>
-                            </div>
-                            <div class="expander-content" id="review-sentiment-expander">
-                                <div id="review-sentiment-filter"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="reviews-table-container"><table id="reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody></tbody></table></div>
-            </div>
+
         </div>
 
         <div class="part-divider"></div>
@@ -1097,7 +1097,7 @@ def build_html(aggregated_data, raw_data_json):
             traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', line: {{ shape: 'spline', smoothing: 0.3, width: 3, color: '#355e58' }}, text: yearly_counts.map(count => `${{count.toLocaleString()}}건`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}건<br>연도: %{{x}}<extra></extra>' }});
 
             const layout = {{
-                title: `<b>[${{selectedDivision}}] 연도별 문항 점수</b>`,
+                title: `<b>[${{selectedDivision}}] 결과</b>`,
                 barmode: 'group', height: 500,
                 xaxis: {{ type: 'category', title: '설문 연도' }},
                 yaxis: {{ title: '점수', range: [0, 100] }},
@@ -1130,8 +1130,19 @@ def build_html(aggregated_data, raw_data_json):
             const filteredDivisions = selectedDivisions.filter(div => yearComparisonData[div]);
             const divisions = filteredDivisions.sort((a,b) => a.localeCompare(b, 'ko'));
             const avgScores = divisions.map(div => yearComparisonData[div]['종합점수'].toFixed(1));
+            const responseCounts = divisions.map(div => yearComparisonData[div]['응답수'] || 0);
 
-            const trace = [{{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#FDC1B4', line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{x}}: %{{y}}<extra></extra>' }}];
+            // 🔒 보안 강화: 미리 계산된 전체 평균 사용
+            const yearlyOverallAverage = aggregatedData.hospital_yearly[selectedYear] ? aggregatedData.hospital_yearly[selectedYear]['종합점수'].toFixed(1) : '0.0';
+
+            const trace = {{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#FDC1B4', line: {{ color: '#000000', width: 1 }} }}, customdata: responseCounts, hovertemplate: '%{{x}}: %{{y}}점<br>응답수: %{{customdata}}건<extra></extra>' }};
+            
+            const avgLine = {{
+                x: [divisions[0], divisions[divisions.length - 1]], y: [yearlyOverallAverage, yearlyOverallAverage],
+                type: 'scatter', mode: 'lines', line: {{ color: 'red', width: 2, dash: 'dash' }},
+                name: `${{selectedYear}} 종합 점수: ${{yearlyOverallAverage}}`, hoverinfo: 'skip'
+            }};
+            
             const layout = {{
                 title: `<b>${{selectedYear}} 부문별 종합 점수</b>`,
                 yaxis: {{ title: '점수', range: [0, 100] }},
@@ -1139,9 +1150,16 @@ def build_html(aggregated_data, raw_data_json):
                 height: 500,
                 barmode: 'group',
                 hovermode: 'closest',
+                showlegend: false,
+                annotations: [{{
+                    text: `${{selectedYear}} 종합 점수: ${{yearlyOverallAverage}}점`, xref: 'paper', yref: 'y',
+                    x: 0.02, y: parseFloat(yearlyOverallAverage), showarrow: false,
+                    font: {{ color: 'red', size: 12 }}, bgcolor: 'rgba(255,255,255,0.8)',
+                    bordercolor: 'red', borderwidth: 1
+                }}],
                 margin: {{ l: 60, r: 60, t: 80, b: 60 }}
             }};
-            Plotly.react(container, trace, layout);
+            Plotly.react(container, [trace, avgLine], layout);
         }}
 
         function updateSentimentChart(data) {{
@@ -1206,7 +1224,7 @@ def build_html(aggregated_data, raw_data_json):
             }};
 
             const layout = {{
-                title: '<b>감정 분류별 응답 분포</b>',
+                title: '',
                 height: 400,
                 xaxis: {{ title: '감정 분류' }},
                 yaxis: {{ title: '응답 수', rangemode: 'tozero', range: [0, Math.max(...counts) * 1.15] }},
@@ -1406,17 +1424,17 @@ def build_html(aggregated_data, raw_data_json):
             const avgLine = {{
                 x: [departments[0], departments[departments.length - 1]], y: [yearlyOverallAverage, yearlyOverallAverage],
                 type: 'scatter', mode: 'lines', line: {{ color: 'red', width: 2, dash: 'dash' }},
-                name: `${{selectedYear}} 전체 평균: ${{yearlyOverallAverage}}`, hoverinfo: 'skip'
+                name: `${{selectedYear}} 종합 점수: ${{yearlyOverallAverage}}`, hoverinfo: 'skip'
             }};
 
             const layout = {{
-                title: `<b>${{selectedYear}} 소속 부문 팀별 종합 점수</b>`, height: 600,
+                title: `<b>${{selectedYear}} 팀별 종합점수</b>`, height: 600,
                 xaxis: {{ title: '부서', tickangle: -45, automargin: true }},
                 yaxis: {{ title: '점수', range: [Math.min(...scores) - 5, Math.max(...scores) + 5] }},
                 font: layoutFont, hovermode: 'closest', showlegend: false,
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
                 annotations: [{{
-                    text: `${{selectedYear}} 전체 평균: ${{yearlyOverallAverage}}점`, xref: 'paper', yref: 'y',
+                    text: `${{selectedYear}} 종합 점수: ${{yearlyOverallAverage}}점`, xref: 'paper', yref: 'y',
                     x: 0.02, y: parseFloat(yearlyOverallAverage), showarrow: false,
                     font: {{ color: 'red', size: 12 }}, bgcolor: 'rgba(255,255,255,0.8)',
                     bordercolor: 'red', borderwidth: 1
@@ -1470,10 +1488,10 @@ def build_html(aggregated_data, raw_data_json):
             const yearly_counts = years.map(year => targetData.filter(d => d['설문시행연도'] === year).length);
             traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', line: {{ shape: 'spline', smoothing: 0.3, width: 3, color: '#355e58' }}, text: yearly_counts.map(count => `${{count.toLocaleString()}}건`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}건<br>연도: %{{x}}<extra></extra>' }});
 
-            let titleText = '연도별 문항 점수';
-            if (selectedDept !== '전체' && selectedUnit !== '전체') {{ titleText = `[${{selectedDept}} > ${{selectedUnit}}] 연도별 문항 점수`; }}
-            else if (selectedDept !== '전체') {{ titleText = `[${{selectedDept}}] 연도별 문항 점수`; }}
-            else if (selectedUnit !== '전체') {{ titleText = `[${{selectedUnit}}] 연도별 문항 점수`; }}
+            let titleText = '결과';
+            if (selectedDept !== '전체' && selectedUnit !== '전체') {{ titleText = `[${{selectedDept}} > ${{selectedUnit}}] 결과`; }}
+            else if (selectedDept !== '전체') {{ titleText = `[${{selectedDept}}] 결과`; }}
+            else if (selectedUnit !== '전체') {{ titleText = `[${{selectedUnit}}] 결과`; }}
             
             const layout = {{
                 title: `<b>${{titleText}}</b>`, barmode: 'group', height: 500,
@@ -1541,9 +1559,8 @@ def build_html(aggregated_data, raw_data_json):
                 traces.push({{ x: unitsInDepartment, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: barColors[index % barColors.length], line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>Unit: %{{x}}<extra></extra>' }});
             }});
 
-            const yearTitle = selectedYear === '전체' ? '전체 연도' : selectedYear;
             const layout = {{
-                title: `<b>[${{selectedDepartment}}] Unit별 문항 점수 비교 (${{yearTitle}})</b>`, barmode: 'group', height: 400,
+                title: `<b>[${{selectedDepartment}}] Unit별 결과</b>`, barmode: 'group', height: 400,
                 xaxis: {{ title: 'Unit' }}, yaxis: {{ title: '점수', range: [0, 100] }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.05, xanchor: 'right', x: 1 }},
                 font: layoutFont, hovermode: 'closest',
@@ -1759,10 +1776,12 @@ def build_html(aggregated_data, raw_data_json):
             }}
             
             // 협업 빈도 계산
+            const selectedUnit = document.getElementById('network-unit-filter').value;
             const collaborationCounts = {{}};
             filteredData.forEach(item => {{
                 const evaluator = item['평가부서'];
-                const evaluated = item['피평가부서'];
+                // Unit이 선택된 경우 Unit 이름 사용, 그렇지 않으면 부서 이름 사용
+                const evaluated = selectedUnit !== '전체' ? item['피평가Unit'] : item['피평가부서'];
                 if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A') {{
                     const key = `${{evaluator}} → ${{evaluated}}`;
                     collaborationCounts[key] = (collaborationCounts[key] || 0) + 1;
@@ -1831,10 +1850,12 @@ def build_html(aggregated_data, raw_data_json):
             }}
             
             // 협업 관계별 점수 계산
+            const selectedUnit = document.getElementById('network-unit-filter').value;
             const relationshipScores = {{}};
             filteredData.forEach(item => {{
                 const evaluator = item['평가부서'];
-                const evaluated = item['피평가부서'];
+                // Unit이 선택된 경우 Unit 이름 사용, 그렇지 않으면 부서 이름 사용
+                const evaluated = selectedUnit !== '전체' ? item['피평가Unit'] : item['피평가부서'];
                 const score = item['종합점수'];
                 if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A' && score != null) {{
                     const key = `${{evaluator}} → ${{evaluated}}`;
@@ -2058,15 +2079,16 @@ def build_html(aggregated_data, raw_data_json):
             selectedDepartments.forEach((dept, index) => {{
                 // 해당 협업 관계의 연도별 점수 및 응답수 계산
                 const relationYearlyData = allYears.map(year => {{
-                    const yearRelationData = rawData.filter(item => 
-                        item['설문시행연도'] === year && 
-                        item['평가부서'] === dept.evaluator && 
-                        item['피평가부서'] === dept.evaluated &&
-                        // 트렌드 차트에서는 연도 필터를 제외하고 다른 필터만 적용
-                        (selectedDivision === '전체' || item['피평가부문'] === selectedDivision) &&
-                        (selectedDepartment === '전체' || item['피평가부서'] === selectedDepartment) &&
-                        (selectedUnit === '전체' || item['피평가Unit'] === selectedUnit)
-                    );
+                    const yearRelationData = rawData.filter(item => {{
+                        const evaluatedTarget = selectedUnit !== '전체' ? item['피평가Unit'] : item['피평가부서'];
+                        return item['설문시행연도'] === year && 
+                            item['평가부서'] === dept.evaluator && 
+                            evaluatedTarget === dept.evaluated &&
+                            // 트렌드 차트에서는 연도 필터를 제외하고 다른 필터만 적용
+                            (selectedDivision === '전체' || item['피평가부문'] === selectedDivision) &&
+                            (selectedDepartment === '전체' || item['피평가부서'] === selectedDepartment) &&
+                            (selectedUnit === '전체' || item['피평가Unit'] === selectedUnit);
+                    }});
                     
                     if (yearRelationData.length === 0) return null;
                     const avgScore = yearRelationData.reduce((sum, item) => sum + (item['종합점수'] || 0), 0) / yearRelationData.length;
