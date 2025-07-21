@@ -541,6 +541,7 @@ def build_html(aggregated_data, raw_data_json):
         .status-dropdown.problem {{ border-left: 4px solid #dc3545; }}
         .status-dropdown select {{ width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px; background: white; }}
         .status-dropdown .dept-count {{ color: #6c757d; font-size: 0.9em; margin-top: 5px; }}
+        
     </style>
 </head>
 <body>

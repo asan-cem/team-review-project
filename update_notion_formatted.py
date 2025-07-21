@@ -11,8 +11,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- 설정 ---
 NOTION_API_KEY = "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"
-PAGE_ID = "22931382e0a280c0b9aee9121c219184"
-MARKDOWN_FILE = 'framework.md'
+PAGE_ID = "23731382e0a28084b958f0551643d8a5"
+MARKDOWN_FILE = 'HANDOVER_DOCUMENTATION.md'
 
 # --- Notion API 헤더 ---
 headers = {
