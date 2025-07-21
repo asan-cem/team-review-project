@@ -93,32 +93,52 @@ class LocalGoogleSheetsAnalyzer:
         return unit_str in ['', 'n/a', 'na', 'null', 'none']
 
     def load_department_mapping(self):
-        """부서-부문 매핑 로드 (개선된 버전)"""
+        """부서-부문 매핑 로드 (표준화 적용 버전)"""
         if not self.mapping_file_path or not Path(self.mapping_file_path).exists(): 
             return
         try:
             mapping_df = pd.read_excel(self.mapping_file_path)
             print(f"📋 매핑 파일 로드: {len(mapping_df)}개 레코드")
             
-            # 기본 부서명 -> 부문 매핑 (정규화된 키 사용)
+            # 기본 부서명 -> 부문 매핑 (표준화 + 정규화된 키 사용)
             if '부서명' in mapping_df.columns and '부문' in mapping_df.columns:
                 dept_mapping = mapping_df.dropna(subset=['부서명', '부문']).copy()
-                # 정규화된 부서명을 키로 사용
+                
                 for _, row in dept_mapping.iterrows():
-                    norm_dept = self.normalize_string(row['부서명'])
+                    dept_name = row['부서명']
+                    
+                    # 1️⃣ 표준화 적용 (있는 경우)
+                    if self.department_standard_map and dept_name in self.department_standard_map:
+                        standardized_dept = self.department_standard_map[dept_name]
+                        print(f"🔄 부서명 표준화 적용: '{dept_name}' → '{standardized_dept}'")
+                    else:
+                        standardized_dept = dept_name
+                    
+                    # 2️⃣ 정규화 적용
+                    norm_dept = self.normalize_string(standardized_dept)
+                    
                     if norm_dept:  # 빈 문자열이 아닌 경우만
                         self.department_mapping[norm_dept] = row['부문']
+                
                 print(f"✅ 기본 부문 매핑 로드 완료: {len(self.department_mapping)}개")
             
-            # 향상된 부서명+Unit -> 부문 매핑
+            # 향상된 부서명+Unit -> 부문 매핑 (표준화 적용)
             if all(col in mapping_df.columns for col in ['부서명', '부문', '소속UNIT']):
+                standardization_applied = 0
+                
                 for _, row in mapping_df.iterrows():
                     dept_name = row['부서명']
                     division = row['부문'] 
                     unit_name = row['소속UNIT']
                     
                     if pd.notna(dept_name) and pd.notna(division):
-                        # 정규화된 부서명
+                        # 1️⃣ 표준화 적용 (있는 경우)
+                        original_dept_name = dept_name
+                        if self.department_standard_map and dept_name in self.department_standard_map:
+                            dept_name = self.department_standard_map[dept_name]
+                            standardization_applied += 1
+                        
+                        # 2️⃣ 정규화 적용
                         norm_dept = self.normalize_string(dept_name)
                         
                         # Unit이 있는 경우와 없는 경우 모두 저장
@@ -127,7 +147,8 @@ class LocalGoogleSheetsAnalyzer:
                             key = f"{norm_dept}|{norm_unit}"
                             self.enhanced_mapping[key] = {
                                 'division': division,
-                                'original_dept': dept_name,
+                                'original_dept': original_dept_name,  # 원본 부서명 유지
+                                'standardized_dept': dept_name,       # 표준화된 부서명 추가
                                 'original_unit': unit_name,
                                 'match_type': 'dept_unit'
                             }
@@ -137,18 +158,21 @@ class LocalGoogleSheetsAnalyzer:
                             dept_only_key = f"{norm_dept}|"
                             self.enhanced_mapping[dept_only_key] = {
                                 'division': division,
-                                'original_dept': dept_name, 
+                                'original_dept': original_dept_name,  # 원본 부서명 유지
+                                'standardized_dept': dept_name,       # 표준화된 부서명 추가
                                 'original_unit': None,
                                 'match_type': 'dept_only'
                             }
                 
                 print(f"✅ 향상된 부문 매핑 로드 완료: {len(self.enhanced_mapping)}개")
+                if standardization_applied > 0:
+                    print(f"🔄 부서명 표준화 적용: {standardization_applied}개 부서")
                 
         except Exception as e:
             print(f"❌ 부문 매핑 파일 로드 오류: {e}")
 
     def enhanced_department_labeling(self, dept_name, unit_name):
-        """향상된 부서-부문 라벨링 함수
+        """향상된 부서-부문 라벨링 함수 (표준화 적용)
         
         라벨링 규칙:
         1. 부서명과 소속UNIT이 모두 일치하는 경우 → 해당 부문으로 라벨링 (dept_unit_match)
@@ -160,6 +184,12 @@ class LocalGoogleSheetsAnalyzer:
             self.labeling_stats['dept_not_found'] += 1
             return '미분류', 'dept_not_found'
         
+        # 1️⃣ 표준화 적용 (있는 경우)
+        original_dept_name = dept_name
+        if self.department_standard_map and dept_name in self.department_standard_map:
+            dept_name = self.department_standard_map[dept_name]
+        
+        # 2️⃣ 정규화 적용
         norm_dept = self.normalize_string(dept_name)
         norm_unit = self.normalize_string(unit_name) if not self.is_empty_unit(unit_name) else ''
         
@@ -274,8 +304,8 @@ class LocalGoogleSheetsAnalyzer:
     def load_and_process_data(self, file_identifiers):
         """데이터 로드 및 처리"""
         print("📂 데이터 로드 시작...")
-        self.load_department_mapping()
-        self.load_department_standard_map()
+        self.load_department_standard_map()  # 1️⃣ 먼저 표준화 매핑 로드
+        self.load_department_mapping()       # 2️⃣ 표준화를 적용한 부문 매핑 로드
 
         integrated_df = pd.DataFrame()
         for identifier in file_identifiers:
