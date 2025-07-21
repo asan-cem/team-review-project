@@ -379,7 +379,7 @@ def calculate_aggregated_data(df):
             }
             aggregated["hospital_yearly"][str(year)]["응답수"] = len(year_data)
     
-    # 2. 연도별 부문 비교 (모든 부문 데이터 포함)
+    # 2. 부문별 종합 점수 (연도별 부문 비교)
     for year in df['설문시행연도'].unique():
         if pd.notna(year):
             year_str = str(year)
@@ -398,7 +398,7 @@ def calculate_aggregated_data(df):
                         }
                         aggregated["division_comparison"][year_str][division]["응답수"] = len(div_year_data)
     
-    # 3. [부문별] 연도별 문항 점수 - 커뮤니케이션실만
+    # 3. 소속 부문 결과 ([부문별] 연도별 문항 점수 - 커뮤니케이션실만)
     comm_data = df[df['피평가부문'] == '커뮤니케이션실']
     aggregated["division_yearly"]["커뮤니케이션실"] = {}
     for year in comm_data['설문시행연도'].unique():
@@ -645,29 +645,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
         <div class="part-divider"></div>
 
         <div class="section">
-            <h2>소속 부문 결과</h2>
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="division-chart-filter">부문 선택</label>
-                    <select id="division-chart-filter"></select>
-                </div>
-                <div class="filter-group">
-                    <label>문항 선택</label>
-                    <div class="expander-container">
-                        <div class="expander-header" id="division-score-header" onclick="toggleExpander('division-score-expander')">
-                            <span>문항 선택 (6개 선택됨)</span>
-                            <span class="expander-arrow" id="division-score-arrow">▼</span>
-                        </div>
-                        <div class="expander-content" id="division-score-expander">
-                            <div id="division-score-filter"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div id="division-yearly-chart-container" class="chart-container"></div>
-        </div>
-
-        <div class="section">
             <h2>부문별 종합 점수</h2>
             <div class="filters">
                 <div class="filter-group">
@@ -688,6 +665,29 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 </div>
             </div>
             <div id="comparison-chart-container" class="chart-container"></div>
+        </div>
+
+        <div class="section">
+            <h2>소속 부문 결과</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="division-chart-filter">부문 선택</label>
+                    <select id="division-chart-filter"></select>
+                </div>
+                <div class="filter-group">
+                    <label>문항 선택</label>
+                    <div class="expander-container">
+                        <div class="expander-header" id="division-score-header" onclick="toggleExpander('division-score-expander')">
+                            <span>문항 선택 (6개 선택됨)</span>
+                            <span class="expander-arrow" id="division-score-arrow">▼</span>
+                        </div>
+                        <div class="expander-content" id="division-score-expander">
+                            <div id="division-score-filter"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="division-yearly-chart-container" class="chart-container"></div>
         </div>
 
         <div class="part-divider"></div>
@@ -1937,7 +1937,7 @@ def calculate_aggregated_data_for_department(df, target_department, target_divis
             }
             aggregated["hospital_yearly"][str(year)]["응답수"] = len(year_data)
     
-    # 2. 연도별 부문 비교 (모든 부문 데이터 포함)
+    # 2. 부문별 종합 점수 (연도별 부문 비교)
     for year in df['설문시행연도'].unique():
         if pd.notna(year):
             year_str = str(year)
@@ -1956,7 +1956,7 @@ def calculate_aggregated_data_for_department(df, target_department, target_divis
                         }
                         aggregated["division_comparison"][year_str][division]["응답수"] = len(div_year_data)
     
-    # 3. [부문별] 연도별 문항 점수 - 대상 부문만
+    # 3. 소속 부문 결과 ([부문별] 연도별 문항 점수 - 대상 부문만)
     division_data = df[df['피평가부문'] == target_division]
     aggregated["division_yearly"][target_division] = {}
     for year in division_data['설문시행연도'].unique():
