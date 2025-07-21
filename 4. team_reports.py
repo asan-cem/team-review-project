@@ -533,7 +533,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
 <html lang="ko">
 <head>
     <meta charset="utf-8">
-    <title>서울아산병원 협업 평가 대시보드</title>
+    <title>서울아산병원 협업 평가 결과 보고</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         body {{ font-family: 'Malgun Gothic', 'Segoe UI', sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; color: #343a40; font-size: 16px;}}
@@ -593,14 +593,13 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
 </head>
 <body>
     <div class="header">
-        <h1> 서울아산병원 협업 평가 대시보드 - {target_department} </h1>
+        <h1> 서울아산병원 협업 평가 결과 보고 - {target_department} </h1>
         <p style="margin: 10px 0 0 0; opacity: 0.9;">설문 데이터: 2022년 ~ 2025년 상반기(2025년 7월 9일 기준) </p>
     </div>
     
     <!-- 안내 문구 섹션 -->
     <div style="max-width: 1400px; margin: 20px auto; padding: 0 20px;">
         <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-            <h3 style="color: #495057; margin: 0 0 15px 0; font-size: 1.1em;">📋 대시보드 이용 안내</h3>
             
             <div style="margin-bottom: 15px;">
                 <strong style="color: #495057;">📊 평가 문항 설명:</strong>
@@ -618,15 +617,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 <span style="color: #856404; font-size: 0.95em;">응답건수(표본수)가 30건 미만인 경우 통계적 해석에 유의하시기 바랍니다.</span>
             </div>
             
-            <div style="background: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 6px; padding: 12px; margin-top: 10px;">
-                <strong style="color: #004085;">📊 평가 데이터 해석 시 주의사항</strong><br>
-                <span style="color: #004085; font-size: 0.95em;">
-                현재 협업 평가 결과는 평가자가 구체적인 업무 영역을 정확히 파악하지 못해 업무 성격이 유사한 다른 부서로 평가하는 사례가 일부 발생하고 있습니다.<br>
-                이로 인해 일부 부서의 점수 및 협업 후기에는 실제 업무와 무관한 내용이 포함될 수 있으며,<br>
-                해당 결과 해석 시 이점을 고려해 주시기 바랍니다.<br><br>
-                <strong>🔄 개선 계획:</strong> 하반기 협업 평가 시행 후 각 부서별 업무 범위에 맞추어 기존 응답을 재정리할 예정입니다.
-                </span>
-            </div>
         </div>
     </div>
     
@@ -635,7 +625,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
         
         <div class="section">
             <h2>[전체] 연도별 문항 점수</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">우리 병원의 점수 트렌드를 파악합니다.</p>
             <div class="filters">
                 <div class="filter-group">
                     <label>문항 선택</label>
@@ -657,7 +646,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
 
         <div class="section">
             <h2>[부문별] 연도별 문항 점수</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">부문별 점수 트렌드를 파악합니다.</p>
             <div class="filters">
                 <div class="filter-group">
                     <label for="division-chart-filter">부문 선택</label>
@@ -2081,7 +2069,7 @@ def generate_summary_report(results, output_dir, start_time):
         division_stats[division] += 1
     
     # 요약 보고서 생성
-    summary_content = f"""# 서울아산병원 협업 평가 대시보드 전체 부서 생성 결과
+    summary_content = f"""# 서울아산병원 협업 평가 결과 보고 전체 부서 생성 결과
 
 ## 📊 생성 요약
 - **생성 일시**: {start_time.strftime('%Y년 %m월 %d일 %H:%M:%S')}
@@ -2126,7 +2114,7 @@ def main():
     try:
         # 시작 메시지
         print("=" * 70)
-        print("🚀 서울아산병원 협업 평가 대시보드 전체 부서 생성 시작")
+        print("🚀 서울아산병원 협업 평가 결과 보고 전체 부서 생성 시작")
         print(f"📅 실행 시간: {start_time.strftime('%Y년 %m월 %d일 %H:%M:%S')}")
         print("=" * 70)
         
