@@ -814,6 +814,72 @@ def build_html(aggregated_data, raw_data_json):
                 <div id="collaboration-frequency-chart-container" class="chart-container"></div>
             </div>
 
+            <!-- 2.2 협업 관계 현황 -->
+            <div class="subsection">
+                <h3>협업 관계 현황</h3>
+                <div id="collaboration-status-chart-container" class="chart-container"></div>
+                <div class="collaboration-status-dropdowns">
+                    <div class="status-dropdown excellent">
+                        <h5>🏆 우수 (75점 이상)</h5>
+                        <div class="expander-container">
+                            <div class="expander-header" id="excellent-dept-header" onclick="toggleExpander('excellent-dept-expander')">
+                                <span>부서 선택 (0개 선택됨)</span>
+                                <span class="expander-arrow" id="excellent-dept-arrow">▼</span>
+                            </div>
+                            <div class="expander-content" id="excellent-dept-expander">
+                                <div id="excellent-dept-filter"></div>
+                            </div>
+                        </div>
+                        <div class="dept-count" id="excellent-count">0개 관계</div>
+                    </div>
+                    <div class="status-dropdown good">
+                        <h5>✅ 양호 (60-74점)</h5>
+                        <div class="expander-container">
+                            <div class="expander-header" id="good-dept-header" onclick="toggleExpander('good-dept-expander')">
+                                <span>부서 선택 (0개 선택됨)</span>
+                                <span class="expander-arrow" id="good-dept-arrow">▼</span>
+                            </div>
+                            <div class="expander-content" id="good-dept-expander">
+                                <div id="good-dept-filter"></div>
+                            </div>
+                        </div>
+                        <div class="dept-count" id="good-count">0개 관계</div>
+                    </div>
+                    <div class="status-dropdown caution">
+                        <h5>🔄 개선 기회 (50-59점)</h5>
+                        <div class="expander-container">
+                            <div class="expander-header" id="caution-dept-header" onclick="toggleExpander('caution-dept-expander')">
+                                <span>부서 선택 (0개 선택됨)</span>
+                                <span class="expander-arrow" id="caution-dept-arrow">▼</span>
+                            </div>
+                            <div class="expander-content" id="caution-dept-expander">
+                                <div id="caution-dept-filter"></div>
+                            </div>
+                        </div>
+                        <div class="dept-count" id="caution-count">0개 관계</div>
+                    </div>
+                    <div class="status-dropdown problem">
+                        <h5>🎯 중점 개선 (50점 미만)</h5>
+                        <div class="expander-container">
+                            <div class="expander-header" id="problem-dept-header" onclick="toggleExpander('problem-dept-expander')">
+                                <span>부서 선택 (0개 선택됨)</span>
+                                <span class="expander-arrow" id="problem-dept-arrow">▼</span>
+                            </div>
+                            <div class="expander-content" id="problem-dept-expander">
+                                <div id="problem-dept-filter"></div>
+                            </div>
+                        </div>
+                        <div class="dept-count" id="problem-count">0개 관계</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2.3 협업 관계 변화 트렌드 -->
+            <div class="subsection">
+                <h3>협업 관계 변화 트렌드</h3>
+                <div id="collaboration-trend-chart-container" class="chart-container"></div>
+            </div>
+
 
         </div>
 
