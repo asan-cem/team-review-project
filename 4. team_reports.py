@@ -379,19 +379,7 @@ def calculate_aggregated_data(df):
             }
             aggregated["hospital_yearly"][str(year)]["응답수"] = len(year_data)
     
-    # 2. [부문별] 연도별 문항 점수 - 커뮤니케이션실만
-    comm_data = df[df['피평가부문'] == '커뮤니케이션실']
-    aggregated["division_yearly"]["커뮤니케이션실"] = {}
-    for year in comm_data['설문시행연도'].unique():
-        if pd.notna(year):
-            year_data = comm_data[comm_data['설문시행연도'] == year]
-            aggregated["division_yearly"]["커뮤니케이션실"][str(year)] = {
-                col: float(year_data[col].mean()) if col in year_data.columns else 0.0
-                for col in SCORE_COLUMNS
-            }
-            aggregated["division_yearly"]["커뮤니케이션실"][str(year)]["응답수"] = len(year_data)
-    
-    # 3. 연도별 부문 비교 (모든 부문 데이터 포함)
+    # 2. 연도별 부문 비교 (모든 부문 데이터 포함)
     for year in df['설문시행연도'].unique():
         if pd.notna(year):
             year_str = str(year)
@@ -409,6 +397,18 @@ def calculate_aggregated_data(df):
                             for col in SCORE_COLUMNS
                         }
                         aggregated["division_comparison"][year_str][division]["응답수"] = len(div_year_data)
+    
+    # 3. [부문별] 연도별 문항 점수 - 커뮤니케이션실만
+    comm_data = df[df['피평가부문'] == '커뮤니케이션실']
+    aggregated["division_yearly"]["커뮤니케이션실"] = {}
+    for year in comm_data['설문시행연도'].unique():
+        if pd.notna(year):
+            year_data = comm_data[comm_data['설문시행연도'] == year]
+            aggregated["division_yearly"]["커뮤니케이션실"][str(year)] = {
+                col: float(year_data[col].mean()) if col in year_data.columns else 0.0
+                for col in SCORE_COLUMNS
+            }
+            aggregated["division_yearly"]["커뮤니케이션실"][str(year)]["응답수"] = len(year_data)
     
     # 4. 부문별 팀 점수 순위 - 커뮤니케이션실 부서들만
     for year in comm_data['설문시행연도'].unique():
@@ -1937,19 +1937,7 @@ def calculate_aggregated_data_for_department(df, target_department, target_divis
             }
             aggregated["hospital_yearly"][str(year)]["응답수"] = len(year_data)
     
-    # 2. [부문별] 연도별 문항 점수 - 대상 부문만
-    division_data = df[df['피평가부문'] == target_division]
-    aggregated["division_yearly"][target_division] = {}
-    for year in division_data['설문시행연도'].unique():
-        if pd.notna(year):
-            year_data = division_data[division_data['설문시행연도'] == year]
-            aggregated["division_yearly"][target_division][str(year)] = {
-                col: float(year_data[col].mean()) if col in year_data.columns else 0.0
-                for col in SCORE_COLUMNS
-            }
-            aggregated["division_yearly"][target_division][str(year)]["응답수"] = len(year_data)
-    
-    # 3. 연도별 부문 비교 (모든 부문 데이터 포함)
+    # 2. 연도별 부문 비교 (모든 부문 데이터 포함)
     for year in df['설문시행연도'].unique():
         if pd.notna(year):
             year_str = str(year)
@@ -1967,6 +1955,18 @@ def calculate_aggregated_data_for_department(df, target_department, target_divis
                             for col in SCORE_COLUMNS
                         }
                         aggregated["division_comparison"][year_str][division]["응답수"] = len(div_year_data)
+    
+    # 3. [부문별] 연도별 문항 점수 - 대상 부문만
+    division_data = df[df['피평가부문'] == target_division]
+    aggregated["division_yearly"][target_division] = {}
+    for year in division_data['설문시행연도'].unique():
+        if pd.notna(year):
+            year_data = division_data[division_data['설문시행연도'] == year]
+            aggregated["division_yearly"][target_division][str(year)] = {
+                col: float(year_data[col].mean()) if col in year_data.columns else 0.0
+                for col in SCORE_COLUMNS
+            }
+            aggregated["division_yearly"][target_division][str(year)]["응답수"] = len(year_data)
     
     # 4. 부문별 팀 점수 순위 - 대상 부문 부서들만
     for year in division_data['설문시행연도'].unique():

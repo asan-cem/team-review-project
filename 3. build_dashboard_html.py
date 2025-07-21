@@ -347,21 +347,7 @@ def calculate_aggregated_data(df):
             }
             aggregated["hospital_yearly"][str(year)]["응답수"] = len(year_data)
     
-    # 2. [부문별] 연도별 문항 점수 - 모든 부문
-    for division in df['피평가부문'].unique():
-        if pd.notna(division) and division != 'N/A':
-            div_data = df[df['피평가부문'] == division]
-            aggregated["division_yearly"][division] = {}
-            for year in div_data['설문시행연도'].unique():
-                if pd.notna(year):
-                    year_data = div_data[div_data['설문시행연도'] == year]
-                    aggregated["division_yearly"][division][str(year)] = {
-                        col: float(year_data[col].mean()) if col in year_data.columns else 0.0
-                        for col in SCORE_COLUMNS
-                    }
-                    aggregated["division_yearly"][division][str(year)]["응답수"] = len(year_data)
-    
-    # 3. 연도별 부문 비교 (모든 부문 데이터 포함)
+    # 2. 연도별 부문 비교 (모든 부문 데이터 포함)
     for year in df['설문시행연도'].unique():
         if pd.notna(year):
             year_str = str(year)
@@ -379,6 +365,20 @@ def calculate_aggregated_data(df):
                             for col in SCORE_COLUMNS
                         }
                         aggregated["division_comparison"][year_str][division]["응답수"] = len(div_year_data)
+    
+    # 3. [부문별] 연도별 문항 점수 - 모든 부문
+    for division in df['피평가부문'].unique():
+        if pd.notna(division) and division != 'N/A':
+            div_data = df[df['피평가부문'] == division]
+            aggregated["division_yearly"][division] = {}
+            for year in div_data['설문시행연도'].unique():
+                if pd.notna(year):
+                    year_data = div_data[div_data['설문시행연도'] == year]
+                    aggregated["division_yearly"][division][str(year)] = {
+                        col: float(year_data[col].mean()) if col in year_data.columns else 0.0
+                        for col in SCORE_COLUMNS
+                    }
+                    aggregated["division_yearly"][division][str(year)]["응답수"] = len(year_data)
     
     # 4. 부문별 팀 점수 순위 - 모든 부문별로 계산
     for division in df['피평가부문'].unique():
