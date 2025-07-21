@@ -733,28 +733,28 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 </div>
             </div>
             
-            <!-- 5.1 기본 지표 및 점수 트렌드 -->
+            <!-- 5.1 부서/Unit 결과 -->
             <div class="subsection">
-                <h3>기본 지표 및 점수 트렌드</h3>
+                <h3>부서/Unit 결과</h3>
                 <div id="metrics-container"></div>
                 <div id="drilldown-chart-container" class="chart-container"></div>
                 <div id="yearly-comparison-chart-container" class="chart-container"></div>
                 
-                <!-- 부서 내 Unit 비교 -->
+                <!-- 5.2 부서 내 Unit 결과 -->
                 <div style="margin-top: 30px;">
-                    <h4 style="color: #555; margin-bottom: 15px;">부서 내 Unit 비교</h4>
+                    <h4 style="color: #555; margin-bottom: 15px;">5.2 부서 내 Unit 결과</h4>
                     <div id="unit-comparison-chart-container" class="chart-container"></div>
                 </div>
             </div>
             
-            <!-- 5.2 감정 분석 -->
+            <!-- 5.3 감정 분석 -->
             <div class="subsection">
                 <h3>평가 부서 의견</h3>
                 <div id="sentiment-chart-container" class="chart-container"></div>
             </div>
             
 
-            <!-- 5.3 키워드 분석 -->
+            <!-- 5.4 키워드 분석 -->
             <div class="subsection">
                 <h3>핵심 키워드 분석</h3>
                 <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #6a89cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
@@ -775,7 +775,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 <div id="keyword-reviews-container"></div>
             </div>
             
-            <!-- 5.4 협업 후기 -->
+            <!-- 5.5 협업 후기 -->
             <div class="subsection">
                 <h3>협업 후기 <span id="reviews-count-display" style="color: #666; font-size: 0.9em;"></span></h3>
                 <div class="filters">

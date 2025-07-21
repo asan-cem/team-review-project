@@ -686,16 +686,16 @@ def build_html(aggregated_data, raw_data_json):
                 </div>
             </div>
             
-            <!-- 5.1 기본 지표 및 점수 트렌드 -->
+            <!-- 5.1 부서/Unit 결과  -->
             <div class="subsection">
-                <h3>기본 지표 및 점수 트렌드</h3>
+                <h3>부서/Unit 결과</h3>
                 <div id="metrics-container"></div>
                 <div id="drilldown-chart-container" class="chart-container"></div>
                 <div id="yearly-comparison-chart-container" class="chart-container"></div>
                 
-                <!-- 부서 내 Unit 비교 -->
+                <!-- 5.2 부서 내 Unit 결과 -->
                 <div style="margin-top: 30px;">
-                    <h4 style="color: #555; margin-bottom: 15px;">부서 내 Unit 비교</h4>
+                    <h4 style="color: #555; margin-bottom: 15px;">5.2 부서 내 Unit 결과</h4>
                     <div id="unit-comparison-chart-container" class="chart-container"></div>
                 </div>
             </div>
