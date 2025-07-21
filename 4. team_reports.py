@@ -624,7 +624,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
         
         
         <div class="section">
-            <h2>[전체] 연도별 문항 점수</h2>
+            <h2>병원 전체 결과</h2>
             <div class="filters">
                 <div class="filter-group">
                     <label>문항 선택</label>
@@ -645,7 +645,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
         <div class="part-divider"></div>
 
         <div class="section">
-            <h2>[부문별] 연도별 문항 점수</h2>
+            <h2>소속 부문 결과</h2>
             <div class="filters">
                 <div class="filter-group">
                     <label for="division-chart-filter">부문 선택</label>
@@ -668,8 +668,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
         </div>
 
         <div class="section">
-            <h2>연도별 부문 비교</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">특정 연도의 부문간 점수를 비교합니다.</p>
+            <h2>부문별 종합 점수</h2>
             <div class="filters">
                 <div class="filter-group">
                     <label for="comparison-year-filter">연도 선택</label>
@@ -695,8 +694,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
         
         
         <div class="section">
-            <h2>부문별 팀 점수 순위</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">부문 내 부서간 점수를 파악합니다.</p>
+            <h2>소속 부문 팀별 종합 점수</h2>
             <div class="filters">
                 <div class="filter-group">
                     <label for="team-ranking-year-filter">연도 선택</label>
@@ -715,7 +713,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
         
         <div class="section">
             <h2>부서/Unit 결과</h2>
-            <p style="color: #6c757d; margin-bottom: 20px;">부서와 Unit이 받은 점수 및 후기를 파악합니다.</p>
             
             <!-- 공통 필터 -->
             <div class="filters">
@@ -1024,7 +1021,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', line: {{ shape: 'spline', smoothing: 0.3, width: 3, color: '#355e58' }}, text: yearly_counts.map(count => `${{count.toLocaleString()}}건`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}건<br>연도: %{{x}}<extra></extra>' }});
 
             const layout = {{
-                title: '<b>[전체] 연도별 문항 점수</b>',
+                title: '<b>병원 전체 결과</b>',
                 barmode: 'group', height: 500,
                 xaxis: {{ type: 'category', title: '설문 연도' }},
                 yaxis: {{ title: '점수', range: [0, 100] }},
