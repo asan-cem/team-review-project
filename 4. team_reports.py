@@ -1504,9 +1504,8 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 traces.push({{ x: unitsInDepartment, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: barColors[index % barColors.length], line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>Unit: %{{x}}<extra></extra>' }});
             }});
 
-            const yearTitle = selectedYear === '전체' ? '전체 연도' : selectedYear;
             const layout = {{
-                title: `<b>[${{selectedDepartment}}] Unit별 문항 점수 비교 (${{yearTitle}})</b>`, barmode: 'group', height: 400,
+                title: `<b>[${{selectedDepartment}}] Unit별 결과</b>`, barmode: 'group', height: 400,
                 xaxis: {{ title: 'Unit' }}, yaxis: {{ title: '점수', range: [0, 100] }},
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.05, xanchor: 'right', x: 1 }},
                 font: layoutFont, hovermode: 'closest',
