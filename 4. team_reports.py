@@ -740,11 +740,12 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 <div id="drilldown-chart-container" class="chart-container"></div>
                 <div id="yearly-comparison-chart-container" class="chart-container"></div>
                 
-                <!-- 5.2 부서 내 Unit 결과 -->
-                <div style="margin-top: 30px;">
-                    <h4 style="color: #555; margin-bottom: 15px;">5.2 부서 내 Unit 결과</h4>
-                    <div id="unit-comparison-chart-container" class="chart-container"></div>
-                </div>
+            </div>
+            
+            <!-- 5.2 부서 내 Unit 결과 -->
+            <div class="subsection">
+                <h3>부서 내 Unit 결과</h3>
+                <div id="unit-comparison-chart-container" class="chart-container"></div>
             </div>
             
             <!-- 5.3 감정 분석 -->
@@ -1065,7 +1066,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', line: {{ shape: 'spline', smoothing: 0.3, width: 3, color: '#355e58' }}, text: yearly_counts.map(count => `${{count.toLocaleString()}}건`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}건<br>연도: %{{x}}<extra></extra>' }});
 
             const layout = {{
-                title: `<b>[${{selectedDivision}}] 연도별 문항 점수</b>`,
+                title: `<b>[${{selectedDivision}}] 결과</b>`,
                 barmode: 'group', height: 500,
                 xaxis: {{ type: 'category', title: '설문 연도' }},
                 yaxis: {{ title: '점수', range: [0, 100] }},
@@ -1372,7 +1373,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             }};
 
             const layout = {{
-                title: `<b>${{selectedYear}} 부문별 부서 점수 순위 (점수 높은 순)</b>`, height: 600,
+                title: `<b>${{selectedYear}} 팀별 종합점수</b>`, height: 600,
                 xaxis: {{ title: '부서', tickangle: -45, automargin: true }},
                 yaxis: {{ title: '점수', range: [Math.min(...scores) - 5, Math.max(...scores) + 5] }},
                 font: layoutFont, hovermode: 'closest', showlegend: false,
@@ -1432,10 +1433,10 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             const yearly_counts = years.map(year => targetData.filter(d => d['설문시행연도'] === year).length);
             traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', line: {{ shape: 'spline', smoothing: 0.3, width: 3, color: '#355e58' }}, text: yearly_counts.map(count => `${{count.toLocaleString()}}건`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}건<br>연도: %{{x}}<extra></extra>' }});
 
-            let titleText = '연도별 문항 점수';
-            if (selectedDept !== '전체' && selectedUnit !== '전체') {{ titleText = `[${{selectedDept}} > ${{selectedUnit}}] 연도별 문항 점수`; }}
-            else if (selectedDept !== '전체') {{ titleText = `[${{selectedDept}}] 연도별 문항 점수`; }}
-            else if (selectedUnit !== '전체') {{ titleText = `[${{selectedUnit}}] 연도별 문항 점수`; }}
+            let titleText = '결과';
+            if (selectedDept !== '전체' && selectedUnit !== '전체') {{ titleText = `[${{selectedDept}} > ${{selectedUnit}}] 결과`; }}
+            else if (selectedDept !== '전체') {{ titleText = `[${{selectedDept}}] 결과`; }}
+            else if (selectedUnit !== '전체') {{ titleText = `[${{selectedUnit}}] 결과`; }}
             
             const layout = {{
                 title: `<b>${{titleText}}</b>`, barmode: 'group', height: 500,
