@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-서울아산병원 협업 평가 대시보드 생성기 (통합 버전)
+서울아산병원 협업 평가 결과 생성기 (통합 버전)
 
 이 파일은 데이터 처리부터 HTML 생성까지 모든 기능을 포함합니다.
 비개발자 실무진이 쉽게 유지보수할 수 있도록 설계되었습니다.
@@ -18,7 +18,7 @@
 - 각 함수는 명확한 목적과 설명을 가짐
 
 작성자: Claude AI
-버전: 3.0 (통합 및 유지보수 개선판)
+버전: 3.0
 업데이트: 2025년 7월 9일
 """
 
@@ -60,7 +60,7 @@ def get_latest_text_processor_file():
         return "rawdata/2. text_processor_결과_20250710_153008.xlsx"  # 기본값
 
 INPUT_DATA_FILE = get_latest_text_processor_file()  # 입력 데이터 파일 (자동 감지)
-OUTPUT_HTML_FILE = "서울아산병원 협업평가 대시보드.html"  # 출력 HTML 파일
+OUTPUT_HTML_FILE = "서울아산병원 협업평가 결과.html"  # 출력 HTML 파일
 
 # 📊 데이터 컬럼 정의 (실제 데이터 구조와 일치)
 EXCEL_COLUMNS = [
@@ -141,7 +141,7 @@ def get_data_summary(df):
     }
 
 # ============================================================================
-# 📊 개선된 데이터 로드 및 전처리 함수들
+# 📊 데이터 로드 및 전처리 함수들
 # ============================================================================
 
 def safe_literal_eval(s):
@@ -263,7 +263,7 @@ def preprocess_data_types(df):
 
 def clean_data(df):
     """
-    데이터 정제 및 품질 개선
+    데이터 정제 및 품질 관리
     
     Args:
         df (pd.DataFrame): 전처리된 데이터프레임
@@ -314,7 +314,7 @@ def clean_data(df):
 
 def calculate_aggregated_data(df):
     """
-    섹션 1-4용 집계 데이터 미리 계산 (보안 강화)
+    섹션 1-4용 집계 데이터 미리 계산
     원본 개별 응답 데이터 대신 계산된 통계만 저장
     
     Args:
@@ -323,7 +323,7 @@ def calculate_aggregated_data(df):
     Returns:
         dict: 집계된 통계 데이터
     """
-    log_message("🔒 집계 데이터 계산 시작 (보안 강화)")
+    log_message("📊 집계 데이터 계산 시작")
     
     aggregated = {
         "hospital_yearly": {},
@@ -453,7 +453,7 @@ def load_data():
     """
     log_message("🚀 데이터 로드 및 전처리 시작")
     
-    # 새로운 개선된 함수들을 사용하여 데이터 처리
+    # 데이터 로드 및 전처리
     df = load_excel_data()
     df = preprocess_data_types(df)
     df = clean_data(df)
@@ -467,7 +467,7 @@ def load_data():
     log_message("✅ 데이터 처리 완료: 집계 데이터 + 원시 데이터")
     return aggregated_data, raw_data_json
 
-# --- 2. 개선된 HTML 생성 ---
+# --- 2. HTML 생성 ---
 def build_html(aggregated_data, raw_data_json):
     """개선된 구조와 번호 체계를 적용한 대화형 HTML 생성 - 집계 데이터와 원시 데이터 분리"""
     return f"""
@@ -524,7 +524,7 @@ def build_html(aggregated_data, raw_data_json):
         .keyword-charts-container {{ display: flex; gap: 20px; }}
         .keyword-chart {{ flex: 1; }}
         
-        /* 차트 컨테이너 스타일 개선 */
+        /* 차트 컨테이너 스타일 */
         .chart-container {{ margin: 20px 0; }}
         .subsection {{ margin: 30px 0; }}
         
@@ -865,7 +865,7 @@ def build_html(aggregated_data, raw_data_json):
 
     </div>
     <script>
-        // 집계 데이터 (섹션 1-4용) - 보안 강화
+        // 집계 데이터 (섹션 1-4용)
         const aggregatedData = {json.dumps(aggregated_data, ensure_ascii=False)};
         
         // 원시 데이터 (섹션 5-6용) - 상세 분석용
@@ -1112,7 +1112,7 @@ def build_html(aggregated_data, raw_data_json):
             const avgScores = divisions.map(div => yearComparisonData[div]['종합점수'].toFixed(1));
             const responseCounts = divisions.map(div => yearComparisonData[div]['응답수'] || 0);
 
-            // 🔒 보안 강화: 미리 계산된 전체 평균 사용
+            // 미리 계산된 전체 평균 사용
             const yearlyOverallAverage = aggregatedData.hospital_yearly[selectedYear] ? aggregatedData.hospital_yearly[selectedYear]['종합점수'].toFixed(1) : '0.0';
 
             const trace = {{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#FDC1B4', line: {{ color: '#000000', width: 1 }} }}, customdata: responseCounts, hovertemplate: '%{{x}}: %{{y}}점<br>응답수: %{{customdata}}건<extra></extra>' }};
@@ -2031,7 +2031,7 @@ def build_html(aggregated_data, raw_data_json):
                 Plotly.react(container, [], {{
                     height: 400,
                     annotations: [{{
-                        text: '우수/양호/개선 기회/중점 개선 드롭다운에서 부서를 선택하세요.',
+                        text: '우수/양호/개선 기회/중점 개선 항목에서 부서를 선택하세요.',
                         xref: 'paper', yref: 'paper', x: 0.5, y: 0.5,
                         showarrow: false, font: {{size: 16, color: '#888'}}
                     }}],

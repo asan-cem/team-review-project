@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-서울아산병원 협업 평가 대시보드 생성기 (통합 버전)
+서울아산병원 협업 평가 결과 생성기 (통합 버전)
 
 이 파일은 데이터 처리부터 HTML 생성까지 모든 기능을 포함합니다.
 비개발자 실무진이 쉽게 유지보수할 수 있도록 설계되었습니다.
@@ -18,7 +18,7 @@
 - 각 함수는 명확한 목적과 설명을 가짐
 
 작성자: Claude AI
-버전: 3.0 (통합 및 유지보수 개선판)
+버전: 3.0
 업데이트: 2025년 7월 9일
 """
 
@@ -141,7 +141,7 @@ def get_data_summary(df):
     }
 
 # ============================================================================
-# 📊 개선된 데이터 로드 및 전처리 함수들
+# 📊 데이터 로드 및 전처리 함수들
 # ============================================================================
 
 def safe_literal_eval(s):
@@ -263,7 +263,7 @@ def preprocess_data_types(df):
 
 def clean_data(df):
     """
-    데이터 정제 및 품질 개선
+    데이터 정제 및 품질 관리
     
     Args:
         df (pd.DataFrame): 전처리된 데이터프레임
@@ -341,12 +341,12 @@ def prepare_json_data(df):
     return data_json
 
 # ============================================================================
-# 🔒 보안 강화 함수들 (하이브리드 데이터 접근 방식)
+# 📊 부서별 데이터 처리 함수들
 # ============================================================================
 
 def calculate_aggregated_data(df):
     """
-    섹션 1-4용 집계 데이터 미리 계산 (보안 강화)
+    섹션 1-4용 집계 데이터 미리 계산
     원본 개별 응답 데이터 대신 계산된 통계만 저장
     
     Args:
@@ -355,7 +355,7 @@ def calculate_aggregated_data(df):
     Returns:
         dict: 집계된 통계 데이터
     """
-    log_message("🔒 집계 데이터 계산 시작 (보안 강화)")
+    log_message("📊 집계 데이터 계산 시작")
     
     aggregated = {
         "hospital_yearly": {},
@@ -439,7 +439,7 @@ def calculate_aggregated_data(df):
 
 def prepare_department_filtered_data(df, target_department):
     """
-    섹션 5-6용 부서별 필터링된 데이터 준비 (보안 강화)
+    섹션 5-6용 부서별 필터링된 데이터 준비
     해당 부서가 피평가 대상인 데이터만 포함
     
     Args:
@@ -449,7 +449,7 @@ def prepare_department_filtered_data(df, target_department):
     Returns:
         str: 필터링된 JSON 데이터
     """
-    log_message(f"🔒 부서별 필터링 시작: {target_department}")
+    log_message(f"📊 부서별 데이터 필터링: {target_department}")
     
     # 해당 부서가 피평가 대상인 데이터만 추출
     dept_data = df[df['피평가부서'] == target_department].copy()
@@ -468,12 +468,12 @@ def prepare_department_filtered_data(df, target_department):
     # JSON 변환
     filtered_json = filtered_data.to_json(orient='records', force_ascii=False)
     
-    log_message(f"✅ 부서별 필터링 완료: {len(filtered_data):,}건 (보안 감소율: {((len(df)-len(filtered_data))/len(df)*100):.1f}%)")
+    log_message(f"✅ 부서별 필터링 완료: {len(filtered_data):,}건 (필터링된 데이터: {((len(df)-len(filtered_data))/len(df)*100):.1f}% 제외)")
     return filtered_json
 
 def build_secure_html(aggregated_data, filtered_rawdata, target_department, target_division):
     """
-    보안 강화된 HTML 생성 (하이브리드 데이터 구조)
+    부서별 맞춤 HTML 생성
     
     Args:
         aggregated_data (dict): 집계된 통계 데이터
@@ -482,9 +482,9 @@ def build_secure_html(aggregated_data, filtered_rawdata, target_department, targ
         target_division (str): 대상 부문명
         
     Returns:
-        str: 보안 강화된 HTML
+        str: 부서별 HTML 대시보드
     """
-    log_message(f"🔒 보안 강화 HTML 생성: {target_department} ({target_division})")
+    log_message(f"🎨 부서별 HTML 생성: {target_department} ({target_division})")
     
     # 보안 메타데이터 추가
     security_metadata = {
@@ -515,15 +515,15 @@ def load_data():
     Returns:
         pd.DataFrame: 전처리된 데이터프레임
     """
-    # 새로운 개선된 함수들을 사용하여 데이터 처리
+    # 데이터 로드 및 전처리
     df = load_excel_data()
     df = preprocess_data_types(df)
     df = clean_data(df)
     return df
 
-# --- 2. 개선된 HTML 생성 (보안 강화) ---
+# --- 2. 부서별 HTML 생성 ---
 def build_html_with_hybrid_data(hybrid_data, target_department, target_division):
-    """보안 강화된 하이브리드 데이터 구조로 HTML 생성"""
+    """부서별 맞춤 대시보드 HTML 생성"""
     
     # JavaScript용 데이터를 JSON으로 변환
     import json
@@ -582,7 +582,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
         .keyword-charts-container {{ display: flex; gap: 20px; }}
         .keyword-chart {{ flex: 1; }}
         
-        /* 차트 컨테이너 스타일 개선 */
+        /* 차트 컨테이너 스타일 */
         .chart-container {{ margin: 20px 0; }}
         .subsection {{ margin: 30px 0; }}
         
@@ -818,7 +818,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
 
     </div>
     <script>
-        // 🔒 보안 강화된 하이브리드 데이터 구조
+        // 부서별 데이터 구조
         const hybridData = {hybrid_data_json};
         const rawData = hybridData.rawData;  // 필터링된 부서 데이터만 포함
         const aggregatedData = hybridData.aggregated;  // 미리 계산된 집계 데이터
@@ -986,7 +986,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 return;
             }}
 
-            // 🔒 보안 강화: 미리 계산된 집계 데이터 사용
+            // 미리 계산된 집계 데이터 사용
             const hospitalData = aggregatedData.hospital_yearly;
             const years = Object.keys(hospitalData).sort();
             const traces = [];
@@ -1030,7 +1030,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 return;
             }}
 
-            // 🔒 보안 강화: 미리 계산된 부문별 집계 데이터 사용
+            // 미리 계산된 부문별 집계 데이터 사용
             const divisionData = aggregatedData.division_yearly[selectedDivision] || {{}};
             const years = Object.keys(divisionData).sort();
             const traces = [];
@@ -1072,14 +1072,14 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 return;
             }}
 
-            // 🔒 보안 강화: 미리 계산된 부문 비교 집계 데이터 사용 (모든 부문 포함)
+            // 미리 계산된 부문 비교 집계 데이터 사용 (모든 부문 포함)
             const comparisonData = aggregatedData.division_comparison[selectedYear] || {{}};
             
             const divisions = selectedDivisions.filter(div => comparisonData[div]).sort((a,b) => a.localeCompare(b, 'ko'));
             const avgScores = divisions.map(div => comparisonData[div]['종합점수'] ? comparisonData[div]['종합점수'].toFixed(1) : '0.0');
             const responseCounts = divisions.map(div => comparisonData[div]['응답수'] || 0);
 
-            // 🔒 보안 강화: 미리 계산된 전체 평균 사용
+            // 미리 계산된 전체 평균 사용
             const yearlyOverallAverage = aggregatedData.hospital_yearly[selectedYear] ? aggregatedData.hospital_yearly[selectedYear]['종합점수'].toFixed(1) : '0.0';
 
             const trace = {{ x: divisions, y: avgScores, type: 'bar', text: avgScores, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: '#FDC1B4', line: {{ color: '#000000', width: 1 }} }}, customdata: responseCounts, hovertemplate: '%{{x}}: %{{y}}점<br>응답수: %{{customdata}}건<extra></extra>' }};
@@ -1331,7 +1331,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
 
             // {target_division}로 고정되어 있으므로 선택 확인 불필요
 
-            // 🔒 보안 강화: 미리 계산된 팀 순위 집계 데이터 사용
+            // 미리 계산된 팀 순위 집계 데이터 사용
             const teamRankingData = aggregatedData.team_ranking[selectedYear] || [];
             
             // 해당 부문에 속한 팀들만 필터링 ({target_division} 소속 부서들)
@@ -1355,7 +1355,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             const colors = teamRankings.map(() => '#FDC1B4');
             const hoverTexts = teamRankings.map(item => `부서: ${{item.department}}<br>점수: ${{item.score.toFixed(1)}}<br>응답수: ${{item.count}}건`);
 
-            // 🔒 보안 강화: 미리 계산된 전체 평균 사용
+            // 미리 계산된 전체 평균 사용
             const yearlyOverallAverage = aggregatedData.hospital_yearly[selectedYear] ? aggregatedData.hospital_yearly[selectedYear]['종합점수'].toFixed(1) : '0.0';
 
             const trace = {{
@@ -1893,7 +1893,7 @@ def calculate_aggregated_data_for_department(df, target_department, target_divis
     Returns:
         dict: 집계된 통계 데이터
     """
-    log_message(f"🔒 집계 데이터 계산 시작: {target_department} ({target_division})")
+    log_message(f"📊 집계 데이터 계산 시작: {target_department} ({target_division})")
     
     aggregated = {
         "hospital_yearly": {},
@@ -2103,7 +2103,7 @@ def main():
         print("=" * 70)
         
         # 1. 데이터 로드 및 전처리
-        log_message("1️⃣ 데이터 로드 및 전처리 시작")
+        log_message("📊 데이터 로드 및 전처리")
         df = load_data()
         
         # 2. 데이터 요약 정보 출력
@@ -2111,7 +2111,7 @@ def main():
         log_message(f"📊 데이터 요약: {summary['총_응답수']:,}건, 평균 점수: {summary['평균_종합점수']}점")
         
         # 3. 전체 부서 목록 추출
-        log_message("2️⃣ 전체 부서 목록 추출")
+        log_message("📁 대상 부서 목록 추출")
         departments = get_all_departments(df)
         
         if not departments:
@@ -2119,12 +2119,12 @@ def main():
             return False
         
         # 4. 출력 디렉토리 구조 생성
-        log_message("3️⃣ 출력 디렉토리 구조 생성")
+        log_message("📁 출력 디렉토리 생성")
         output_dir = create_output_directory_structure()
         division_dirs = create_division_directories(output_dir, departments)
         
         # 5. 부서별 보고서 생성
-        log_message("4️⃣ 부서별 보고서 생성 시작")
+        log_message("📄 부서별 보고서 생성")
         
         results = []
         total_departments = len(departments)
@@ -2139,7 +2139,7 @@ def main():
             
             # 출력 파일 경로 생성
             division_dir = division_dirs[division]
-            filename = f"서울아산병원 협업평가 대시보드_{department}.html"
+            filename = f"서울아산병원 협업평가 결과_{department}.html"
             output_path = str(Path(division_dir) / filename)
             
             # 부서별 보고서 생성
@@ -2150,7 +2150,7 @@ def main():
             log_message(f"📊 진행률: {progress_info['percentage']:.1f}% ({idx}/{total_departments})")
         
         # 6. 생성 결과 요약
-        log_message("5️⃣ 생성 결과 요약")
+        log_message("📊 생성 결과 요약")
         generate_summary_report(results, output_dir, start_time)
         
         # 7. 최종 결과 출력
