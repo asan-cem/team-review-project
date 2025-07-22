@@ -737,7 +737,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             <div class="subsection">
                 <h3>부서/Unit 결과</h3>
                 <div id="metrics-container"></div>
-                <div id="drilldown-chart-container" class="chart-container" style="display: none;"></div>
                 <div id="yearly-comparison-chart-container" class="chart-container"></div>
                 
             </div>
@@ -772,26 +771,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                     </div>
                     <div id="reviews-table-container"><table id="reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody></tbody></table></div>
                 </div>
-            </div>
-            <!-- 5.4 키워드 분석 -->
-            <div class="subsection" style="display: none;">
-                <h3>핵심 키워드 분석</h3>
-                <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #6a89cc; margin-bottom: 20px; border-radius: 0 5px 5px 0;">
-                    <p style="margin: 0; color: #495057; font-size: 0.95em;">
-                        <strong>📊 이 차트는 무엇인가요?</strong><br>
-                        협업 후기에서 자주 언급되는 단어들을 긍정/부정으로 분류하여 상위 10개를 보여줍니다.<br><br>
-                        <strong>💡 활용 방법:</strong><br>
-                        • <span style="color: #28a745;"><strong>긍정 키워드</strong></span>: 어떤 부분에서 만족하고 있는지 파악<br>
-                        • <span style="color: #dc3545;"><strong>부정 키워드</strong></span>: 개선이 필요한 부분을 빠르게 확인<br>
-                        • <strong>막대 클릭</strong>: 해당 키워드가 포함된 실제 후기 내용을 확인할 수 있습니다<br><br>
-                        <em>예시: "신속한" 키워드 클릭 → "신속한 응답으로 업무가 원활했다" 등의 후기 표시</em>
-                    </p>
-                </div>
-                <div class="keyword-charts-container">
-                    <div id="positive-keywords-chart" class="keyword-chart"></div>
-                    <div id="negative-keywords-chart" class="keyword-chart"></div>
-                </div>
-                <div id="keyword-reviews-container"></div>
             </div>
 
         </div>
@@ -962,6 +941,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
         
         function updateDrilldownChart(data) {{
             const container = document.getElementById('drilldown-chart-container');
+            if (!container) return;
             const selectedScores = Array.from(document.querySelectorAll('input[name="drilldown-score"]:checked')).map(cb => cb.value);
 
             if (data.length === 0 || selectedScores.length === 0) {{ 
@@ -1260,13 +1240,14 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             const posChartContainer = document.getElementById('positive-keywords-chart');
             const negChartContainer = document.getElementById('negative-keywords-chart');
 
-            plotKeywordChart(posChartContainer, '긍정 키워드 Top 10', topPositive, '긍정');
-            plotKeywordChart(negChartContainer, '부정 키워드 Top 10', topNegative, '부정');
+            if (posChartContainer) plotKeywordChart(posChartContainer, '긍정 키워드 Top 10', topPositive, '긍정');
+            if (negChartContainer) plotKeywordChart(negChartContainer, '부정 키워드 Top 10', topNegative, '부정');
             
             displayKeywordReviews(null, null, true);
         }}
 
         function plotKeywordChart(container, title, data, sentiment) {{
+            if (!container) return;
             if (data.length === 0) {{
                 Plotly.react(container, [], {{ title: `<b>${{title}}</b>`, height: 400, annotations: [{{ text: '데이터 없음', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false }}] }});
                 return;
@@ -1299,6 +1280,7 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
 
         function displayKeywordReviews(keyword, sentiment, isInitial = false) {{
             const container = document.getElementById('keyword-reviews-container');
+            if (!container) return;
             
             if (isInitial) {{
                 container.innerHTML = `<h4>관련 리뷰</h4><p>위 그래프의 막대를 클릭하면 관련 리뷰를 확인할 수 있습니다.</p><div id="keyword-reviews-table-container"><table id="keyword-reviews-table"><thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody><tr><td colspan="2" style="text-align:center;"></td></tr></tbody></table></div>`;
