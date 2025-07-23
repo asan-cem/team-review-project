@@ -454,9 +454,9 @@ def prepare_department_filtered_data(df, target_department):
     # 해당 부서가 피평가 대상인 데이터만 추출
     dept_data = df[df['피평가부서'] == target_department].copy()
     
-    # 보안을 위한 컬럼 선택 (이미 공개된 평가 내용만)
+    # 보안을 위한 컬럼 선택 (평가부서 정보 제외)
     safe_columns = [
-        '설문시행연도', '평가부서', '피평가부문', '피평가부서', '피평가Unit',
+        '설문시행연도', '피평가부문', '피평가부서', '피평가Unit',
         '존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합점수',
         '정제된_텍스트', '감정_분류', '핵심_키워드'
     ]
@@ -784,20 +784,8 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             <!-- 공통 필터 -->
             <div class="filters">
                 <div class="filter-group">
-                    <label for="network-division-filter">연도 (전체)</label>
+                    <label for="network-year-filter">연도 (전체)</label>
                     <select id="network-year-filter"></select>
-                </div>
-                <div class="filter-group">
-                    <label for="network-division-filter">부문</label>
-                    <select id="network-division-filter"></select>
-                </div>
-                <div class="filter-group">
-                    <label for="network-department-filter">부서</label>
-                    <select id="network-department-filter"></select>
-                </div>
-                <div class="filter-group">
-                    <label for="network-unit-filter">Unit</label>
-                    <select id="network-unit-filter"></select>
                 </div>
                 <div class="filter-group">
                     <label for="min-collaboration-filter">평가 횟수</label>
@@ -807,6 +795,12 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                         <option value="30">30회 이상</option>
                     </select>
                 </div>
+            </div>
+            <!-- 부문/부서/Unit 필터는 집계 데이터 사용으로 제거 -->
+            <div style="display: none;">
+                <select id="network-division-filter"><option value="전체">전체</option></select>
+                <select id="network-department-filter"><option value="{target_department}">{target_department}</option></select>
+                <select id="network-unit-filter"><option value="전체">전체</option></select>
             </div>
             
             <div class="subsection">
@@ -1617,17 +1611,12 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
             departmentSelect.innerHTML = '<option value="전체">전체</option>';
             unitSelect.innerHTML = '<option value="전체">전체</option>';
             
-            // 이벤트 리스너 추가
+            // 이벤트 리스너 추가 (연도와 최소 횟수 필터만)
             yearSelect.addEventListener('change', updateNetworkAnalysis);
-            divisionSelect.addEventListener('change', updateNetworkDepartments);
-            departmentSelect.addEventListener('change', updateNetworkUnits);
-            unitSelect.addEventListener('change', updateNetworkAnalysis);
             minCollabSelect.addEventListener('change', updateNetworkAnalysis);
             
-            // 협업 관계 현황 체크박스 이벤트 리스너는 updateStatusDropdowns 함수에서 동적으로 추가됨
-            
             // 초기 네트워크 분석 표시
-            updateNetworkDepartments();
+            updateNetworkAnalysis();
         }}
 
         function updateNetworkDepartments() {{
@@ -1697,10 +1686,31 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
 
         function updateCollaborationFrequencyChart() {{
             const container = document.getElementById('collaboration-frequency-chart-container');
-            const filteredData = getNetworkFilteredData();
+            const selectedYear = document.getElementById('network-year-filter').value;
             const minCollabCount = parseInt(document.getElementById('min-collaboration-filter').value);
             
-            if (filteredData.length === 0) {{
+            // 집계된 네트워크 분석 데이터 사용
+            let collaborationCounts = {{}};
+            if (selectedYear === '전체') {{
+                // 모든 연도의 협업 횟수 합산
+                Object.keys(aggregatedData.network_analysis || {{}}).forEach(year => {{
+                    const yearData = aggregatedData.network_analysis[year];
+                    if (yearData && yearData.collaboration_counts) {{
+                        Object.entries(yearData.collaboration_counts).forEach(([relation, count]) => {{
+                            collaborationCounts[relation] = (collaborationCounts[relation] || 0) + count;
+                        }});
+                    }}
+                }});
+            }} else {{
+                // 특정 연도의 협업 횟수만 사용
+                const yearData = aggregatedData.network_analysis && aggregatedData.network_analysis[selectedYear];
+                if (yearData && yearData.collaboration_counts) {{
+                    collaborationCounts = yearData.collaboration_counts;
+                }}
+            }}
+            
+            // 데이터가 없는 경우 처리
+            if (Object.keys(collaborationCounts).length === 0) {{
                 Plotly.react(container, [], {{
                     height: 400,
                     annotations: [{{ text: '선택된 조건에 해당하는 데이터가 없습니다.', xref: 'paper', yref: 'paper', x: 0.5, y: 0.5, showarrow: false, font: {{size: 16, color: '#888'}} }}],
@@ -1708,19 +1718,6 @@ def build_html_with_hybrid_data(hybrid_data, target_department, target_division)
                 }});
                 return;
             }}
-            
-            // 협업 빈도 계산
-            const selectedUnit = document.getElementById('network-unit-filter').value;
-            const collaborationCounts = {{}};
-            filteredData.forEach(item => {{
-                const evaluator = item['평가부서'];
-                // Unit이 선택된 경우 Unit 이름 사용, 그렇지 않으면 부서 이름 사용
-                const evaluated = selectedUnit !== '전체' ? item['피평가Unit'] : item['피평가부서'];
-                if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A') {{
-                    const key = `${{evaluator}} → ${{evaluated}}`;
-                    collaborationCounts[key] = (collaborationCounts[key] || 0) + 1;
-                }}
-            }});
             
             // 최소 협업 횟수 이상인 관계만 필터링
             const filteredCollaborations = Object.entries(collaborationCounts)
@@ -1900,6 +1897,7 @@ def calculate_aggregated_data_for_department(df, target_department, target_divis
         "division_yearly": {},
         "division_comparison": {},
         "team_ranking": {},
+        "network_analysis": {},
         "metadata": {
             "calculation_date": datetime.now().isoformat(),
             "total_responses": len(df),
@@ -1973,6 +1971,30 @@ def calculate_aggregated_data_for_department(df, target_department, target_divis
                 dept["rank"] = i + 1
             
             aggregated["team_ranking"][year_str] = dept_scores
+    
+    # 5. 네트워크 분석용 집계 데이터 (평가부서 정보를 집계하여 응답수만 저장)
+    # 해당 부서가 피평가 대상인 데이터만 필터링
+    target_dept_data = df[df['피평가부서'] == target_department]
+    
+    for year in target_dept_data['설문시행연도'].unique():
+        if pd.notna(year):
+            year_str = str(year)
+            year_data = target_dept_data[target_dept_data['설문시행연도'] == year]
+            
+            # 협업 관계별 응답수 집계 (평가부서별로 그룹화)
+            collaboration_counts = {}
+            for evaluator in year_data['평가부서'].unique():
+                if pd.notna(evaluator) and evaluator != 'N/A':
+                    count = len(year_data[year_data['평가부서'] == evaluator])
+                    if count > 0:
+                        # 평가부서 → 피평가부서(target_department) 형태로 저장
+                        collaboration_counts[f"{evaluator} → {target_department}"] = count
+            
+            aggregated["network_analysis"][year_str] = {
+                "collaboration_counts": collaboration_counts,
+                "total_evaluators": len(year_data['평가부서'].unique()),
+                "total_responses": len(year_data)
+            }
     
     log_message(f"✅ 집계 데이터 계산 완료: {len(aggregated['hospital_yearly'])}년치 데이터")
     return aggregated
