@@ -3,19 +3,15 @@ import pandas as pd  # 엑셀, CSV 파일 처리
 import json  # JSON 데이터 처리
 import time  # 대기 시간 처리
 from pathlib import Path  # 파일 경로 처리
-import math  # 수학 계산
-import datetime  # 시간 처리
 from tqdm import tqdm  # 진행률 표시
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FutureTimeoutError  # 병렬 처리
+from concurrent.futures import ThreadPoolExecutor, as_completed  # 병렬 처리
 import re  # 정규표현식
 import sys  # 명령행 인자 처리
-import os  # 파일 시스템 조작
 import warnings  # 경고 메시지 제어
-import signal  # 시그널 처리
 import pickle  # 체크포인트 직렬화
 import logging  # 로깅
-from multiprocessing import Process, Queue, Manager  # 백그라운드 프로세싱
-from threading import Timer  # 타임아웃 처리
+from multiprocessing import Process, Queue  # 백그라운드 프로세싱
+from collections import Counter  # 키워드 카운팅
 warnings.filterwarnings('ignore')
 
 # Google Cloud AI 라이브러리
@@ -1087,7 +1083,6 @@ class ReviewAnalyzer:
                     all_keywords.extend(keywords)
             
             if all_keywords:
-                from collections import Counter
                 keyword_counts = Counter(all_keywords)
                 print("\n주요 키워드:")
                 for keyword, count in keyword_counts.most_common(10):
