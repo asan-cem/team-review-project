@@ -104,6 +104,9 @@ python "3. build_dashboard_html.py"
 
 # 4단계: 부서별 리포트 생성 (선택사항)
 python "4. team_reports.py"
+
+# 또는 진료부문 버전2 실행 (방사성의약품제조소 제외)
+python "4. team_reports.py" clinical_v2
 ```
 
 ### 각 단계별 설명
@@ -136,6 +139,9 @@ python "4. team_reports.py"
 - **입력**: 전처리된 데이터
 - **처리**: 각 부서별 상세 분석
 - **출력**: `generated_reports/reports_*/부문명/부서별HTML파일`
+- **실행 옵션**:
+  - 기본 실행: `python "4. team_reports.py"` - 전체 76개 부서 보고서 생성
+  - 진료부문 v2: `python "4. team_reports.py" clinical_v2` - 진료부문 22개 부서만 (방사성의약품제조소 제외)
 
 ## 주요 기능 상세
 
@@ -221,6 +227,23 @@ python "4. team_reports.py"
 - **이슈 제출**: GitHub Issues 사용
 - **개선 제안**: Pull Request 환영
 - **최종 업데이트**: 2025년 7월
+
+## 최근 변경사항 (2025년 7월 25일)
+
+### 진료부문 버전2 추가
+- **요청자**: 핵의학팀장님
+- **변경사항**: 진료부문 보고서에서 방사성의약품제조소를 제외한 버전 추가
+- **적용범위**: 
+  - 진료부문 v2 실행 시 방사성의약품제조소가 섹션 4(부문별 팀 점수 순위)에서 제외됨
+  - 총 23개 부서 중 22개 부서만 표시
+  - 종합점수 계산에는 포함되며, 차트 표시에서만 제외
+- **실행방법**: `python "4. team_reports.py" clinical_v2`
+- **출력폴더**: `generated_reports/진료부문_v2_YYYYMMDD_HHMMSS/`
+
+### Context7 MCP 연결 문제
+- **증상**: Context7 API 연결 실패 (DNS 해석 불가)
+- **원인**: `api.context7.ai` 도메인이 내부 DNS에서 해석되지 않음
+- **해결방안**: IT팀에 DNS 허용 요청 필요
 
 ---
 

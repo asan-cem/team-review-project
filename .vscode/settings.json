@@ -1,8 +1,8 @@
 {
-    "python.defaultInterpreterPath": "./venv/bin/python",
+    "python.defaultInterpreterPath": "./.venv/bin/python",
     "python.terminal.activateEnvironment": true,
-    "python.terminal.activateEnvInCurrentTerminal": true,
-    "python.analysis.extraPaths": ["./venv/lib/python3.12/site-packages"],
+    "python.terminal.activateEnvInCurrentTerminal": false,
+    "python.analysis.extraPaths": ["./.venv/lib/python3.12/site-packages"],
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": true,
     "python.formatting.provider": "black",
