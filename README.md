@@ -100,12 +100,19 @@ python "1. data_processor.py"
 python "2. text_processor.py"
 
 # 3단계: 대시보드 생성
+# 전체 보고서 생성
 python "3. build_dashboard_html.py"
+
+# 특정 부서 보고서 생성
+python "3. build_dashboard_html.py" --department "인사팀" --division "관리부문"
+
+# 모든 부서 개별 보고서 생성
+python "3. build_dashboard_html.py" --all-departments
 
 # 4단계: 부서별 리포트 생성 (선택사항)
 python "4. team_reports.py"
 
-# 또는 진료부문 버전2 실행 (방사성의약품제조소 제외)
+# 또는 진료부문 버전2 실행 (방사성의약품제조소 제줘)
 python "4. team_reports.py" clinical_v2
 ```
 
@@ -133,7 +140,13 @@ python "4. team_reports.py" clinical_v2
 #### 3. 통합 대시보드 생성 (build_dashboard_html.py)
 - **입력**: 전처리된 데이터 (AI 분석은 선택사항)
 - **처리**: 인터랙티브 차트 및 분석 생성
-- **출력**: `서울아산병원 협업평가 결과.html`
+- **출력**: 
+  - 전체 보고서: `서울아산병원 협업평가 결과.html`
+  - 부서별 보고서: `서울아산병원 협업평가 결과_부서명.html`
+- **새로운 기능**:
+  - 개별 부서 보고서 생성 기능 통합
+  - 부서별 데이터 필터링으로 보안 강화
+  - 작업 효율성 향상 (4. team_reports.py 기능 통합)
 
 #### 4. 부서별 리포트 생성 (team_reports.py)
 - **입력**: 전처리된 데이터
@@ -228,22 +241,36 @@ python "4. team_reports.py" clinical_v2
 - **개선 제안**: Pull Request 환영
 - **최종 업데이트**: 2025년 7월
 
+## 최근 변경사항 (2025년 7월 28일)
+
+### 부서별 보고서 기능 개선
+- **변경사항**: 3. build_dashboard_html.py에 부서별 보고서 생성 기능 통합
+- **주요 기능**:
+  - 개별 부서 보고서 생성: `python "3. build_dashboard_html.py" --department "부서명" --division "부문명"`
+  - 전체 부서 보고서 일괄 생성: `python "3. build_dashboard_html.py" --all-departments`
+  - 성능 개선: 부서별 필터링된 데이터로 보안 강화
+
+### 섹션별 데이터 범위 개선 
+- **섹션 2 (부문별 종합 점수)**: 모든 부문 데이터 표시 (부문 간 비교 목적)
+- **셉션 3 (소속 부문 결과)**: 부서별 보고서에서는 타겟 부문만 선택 가능
+- **셉션 4 (팀별 순위)**: 부서별 보고서에서는 타겟 부문만 표시
+
+### 기술적 개선사항
+- 집계 데이터와 원시 데이터 분리로 성능 향상
+- JavaScript에 reportMode와 targetDivision 변수 추가로 조건부 렌더링
+- 응답수 정보 추가로 통계적 신뢰성 향상
+
 ## 최근 변경사항 (2025년 7월 25일)
 
 ### 진료부문 버전2 추가
 - **요청자**: 핵의학팀장님
 - **변경사항**: 진료부문 보고서에서 방사성의약품제조소를 제외한 버전 추가
 - **적용범위**: 
-  - 진료부문 v2 실행 시 방사성의약품제조소가 섹션 4(부문별 팀 점수 순위)에서 제외됨
+  - 진료부문 v2 실행 시 방사성의약품제조소가 셉션 4(부문별 팀 점수 순위)에서 제외됨
   - 총 23개 부서 중 22개 부서만 표시
   - 종합점수 계산에는 포함되며, 차트 표시에서만 제외
 - **실행방법**: `python "4. team_reports.py" clinical_v2`
 - **출력폴더**: `generated_reports/진료부문_v2_YYYYMMDD_HHMMSS/`
-
-### Context7 MCP 연결 문제
-- **증상**: Context7 API 연결 실패 (DNS 해석 불가)
-- **원인**: `api.context7.ai` 도메인이 내부 DNS에서 해석되지 않음
-- **해결방안**: IT팀에 DNS 허용 요청 필요
 
 ---
 

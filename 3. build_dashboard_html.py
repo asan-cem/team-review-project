@@ -544,7 +544,7 @@ def calculate_aggregated_data_for_department(df, target_department, target_divis
                     }
                     aggregated["division_yearly"][division][str(year)]["응답수"] = len(year_data)
     
-    # 3. [부문 비교] 연도별 부문 비교 - 타겟 부문만 포함
+    # 3. [부문 비교] 연도별 부문 비교 - 모든 부문 포함 (섹션 2에서 사용)
     for year in df['설문시행연도'].unique():
         if pd.notna(year):
             year_str = str(year)
@@ -552,14 +552,16 @@ def calculate_aggregated_data_for_department(df, target_department, target_divis
             
             aggregated["division_comparison"][year_str] = {}
             
-            # 타겟 부문만 계산
-            div_year_data = year_data[year_data['피평가부문'] == target_division]
-            if len(div_year_data) > 0:
-                aggregated["division_comparison"][year_str][target_division] = {
-                    col: float(div_year_data[col].mean()) if col in div_year_data.columns else 0.0
-                    for col in SCORE_COLUMNS
-                }
-                aggregated["division_comparison"][year_str][target_division]["응답수"] = len(div_year_data)
+            # 모든 부문별 평균 계산
+            for division in df['피평가부문'].unique():
+                if pd.notna(division) and division != 'N/A':
+                    div_year_data = year_data[year_data['피평가부문'] == division]
+                    if len(div_year_data) > 0:
+                        aggregated["division_comparison"][year_str][division] = {
+                            col: float(div_year_data[col].mean()) if col in div_year_data.columns else 0.0
+                            for col in SCORE_COLUMNS
+                        }
+                        aggregated["division_comparison"][year_str][division]["응답수"] = len(div_year_data)
     
     # 4. [팀 순위] 해당 부문 내 팀 순위 - 연도별
     division_data = df[df['피평가부문'] == target_division]
@@ -1106,9 +1108,22 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
 
         function setupDivisionChart() {{
             const select = document.getElementById('division-chart-filter');
-            select.innerHTML = ['부문을 선택하세요', ...allDivisions].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            
+            // 섹션 3: 부서별 보고서에서는 타겟 부문만 선택 가능
+            if (reportMode === 'department' && targetDivision) {{
+                select.innerHTML = `<option value="${{targetDivision}}">${{targetDivision}}</option>`;
+                select.value = targetDivision;
+            }} else {{
+                select.innerHTML = ['부문을 선택하세요', ...allDivisions].map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
+            }}
+            
             select.addEventListener('change', updateDivisionYearlyChart);
             createCheckboxFilter('division-score-filter', scoreCols, 'division-score', updateDivisionYearlyChart);
+            
+            // 부서별 보고서에서는 타겟 부문 자동 표시
+            if (reportMode === 'department' && targetDivision) {{
+                setTimeout(() => updateDivisionYearlyChart(), 100);
+            }}
         }}
         
         function setupComparisonChart() {{
@@ -1117,10 +1132,17 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             yearSelect.value = allYears[allYears.length - 1]; // Default to last year
             yearSelect.addEventListener('change', updateYearlyDivisionComparisonChart);
             
-            // 셉션 3: 부서별 보고서에서는 타겟 부문만 표시
-            const divisionsForComparison = reportMode === 'department' && targetDivision ? 
-                [targetDivision] : allDivisions;
-            createCheckboxFilter('comparison-division-filter', divisionsForComparison, 'comparison-division', updateYearlyDivisionComparisonChart, true);
+            // 셉션 2: 부서별 보고서에서도 모든 부문 표시
+            createCheckboxFilter('comparison-division-filter', allDivisions, 'comparison-division', updateYearlyDivisionComparisonChart, true);
+            
+            // 부서별 보고서에서는 모든 부문을 기본적으로 선택
+            if (reportMode === 'department') {{
+                // 모든 체크박스를 체크
+                setTimeout(() => {{
+                    document.querySelectorAll('input[name="comparison-division"]').forEach(cb => cb.checked = true);
+                    updateYearlyDivisionComparisonChart();
+                }}, 100);
+            }}
         }}
 
         function getFilteredData() {{
