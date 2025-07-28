@@ -1764,7 +1764,9 @@ def build_html(aggregated_data, raw_data_json):
                 const evaluator = item['평가부서'];
                 // Unit이 선택된 경우 Unit 이름 사용, 그렇지 않으면 부서 이름 사용
                 const evaluated = selectedUnit !== '전체' ? item['피평가Unit'] : item['피평가부서'];
-                if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A') {{
+                const score = item['종합점수'];
+                // 섹션 6.1과 동일하게 종합점수가 있는 데이터만 카운트
+                if (evaluator !== evaluated && evaluator && evaluated && evaluator !== 'N/A' && evaluated !== 'N/A' && score != null) {{
                     const key = `${{evaluator}} → ${{evaluated}}`;
                     collaborationCounts[key] = (collaborationCounts[key] || 0) + 1;
                 }}
@@ -1928,8 +1930,8 @@ def build_html(aggregated_data, raw_data_json):
             const statusMappings = {{
                 '우수': {{ filterId: 'excellent-dept-filter', countId: 'excellent-count', headerId: 'excellent-dept-header', groupName: 'excellent-dept' }},
                 '양호': {{ filterId: 'good-dept-filter', countId: 'good-count', headerId: 'good-dept-header', groupName: 'good-dept' }},
-                '주의': {{ filterId: 'caution-dept-filter', countId: 'caution-count', headerId: 'caution-dept-header', groupName: 'caution-dept' }},
-                '문제': {{ filterId: 'problem-dept-filter', countId: 'problem-count', headerId: 'problem-dept-header', groupName: 'problem-dept' }}
+                '개선 기회': {{ filterId: 'caution-dept-filter', countId: 'caution-count', headerId: 'caution-dept-header', groupName: 'caution-dept' }},
+                '중점 개선': {{ filterId: 'problem-dept-filter', countId: 'problem-count', headerId: 'problem-dept-header', groupName: 'problem-dept' }}
             }};
             
             Object.entries(statusMappings).forEach(([status, elements]) => {{
@@ -2004,8 +2006,8 @@ def build_html(aggregated_data, raw_data_json):
             const statusMappings = {{
                 '우수': 'excellent-dept',
                 '양호': 'good-dept',
-                '주의': 'caution-dept',
-                '문제': 'problem-dept'
+                '개선 기회': 'caution-dept',
+                '중점 개선': 'problem-dept'
             }};
             
             Object.entries(statusMappings).forEach(([status, groupName]) => {{
