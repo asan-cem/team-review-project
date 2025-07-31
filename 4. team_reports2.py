@@ -28,11 +28,26 @@ def create_standalone_html(html_path, plotly_js_path, output_path):
     with open(plotly_js_path, 'r', encoding='utf-8') as f:
         plotly_content = f.read()
     
-    # 외부 스크립트 참조를 인라인으로 변경
+    # 외부 스크립트 참조를 인라인으로 변경 (여러 패턴 지원)
+    original_content = html_content
+    
+    # CDN 링크 패턴
+    html_content = html_content.replace(
+        '<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>',
+        f'<script>{plotly_content}</script>'
+    )
+    
+    # 로컬 상대 경로 패턴
     html_content = html_content.replace(
         '<script src="../shared/plotly.min.js"></script>',
         f'<script>{plotly_content}</script>'
     )
+    
+    # 치환 성공 여부 확인
+    if html_content == original_content:
+        print(f"⚠️  Plotly 스크립트 태그를 찾을 수 없습니다: {html_path}")
+    else:
+        print(f"✅ Plotly 라이브러리 임베드 완료: {html_path.name}")
     
     # 출력 디렉토리 생성
     output_path.parent.mkdir(parents=True, exist_ok=True)
