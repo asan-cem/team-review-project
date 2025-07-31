@@ -74,15 +74,15 @@ def main():
     print(f"📂 소스 디렉토리: {source_dir}")
     
     # plotly.min.js 경로
-    plotly_js_path = source_dir / "shared" / "plotly.min.js"
+    plotly_js_path = base_dir / "generated_reports" / "never delete" / "plotly.min.js"
     if not plotly_js_path.exists():
         print(f"❌ plotly.min.js 파일을 찾을 수 없습니다: {plotly_js_path}")
         return
     
     # 출력 디렉토리 생성
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_base_dir = base_dir / f"standalone_reports_{timestamp}"
-    output_base_dir.mkdir(exist_ok=True)
+    output_base_dir = base_dir / "generated_reports" / f"standalone_reports_{timestamp}"
+    output_base_dir.mkdir(parents=True, exist_ok=True)
     
     print(f"📁 출력 디렉토리: {output_base_dir}")
     

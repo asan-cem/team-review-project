@@ -528,7 +528,8 @@ team-review-project/
 │   ├── 1. data_processor.py           # 설문 데이터 전처리
 │   ├── 2. text_processor.py           # AI 텍스트 분석 (Google Vertex AI)
 │   ├── 3. build_dashboard_html.py     # 통합 대시보드 생성
-│   └── 4. team_reports.py             # 부서별 개별 리포트 생성
+│   ├── 4. team_reports.py             # 부서별 개별 리포트 생성
+│   └── 4. team_reports2.py            # 단독 실행 HTML 보고서 생성 스크립트
 │
 ├── 데이터 폴더/
 │   └── rawdata/                       # 원본 데이터 및 처리 결과
@@ -540,11 +541,14 @@ team-review-project/
 │
 ├── 결과물 폴더/
 │   ├── generated_reports/             # 생성된 부서별 리포트
-│   │   └── reports_YYYYMMDD_HHMMSS/   # 타임스탬프별 리포트 세트
-│   │       ├── 간호부문/              # 부문별 폴더
-│   │       ├── 관리부문/
-│   │       ├── 진료부문/
-│   │       └── ...
+│   │   ├── never delete/              # 공통 자원 폴더
+│   │   │   └── plotly.min.js          # Plotly.js 라이브러리 파일
+│   │   ├── reports_YYYYMMDD_HHMMSS/   # 타임스탬프별 리포트 세트
+│   │   │   ├── 간호부문/              # 부문별 폴더
+│   │   │   ├── 관리부문/
+│   │   │   ├── 진료부문/
+│   │   │   └── ...
+│   │   └── standalone_reports_YYYYMMDD_HHMMSS/  # 단독 실행 HTML 보고서
 │   └── 서울아산병원 협업평가 결과.html # 통합 대시보드
 │
 ├── 기타 스크립트/
@@ -618,8 +622,11 @@ python "3. build_dashboard_html.py" --all-departments
 # 4단계: 부서별 리포트 생성 (선택사항)
 python "4. team_reports.py"
 
-# 또는 진료부문 버전2 실행 (방사성의약품제조소 제줘)
+# 또는 진료부문 버전2 실행 (방사성의약품제조소 제외)
 python "4. team_reports.py" clinical_v2
+
+# 5단계: 단독 실행 HTML 보고서 생성 (선택사항)
+python "4. team_reports2.py"
 ```
 
 ### 각 단계별 설명
@@ -661,6 +668,20 @@ python "4. team_reports.py" clinical_v2
 - **실행 옵션**:
   - 기본 실행: `python "4. team_reports.py"` - 전체 76개 부서 보고서 생성
   - 진료부문 v2: `python "4. team_reports.py" clinical_v2` - 진료부문 22개 부서만 (방사성의약품제조소 제외)
+
+#### 5. 단독 실행 HTML 보고서 생성 (team_reports2.py)
+- **입력**: 기존 부서별 리포트 (4. team_reports.py 결과)
+- **처리**: 
+  - 각 HTML 파일에 plotly.min.js를 임베드하여 단독 실행 가능한 파일 생성
+  - 외부 스크립트 의존성 제거로 오프라인 환경에서도 실행 가능
+- **출력**: `generated_reports/standalone_reports_*/부문명/부서별HTML파일`
+- **실행 옵션**:
+  - 기본 실행: `python "4. team_reports2.py"` - 가장 최근 생성된 보고서를 변환
+  - 특정 디렉토리 지정: `python "4. team_reports2.py" path/to/reports` - 지정된 보고서 디렉토리를 변환
+- **주요 특징**:
+  - 인터넷 연결 없이도 모든 차트 기능 작동
+  - 파일 크기가 약간 증가하지만 배포 편의성 대폭 향상
+  - 원본 보고서의 모든 기능 보존
 
 ## 주요 기능 상세
 
@@ -724,6 +745,7 @@ python "4. team_reports.py" clinical_v2
 - **AI 분석**: 약 20-40분 (텍스트 수에 따라 변동)
 - **대시보드 생성**: 약 1-2분
 - **부서별 리포트**: 약 5-10분
+- **단독 실행 HTML 변환**: 약 1-3분 (파일 수에 따라 변동)
 
 ## 주의사항
 
@@ -745,7 +767,26 @@ python "4. team_reports.py" clinical_v2
 
 - **이슈 제출**: GitHub Issues 사용
 - **개선 제안**: Pull Request 환영
-- **최종 업데이트**: 2025년 7월
+- **최종 업데이트**: 2025년 7월 31일
+
+## 최근 변경사항 (2025년 7월 31일)
+
+### 단독 실행 HTML 보고서 기능 추가
+- **신규 파일**: `4. team_reports2.py` 추가
+- **주요 기능**:
+  - 기존 부서별 HTML 보고서를 단독 실행 가능한 형태로 변환
+  - plotly.min.js를 각 HTML 파일에 임베드하여 외부 의존성 제거
+  - 오프라인 환경에서도 모든 차트 기능 정상 작동
+- **디렉토리 구조**:
+  - plotly.min.js 파일 위치: `generated_reports/never delete/plotly.min.js`
+  - 출력 디렉토리: `generated_reports/standalone_reports_{timestamp}/`
+- **실행 방법**:
+  - 자동 감지: `python "4. team_reports2.py"`
+  - 특정 디렉토리: `python "4. team_reports2.py" path/to/reports`
+- **장점**:
+  - 배포 편의성 대폭 향상 (CDN 연결 불필요)
+  - 네트워크 제한 환경에서도 완전한 기능 사용 가능
+  - 원본 보고서의 모든 인터랙티브 기능 보존
 
 ## 최근 변경사항 (2025년 7월 28일)
 
