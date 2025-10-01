@@ -509,31 +509,43 @@ class LocalGoogleSheetsAnalyzer:
         return df_final
 
 
-def main_local_analysis(base_path: str, project_id: str = None):
+def main_local_analysis(base_path: str, project_id: str = None, target_file: str = None):
     """메인 로컬 분석 함수"""
     print("🚀 로컬 환경에서 협업 평가 분석 시작")
-    
+
     # 파일 인식
     raw_data_path = Path(base_path)
     file_prefix = "설문조사진행현황[VCRCRIC120S]_"
     file_suffix = ".xlsx"
     file_identifiers = []
-    
-    if raw_data_path.exists():
-        normalized_prefix = unicodedata.normalize('NFKC', file_prefix)
-        for item in raw_data_path.iterdir():
-            if item.is_file():
-                normalized_filename = unicodedata.normalize('NFKC', item.name)
-                if normalized_filename.startswith(normalized_prefix) and normalized_filename.endswith(file_suffix):
-                    identifier = normalized_filename.replace(normalized_prefix, "").replace(file_suffix, "")
-                    file_identifiers.append(identifier)
-        file_identifiers.sort()
 
-    if not file_identifiers:
-        print(f"\n❌ 분석할 설문 파일을 찾을 수 없습니다.")
-        return None
+    if target_file:
+        # 특정 파일만 처리
+        normalized_target = unicodedata.normalize('NFKC', target_file)
+        if raw_data_path.joinpath(normalized_target).exists():
+            identifier = normalized_target.replace(file_prefix, "").replace(file_suffix, "")
+            file_identifiers.append(identifier)
+            print(f"\n✅ 지정된 파일을 찾았습니다: {normalized_target}")
+        else:
+            print(f"\n❌ 지정된 파일을 찾을 수 없습니다: {target_file}")
+            return None
+    else:
+        # 모든 파일 처리
+        if raw_data_path.exists():
+            normalized_prefix = unicodedata.normalize('NFKC', file_prefix)
+            for item in raw_data_path.iterdir():
+                if item.is_file():
+                    normalized_filename = unicodedata.normalize('NFKC', item.name)
+                    if normalized_filename.startswith(normalized_prefix) and normalized_filename.endswith(file_suffix):
+                        identifier = normalized_filename.replace(normalized_prefix, "").replace(file_suffix, "")
+                        file_identifiers.append(identifier)
+            file_identifiers.sort()
 
-    print(f"\n✅ {len(file_identifiers)}개의 설문 파일을 찾았습니다: {file_identifiers}")
+        if not file_identifiers:
+            print(f"\n❌ 분석할 설문 파일을 찾을 수 없습니다.")
+            return None
+
+        print(f"\n✅ {len(file_identifiers)}개의 설문 파일을 찾았습니다: {file_identifiers}")
 
     # 매핑 파일 경로 설정
     standard_map_path = raw_data_path / "부서명_표준화_매핑.xlsx"
@@ -579,8 +591,9 @@ if __name__ == "__main__":
     # 사용 예시
     BASE_PATH = "./rawdata"  # rawdata 폴더에서 파일 검색
     PROJECT_ID = None  # Google Cloud 프로젝트 ID (옵션)
-    
-    result_df = main_local_analysis(BASE_PATH, PROJECT_ID)
+    TARGET_FILE = "설문조사진행현황[VCRCRIC120S]_2025_2.xlsx"  # 특정 파일만 처리
+
+    result_df = main_local_analysis(BASE_PATH, PROJECT_ID, target_file=TARGET_FILE)
     if result_df is not None:
         print("\n🎉 로컬 분석 완료!")
         print(f"총 {len(result_df)}개의 레코드가 처리되었습니다.")

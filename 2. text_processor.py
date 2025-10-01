@@ -1137,24 +1137,21 @@ def main():
     메인 실행 함수 - 텍스트 분석을 수행합니다.
     """
     try:
-        # rawdata 폴더에서 가장 최근 data_processor 결과 파일 찾기
-        rawdata_path = Path("rawdata")
-        data_processor_files = list(rawdata_path.glob("1. data_processor_결과_*.xlsx"))
-        
-        if not data_processor_files:
-            print("❌ rawdata 폴더에서 '1. data_processor_결과_*.xlsx' 파일을 찾을 수 없습니다.")
+        # 특정 파일 지정
+        input_file = "rawdata/1. data_processor_결과_20251001_090316.xlsx"
+
+        # 파일 존재 여부 확인
+        if not Path(input_file).exists():
+            print(f"❌ 파일을 찾을 수 없습니다: {input_file}")
             sys.exit(1)
-        
-        # 가장 최근 파일 선택 (파일명의 타임스탬프 기준)
-        input_file = str(max(data_processor_files, key=lambda x: x.stat().st_mtime))
-        
+
         # 출력 파일명 생성 (타임스탬프 추출)
         input_filename = Path(input_file).stem
         timestamp = input_filename.split('_')[-2] + '_' + input_filename.split('_')[-1]
         output_file = f"rawdata/2. text_processor_결과_{timestamp}.xlsx"
         
         column_name = "협업 후기"
-        max_rows = 200  # 테스트용: 200개 처리
+        max_rows = None  # 전체 데이터 처리
         project_id = "mindmap-462708"
         
         print(f"\n설정 확인:")
