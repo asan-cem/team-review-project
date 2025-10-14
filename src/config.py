@@ -59,9 +59,9 @@ DASHBOARD_CONFIGS = {
     'departments': {
         'name': '부서별 협업 리포트 (완전판)',
         'output_file': 'outputs/dashboard_departments.html',
-        'mode': 'departments',
+        'mode': 'full',  # 통합 대시보드와 동일한 모드 사용
         'use_original': True,
-        'original_script': 'legacy/4. team_reports_외부망접근가능한부서.py',
+        'original_script': 'legacy/3. build_dashboard_html_2025년 기간 통합.py',
         'description': '부서별 협업 분석 - 원본 완전판 (외부망 접근 가능 부서용)'
     },
 
@@ -69,9 +69,9 @@ DASHBOARD_CONFIGS = {
     'standalone': {
         'name': 'Standalone 부서별 리포트 (완전판)',
         'output_file': 'outputs/dashboard_standalone.html',
-        'mode': 'standalone',
+        'mode': 'full',  # 통합 대시보드와 동일한 모드 사용
         'use_original': True,
-        'original_script': 'legacy/4. team_reports_외부망불가능부서(디지털).py',
+        'original_script': 'legacy/3. build_dashboard_html_2025년 기간 통합.py',
         'description': '독립형 부서별 리포트 - 원본 완전판 (외부망 불가 부서용)'
     }
 }
