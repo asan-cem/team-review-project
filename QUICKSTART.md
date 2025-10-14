@@ -4,41 +4,64 @@
 
 ## 🚀 사용법
 
-### 1️⃣ 원본 완전판
+### 1️⃣ 원본 완전판 (병원 전체)
 ```bash
 python build_full.py
 ```
 📄 출력: `서울아산병원 협업평가 결과.html` (20MB)
+📊 전체 병원 통합 대시보드
 
 ### 2️⃣ 기간 통합 버전
 ```bash
 python build_integrated.py
 ```
 📄 출력: `outputs/dashboard_integrated.html` (20MB)
+📅 2025년 전체 기간 통합
 
 ### 3️⃣ 상하반기 분할 버전
 ```bash
 python build_split.py
 ```
-📄 출력: `outputs/dashboard_split.html` (20MB)
+📄 출력: `outputs/dashboard_split.html` (21MB)
 📅 2025년을 상반기/하반기로 구분
 
-### 4️⃣ 부서별 버전 (외부망 가능)
+### 4️⃣ 부서별 개별 보고서 (외부망 가능)
 ```bash
 python build_departments.py
 ```
-📄 출력: `outputs/dashboard_departments.html` (20MB)
+📂 출력: `개별보고서/[부문명]/[부서명].html`
+📊 79개 부서별 개별 보고서 생성
+⏱️  약 1-2분 (전체 부서)
 
-### 5️⃣ 독립형 버전 (외부망 불가)
+**예시 구조**:
+```
+개별보고서/
+├── 커뮤니케이션실/
+│   ├── 고객만족팀.html
+│   ├── 디자인ㆍ콘텐츠팀.html
+│   └── 홍보팀.html
+├── 간호부문/
+│   ├── 중환자간호팀.html
+│   └── ...
+└── 진료부문/
+    ├── 영상의학팀.html
+    └── ...
+```
+
+### 5️⃣ 독립형 부서별 보고서 (외부망 불가)
 ```bash
 python build_standalone.py
 ```
-📄 출력: `outputs/dashboard_standalone.html` (20MB)
+📂 출력: `개별보고서/[부문명]/[부서명].html`
+📊 79개 부서별 보고서 (Plotly 인라인 포함)
+⏱️  약 1-2분 (전체 부서)
+⚠️  외부망 불가 부서용 (인터넷 연결 불필요)
+🔧 내부: `src/department_report_builder.py` 사용
 
-## 📊 모든 버전의 공통 기능
+## 📊 공통 기능 (모든 버전)
 
 - ✅ 병원 전체 결과
-- ✅ 부문별 비교  
+- ✅ 부문별 비교
 - ✅ 팀별 순위
 - ✅ 협업 네트워크 분석
 - ✅ 키워드 분석
@@ -46,7 +69,8 @@ python build_standalone.py
 
 ## ⏱️ 생성 시간
 
-약 10-15초 (버전당)
+- **통합 대시보드** (1-3번): 10-15초
+- **부서별 보고서** (4-5번): 1-3분 (79개 부서)
 
 ---
 

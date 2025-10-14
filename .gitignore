@@ -10,6 +10,8 @@ venv-backup/
 outputs/
 checkpoints/
 상호평가_요약*.xlsx
+개별보고서/
+generated_reports/
 
 # Data files
 rawdata/*.xlsx
