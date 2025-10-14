@@ -5,3 +5,14 @@ __pycache__/
 *.pyc
 venv-backup/
 .env
+
+# Generated outputs
+outputs/
+checkpoints/
+상호평가_요약*.xlsx
+
+# Data files
+rawdata/*.xlsx
+
+# API credentials
+Gemini API.json
