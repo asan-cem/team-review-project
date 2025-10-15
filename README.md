@@ -447,6 +447,7 @@ def expensive_function():
 - `plotly.min.js` 경로 변경 (`src/`로 이동)
 - 빌드 스크립트 한글화 (`1. build_연도별.py` 등)
 - 문서 통합 (README.md)
+- 2022년 ~ 2024년 외과간호x팀 가정간호Unit 팀명을 암병원간호1팀으로 변경
 
 ### v3.1 (2025-10-14)
 - `src/department_report_builder.py` 추가
