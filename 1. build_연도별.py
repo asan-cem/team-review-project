@@ -32,18 +32,20 @@ from src.dashboard_builder import build_dashboard
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("📊 기간 통합 대시보드 생성 (원본 완전판)")
+    print("📊 연도별 대시보드 생성 (2025년 통합)")
     print("=" * 60)
-    print("\n🎯 모드: integrated")
-    print("📄 출력: outputs/dashboard_integrated.html")
-    print("📦 크기: 약 20MB")
-    print("⏱️  예상 시간: 10-15초\n")
+    print("\n🎯 모드: 연도별 (integrated)")
+    print("📋 기간: 2022년, 2023년, 2024년, 2025년")
+    print("📄 출력 경로: outputs/dashboard_integrated.html")
+    print("📦 예상 크기: 약 20MB")
+    print("⏱️  처리 시간: 10-15초\n")
 
     try:
+        output_path = Path('outputs/dashboard_integrated.html').absolute()
         build_dashboard('integrated')
-        print("✨ 기간 통합 대시보드 생성 완료!\n")
+        print("✨ 연도별 대시보드 생성 완료!\n")
         print("📂 생성된 파일:")
-        print("   - outputs/dashboard_integrated.html\n")
+        print(f"   - {output_path}\n")
 
     except Exception as e:
         print(f"\n❌ 에러 발생: {e}\n")

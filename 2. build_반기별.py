@@ -33,18 +33,20 @@ from src.dashboard_builder import build_dashboard
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("📊 상하반기 분할 대시보드 생성 (원본 완전판)")
+    print("📊 반기별 대시보드 생성 (2025년 상하반기 구분)")
     print("=" * 60)
-    print("\n🎯 모드: split")
-    print("📄 출력: outputs/dashboard_split.html")
-    print("📦 크기: 약 20MB")
-    print("⏱️  예상 시간: 10-15초\n")
+    print("\n🎯 모드: 반기별 (split)")
+    print("📋 기간: 2022년, 2023년, 2024년, 2025년 상반기, 2025년 하반기")
+    print("📄 출력 경로: outputs/dashboard_split.html")
+    print("📦 예상 크기: 약 20MB")
+    print("⏱️  처리 시간: 10-15초\n")
 
     try:
+        output_path = Path('outputs/dashboard_split.html').absolute()
         build_dashboard('split')
-        print("✨ 상하반기 분할 대시보드 생성 완료!\n")
+        print("✨ 반기별 대시보드 생성 완료!\n")
         print("📂 생성된 파일:")
-        print("   - outputs/dashboard_split.html\n")
+        print(f"   - {output_path}\n")
 
     except Exception as e:
         print(f"\n❌ 에러 발생: {e}\n")

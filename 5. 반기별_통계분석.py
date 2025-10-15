@@ -1,0 +1,276 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+반기별 통계 분석 스크립트 (2025년 상하반기 구분)
+
+다음 데이터를 Excel 파일로 추출:
+1. 기간별 문항별 점수 (평균, 표준편차, 표본수)
+2. 부문별 종합점수 (기간별, 표본수 포함)
+3. 부문별 부서 종합점수 (기간별, 표본수 포함)
+
+출력: 상호평가_요약_반기별.xlsx (73KB)
+기간: 2022년, 2023년, 2024년, 2025년 상반기, 2025년 하반기 (5개 기간)
+
+사용법:
+    python "5. 반기별_통계분석.py"
+
+작성일: 2025-01-15
+"""
+
+import sys
+from pathlib import Path
+import pandas as pd
+import numpy as np
+
+# src 폴더를 Python 경로에 추가
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
+
+from src.dashboard_builder import (
+    load_data,
+    preprocess_data_types,
+    clean_data,
+    SCORE_COLUMNS
+)
+
+
+def parse_period_from_response_id(response_id):
+    """
+    response_id에서 기간 정보 추출
+    2025년만 상반기/하반기로 구분, 나머지는 연도만
+    """
+    try:
+        parts = str(response_id).split('_')
+        if len(parts) >= 2:
+            year = parts[0]
+            period = parts[1]
+
+            if year == "2025":
+                period_name = "상반기" if period == "1" else "하반기"
+                return f"{year}년 {period_name}"
+            else:
+                return f"{year}년"
+        return '미분류'
+    except:
+        return '미분류'
+
+
+def extract_period_question_scores(df):
+    """
+    기간별 문항별 점수 추출 (2025년 상하반기 구분)
+
+    Args:
+        df (pd.DataFrame): 정제된 데이터프레임
+
+    Returns:
+        pd.DataFrame: 기간별 문항별 점수 (평균, 표준편차, 표본수)
+    """
+    print("📊 1. 기간별 문항별 점수 추출 중...")
+
+    # 기간 컬럼 추가
+    df['기간'] = df['response_id'].apply(parse_period_from_response_id)
+
+    results = []
+
+    for period in sorted(df['기간'].unique()):
+        if period == '미분류':
+            continue
+
+        period_data = df[df['기간'] == period]
+
+        row = {'기간': period}
+
+        # 각 문항별 통계 계산
+        for col in SCORE_COLUMNS:
+            if col in period_data.columns:
+                scores = period_data[col].dropna()
+                row[f'{col}_평균'] = scores.mean()
+                row[f'{col}_표준편차'] = scores.std()
+                row[f'{col}_표본수'] = len(scores)
+
+        # 전체 표본수
+        row['전체_표본수'] = len(period_data)
+
+        results.append(row)
+
+    result_df = pd.DataFrame(results)
+    print(f"   ✅ {len(result_df)}개 기간 처리 완료")
+
+    return result_df
+
+
+def extract_division_scores(df):
+    """
+    부문별 종합점수 추출 (기간별, 2025년 상하반기 구분)
+
+    Args:
+        df (pd.DataFrame): 정제된 데이터프레임
+
+    Returns:
+        pd.DataFrame: 부문별 종합점수 (기간별, 표본수 포함)
+    """
+    print("📊 2. 부문별 종합점수 추출 중...")
+
+    # 기간 컬럼 추가
+    df['기간'] = df['response_id'].apply(parse_period_from_response_id)
+
+    results = []
+
+    for period in sorted(df['기간'].unique()):
+        if period == '미분류':
+            continue
+
+        period_data = df[df['기간'] == period]
+
+        for division in sorted(period_data['피평가부문'].unique()):
+            if pd.notna(division) and division != 'N/A':
+                div_period_data = period_data[period_data['피평가부문'] == division]
+
+                if len(div_period_data) > 0:
+                    row = {
+                        '기간': period,
+                        '부문': division,
+                        '표본수': len(div_period_data)
+                    }
+
+                    # 각 문항별 평균 점수
+                    for col in SCORE_COLUMNS:
+                        if col in div_period_data.columns:
+                            scores = div_period_data[col].dropna()
+                            row[f'{col}_평균'] = scores.mean()
+                            row[f'{col}_표준편차'] = scores.std()
+
+                    results.append(row)
+
+    result_df = pd.DataFrame(results)
+    print(f"   ✅ {len(result_df)}개 부문-기간 조합 처리 완료")
+
+    return result_df
+
+
+def extract_department_scores_by_division(df):
+    """
+    부문별 부서 종합점수 추출 (기간별, 2025년 상하반기 구분)
+
+    Args:
+        df (pd.DataFrame): 정제된 데이터프레임
+
+    Returns:
+        pd.DataFrame: 부문별 부서 종합점수 (기간별, 표본수 포함)
+    """
+    print("📊 3. 부문별 부서 종합점수 추출 중...")
+
+    # 기간 컬럼 추가
+    df['기간'] = df['response_id'].apply(parse_period_from_response_id)
+
+    results = []
+
+    for period in sorted(df['기간'].unique()):
+        if period == '미분류':
+            continue
+
+        period_data = df[df['기간'] == period]
+
+        for division in sorted(period_data['피평가부문'].unique()):
+            if pd.notna(division) and division != 'N/A':
+                div_period_data = period_data[period_data['피평가부문'] == division]
+
+                for dept in sorted(div_period_data['피평가부서'].unique()):
+                    if pd.notna(dept) and dept != 'N/A':
+                        dept_data = div_period_data[div_period_data['피평가부서'] == dept]
+
+                        if len(dept_data) > 0:
+                            row = {
+                                '기간': period,
+                                '부문': division,
+                                '부서': dept,
+                                '표본수': len(dept_data)
+                            }
+
+                            # 각 문항별 평균 점수
+                            for col in SCORE_COLUMNS:
+                                if col in dept_data.columns:
+                                    scores = dept_data[col].dropna()
+                                    row[f'{col}_평균'] = scores.mean()
+                                    row[f'{col}_표준편차'] = scores.std()
+
+                            results.append(row)
+
+    result_df = pd.DataFrame(results)
+    print(f"   ✅ {len(result_df)}개 부문-부서-기간 조합 처리 완료")
+
+    return result_df
+
+
+def main():
+    """메인 실행 함수"""
+    print("=" * 60)
+    print("📊 반기별 통계 분석 (2025년 상하반기 구분)")
+    print("=" * 60)
+    print()
+
+    try:
+        # 1. 데이터 로드 및 전처리
+        print("📁 데이터 로드 중...")
+        input_file = 'rawdata/2. text_processor_결과_20251013_093925.xlsx'
+        df = load_data(input_file)
+
+        print("🔄 데이터 전처리 중...")
+        df = preprocess_data_types(df)
+        df = clean_data(df)
+
+        print(f"✅ 전처리 완료: {len(df):,}행\n")
+
+        # 2. 데이터 추출
+        period_questions = extract_period_question_scores(df)
+        division_scores = extract_division_scores(df)
+        department_scores = extract_department_scores_by_division(df)
+
+        # 3. Excel 저장
+        print("\n💾 Excel 파일 저장 중...")
+        output_file = '상호평가_요약_반기별.xlsx'
+        output_path = (Path(output_file)).absolute()
+
+        with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
+            # Sheet 1: 기간별 문항별 점수
+            period_questions.to_excel(
+                writer,
+                sheet_name='기간별_문항별_점수',
+                index=False
+            )
+
+            # Sheet 2: 부문별 종합점수
+            division_scores.to_excel(
+                writer,
+                sheet_name='부문별_종합점수',
+                index=False
+            )
+
+            # Sheet 3: 부문별 부서 종합점수
+            department_scores.to_excel(
+                writer,
+                sheet_name='부문별_부서_종합점수',
+                index=False
+            )
+
+        print(f"✅ Excel 파일 저장 완료")
+        print()
+        print("📂 생성된 파일:")
+        print(f"   {output_path}")
+        print()
+        print("📋 포함된 시트:")
+        print(f"   1. 기간별_문항별_점수: {len(period_questions)}행")
+        print(f"   2. 부문별_종합점수: {len(division_scores)}행")
+        print(f"   3. 부문별_부서_종합점수: {len(department_scores)}행")
+        print()
+        print("✨ 반기별 통계 분석 완료!")
+
+    except Exception as e:
+        print(f"\n❌ 에러 발생: {e}\n")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
