@@ -2579,19 +2579,26 @@ def main(mode='full', target_department=None, target_division=None, split_mode=F
         
         return False
 
-def generate_all_department_reports():
+def generate_all_department_reports(split_mode=False):
     """
     모든 부서의 개별 보고서 생성
+
+    Args:
+        split_mode (bool): True이면 2025년을 상하반기로 분리, False이면 통합
     """
     try:
         print("=" * 70)
         print("🚀 전체 부서 개별 보고서 생성 시작")
+        if split_mode:
+            print(f"📅 모드: 2025년 상하반기 분리")
+        else:
+            print(f"📅 모드: 전체 기간 통합")
         print(f"📅 실행 시간: {datetime.now().strftime('%Y년 %m월 %d일 %H:%M:%S')}")
         print("=" * 70)
-        
+
         # 데이터 로드
         df = load_excel_data()
-        df = preprocess_data_types(df)
+        df = preprocess_data_types(df, split_mode)
         df = clean_data(df)
         
         # 전체 부서 목록 추출
@@ -2662,7 +2669,7 @@ if __name__ == "__main__":
     # 실행 모드 결정
     if args.all_departments:
         # 모든 부서 개별 보고서 생성
-        success = generate_all_department_reports()
+        success = generate_all_department_reports(split_mode=args.split)
     elif args.department and args.division:
         # 특정 부서 보고서 생성
         success = main(mode='department', target_department=args.department, target_division=args.division, split_mode=args.split)
