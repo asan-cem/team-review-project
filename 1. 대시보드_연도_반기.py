@@ -710,7 +710,10 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
         title = "서울아산병원 협업 평가 결과 보고"
         subtitle = "설문 데이터: 2022년 ~ 2025년 하반기"
         data_scope_notice = ""
-    
+
+    # 섹션 6: 다빈도 평가 부서 (개별 보고서에서는 제외)
+    section_6_enabled = (mode != 'department')
+
     return f"""
 <!DOCTYPE html>
 <html lang="ko">
@@ -969,10 +972,10 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
 
         </div>
 
-        <div class="part-divider"></div>
-        
-        
-        <div class="section">
+        <div class="part-divider" style="display: {'none' if mode == 'department' else 'block'};"></div>
+
+
+        <div class="section" style="display: {'none' if mode == 'department' else 'block'};">
             <h2>다빈도 평가 부서</h2>
             
             <!-- 공통 필터 -->
