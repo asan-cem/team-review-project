@@ -19,7 +19,7 @@
 
 작성자: Claude AI
 버전: 3.0
-업데이트: 2025년 10월 1일
+업데이트: 2025년 7월 9일
 """
 
 import pandas as pd
@@ -80,7 +80,7 @@ SCORE_COLUMNS = ['존중배려', '정보공유', '명확처리', '태도개선',
 
 # 🎯 JSON 출력용 컬럼 (대시보드에 필요한 컬럼들만 선택)
 JSON_OUTPUT_COLUMNS = [
-    '설문시행연도', '기간_표시', '평가부서', '피평가부문', '피평가부서', '피평가Unit',
+    '설문시행연도', '평가부서', '피평가부문', '피평가부서', '피평가Unit', 
     '존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합점수',
     '정제된_텍스트', '감정_분류', '핵심_키워드'
 ]
@@ -92,7 +92,7 @@ EXCLUDE_TEAMS = ['내분비외과']  # 부서 기준 제외할 값들
 
 # 📊 대시보드 정보
 DASHBOARD_TITLE = "서울아산병원 협업 평가 결과 보고"
-DASHBOARD_SUBTITLE = "설문 데이터: 2022년 ~ 2025년 하반기(2025년 10월 1일 기준)"
+DASHBOARD_SUBTITLE = "설문 데이터: 2022년 ~ 2025년 상반기(2025년 7월 9일 기준)"
 
 # ============================================================================
 # 🛠️ 유틸리티 함수들
@@ -229,12 +229,13 @@ def load_excel_data(file_path=INPUT_DATA_FILE):
         log_message(f"데이터 로드 중 오류 발생: {str(e)}", "ERROR")
         raise
 
-def preprocess_data_types(df):
+def preprocess_data_types(df, split_mode=False):
     """
     데이터 타입 변환 및 기본 전처리
 
     Args:
         df (pd.DataFrame): 원본 데이터프레임
+        split_mode (bool): True이면 2025년을 상하반기로 분리, False이면 통합
 
     Returns:
         pd.DataFrame: 타입 변환된 데이터프레임
@@ -248,9 +249,9 @@ def preprocess_data_types(df):
     def parse_period_from_response_id(response_id):
         """
         response_id에서 연도와 반기를 추출하여 기간 표시 생성
-        - 2022년~2024년: '2022년', '2023년', '2024년' (반기 구분 없이)
-        - 2025년: '2025년 상반기', '2025년 하반기' (반기 구분)
-        예: '2024_1_123' → '2024년', '2025_1_456' → '2025년 상반기'
+        - split_mode=False: 모든 연도를 '2022년', '2023년', '2024년', '2025년' 형식으로 표시
+        - split_mode=True: 2025년만 '2025년 상반기', '2025년 하반기'로 구분, 나머지는 연도만
+        예: '2024_1_123' → '2024년', '2025_1_456' → '2025년' (통합) 또는 '2025년 상반기' (분리)
         """
         try:
             parts = str(response_id).split('_')
@@ -258,12 +259,12 @@ def preprocess_data_types(df):
                 year = parts[0]
                 period = parts[1]
 
-                # 2025년만 상반기/하반기로 구분
-                if year == "2025":
+                # split_mode일 때만 2025년을 상반기/하반기로 구분
+                if split_mode and year == "2025":
                     period_name = "상반기" if period == "1" else "하반기"
                     return f"{year}년 {period_name}"
                 else:
-                    # 2022~2024년은 반기 구분 없이 연도만 표시
+                    # 모든 연도를 연도만 표시
                     return f"{year}년"
             return str(response_id)
         except:
@@ -272,10 +273,13 @@ def preprocess_data_types(df):
     # 기간_표시 컬럼 생성 (그래프에서 사용)
     if 'response_id' in df.columns:
         df['기간_표시'] = df['response_id'].apply(parse_period_from_response_id)
-        log_message("📅 기간 표시 컬럼 생성 완료 (2025년만 상반기/하반기 구분)")
+        if split_mode:
+            log_message("📅 기간 표시 컬럼 생성 완료 (2025년만 상반기/하반기 구분)")
+        else:
+            log_message("📅 기간 표시 컬럼 생성 완료 (전체 기간 통합)")
     else:
         df['기간_표시'] = df['설문시행연도']
-    
+
     # 점수 컬럼들을 숫자형으로 변환
     for col in SCORE_COLUMNS:
         if col in df.columns:
@@ -284,12 +288,12 @@ def preprocess_data_types(df):
             converted_count = df[col].notna().sum()
             if original_count != converted_count:
                 log_message(f"⚠️ {col}: {original_count - converted_count}개 값이 숫자 변환 실패", "WARNING")
-    
+
     # 핵심 키워드 컬럼 전처리 (문자열 → 리스트)
     if '핵심_키워드' in df.columns:
         df['핵심_키워드'] = df['핵심_키워드'].apply(safe_literal_eval)
         log_message("🔍 핵심 키워드 파싱 완료")
-    
+
     log_message("✅ 데이터 타입 변환 완료")
     return df
 
@@ -369,62 +373,62 @@ def calculate_aggregated_data(df):
         }
     }
     
-    # 1. [전체] 연도별 문항 점수 (기간_표시 기준)
-    for period in df['기간_표시'].unique():
-        if pd.notna(period):
-            period_data = df[df['기간_표시'] == period]
-            aggregated["hospital_yearly"][str(period)] = {
-                col: float(period_data[col].mean()) if col in period_data.columns else 0.0
+    # 1. [전체] 연도별 문항 점수
+    for year in df['설문시행연도'].unique():
+        if pd.notna(year):
+            year_data = df[df['설문시행연도'] == year]
+            aggregated["hospital_yearly"][str(year)] = {
+                col: float(year_data[col].mean()) if col in year_data.columns else 0.0
                 for col in SCORE_COLUMNS
             }
-            aggregated["hospital_yearly"][str(period)]["응답수"] = len(period_data)
+            aggregated["hospital_yearly"][str(year)]["응답수"] = len(year_data)
     
-    # 2. 부문별 종합 점수 (기간별 부문 비교)
-    for period in df['기간_표시'].unique():
-        if pd.notna(period):
-            period_str = str(period)
-            period_data = df[df['기간_표시'] == period]
-
-            aggregated["division_comparison"][period_str] = {}
-
+    # 2. 부문별 종합 점수 (연도별 부문 비교)
+    for year in df['설문시행연도'].unique():
+        if pd.notna(year):
+            year_str = str(year)
+            year_data = df[df['설문시행연도'] == year]
+            
+            aggregated["division_comparison"][year_str] = {}
+            
             # 모든 부문별 평균 계산
             for division in df['피평가부문'].unique():
                 if pd.notna(division) and division != 'N/A':
-                    div_period_data = period_data[period_data['피평가부문'] == division]
-                    if len(div_period_data) > 0:
-                        aggregated["division_comparison"][period_str][division] = {
-                            col: float(div_period_data[col].mean()) if col in div_period_data.columns else 0.0
+                    div_year_data = year_data[year_data['피평가부문'] == division]
+                    if len(div_year_data) > 0:
+                        aggregated["division_comparison"][year_str][division] = {
+                            col: float(div_year_data[col].mean()) if col in div_year_data.columns else 0.0
                             for col in SCORE_COLUMNS
                         }
-                        aggregated["division_comparison"][period_str][division]["응답수"] = len(div_period_data)
+                        aggregated["division_comparison"][year_str][division]["응답수"] = len(div_year_data)
     
-    # 3. 소속 부문 결과 ([부문별] 기간별 문항 점수)
+    # 3. 소속 부문 결과 ([부문별] 연도별 문항 점수)
     for division in df['피평가부문'].unique():
         if pd.notna(division) and division != 'N/A':
             div_data = df[df['피평가부문'] == division]
             aggregated["division_yearly"][division] = {}
-            for period in div_data['기간_표시'].unique():
-                if pd.notna(period):
-                    period_data = div_data[div_data['기간_표시'] == period]
-                    aggregated["division_yearly"][division][str(period)] = {
-                        col: float(period_data[col].mean()) if col in period_data.columns else 0.0
+            for year in div_data['설문시행연도'].unique():
+                if pd.notna(year):
+                    year_data = div_data[div_data['설문시행연도'] == year]
+                    aggregated["division_yearly"][division][str(year)] = {
+                        col: float(year_data[col].mean()) if col in year_data.columns else 0.0
                         for col in SCORE_COLUMNS
                     }
-                    aggregated["division_yearly"][division][str(period)]["응답수"] = len(period_data)
+                    aggregated["division_yearly"][division][str(year)]["응답수"] = len(year_data)
     
     # 4. 부문별 팀 점수 순위 - 모든 부문별로 계산
     for division in df['피평가부문'].unique():
         if pd.notna(division) and division != 'N/A':
             div_data = df[df['피평가부문'] == division]
-            for period in div_data['기간_표시'].unique():
-                if pd.notna(period):
-                    period_str = str(period)
-                    period_data = div_data[div_data['기간_표시'] == period]
+            for year in div_data['설문시행연도'].unique():
+                if pd.notna(year):
+                    year_str = str(year)
+                    year_data = div_data[div_data['설문시행연도'] == year]
                     dept_scores = []
-
-                    for dept in period_data['피평가부서'].unique():
+                    
+                    for dept in year_data['피평가부서'].unique():
                         if pd.notna(dept):
-                            dept_data = period_data[period_data['피평가부서'] == dept]
+                            dept_data = year_data[year_data['피평가부서'] == dept]
                             avg_score = dept_data['종합점수'].mean() if len(dept_data) > 0 else 0.0
                             dept_scores.append({
                                 "department": dept,
@@ -432,16 +436,16 @@ def calculate_aggregated_data(df):
                                 "score": round(float(avg_score), 1),
                                 "count": len(dept_data)
                             })
-
+                    
                     # 점수 순으로 정렬하고 순위 부여
                     dept_scores.sort(key=lambda x: x["score"], reverse=True)
                     for i, dept in enumerate(dept_scores):
                         dept["rank"] = i + 1
-
+                    
                     # 부문별로 구분하여 저장
-                    if period_str not in aggregated["team_ranking"]:
-                        aggregated["team_ranking"][period_str] = {}
-                    aggregated["team_ranking"][period_str][division] = dept_scores
+                    if year_str not in aggregated["team_ranking"]:
+                        aggregated["team_ranking"][year_str] = {}
+                    aggregated["team_ranking"][year_str][division] = dept_scores
     
     log_message(f"✅ 집계 데이터 계산 완료: {len(aggregated['hospital_yearly'])}년치 데이터")
     return aggregated
@@ -474,28 +478,31 @@ def prepare_json_data(df):
     log_message(f"✅ JSON 데이터 준비 완료: {len(df_for_json):,}건")
     return data_json
 
-def load_data():
+def load_data(split_mode=False):
     """
     전체 데이터 로드 및 전처리 프로세스 - 집계 데이터와 원시 데이터 반환
-    
+
+    Args:
+        split_mode (bool): True이면 2025년을 상하반기로 분리, False이면 통합
+
     Returns:
         tuple: (aggregated_data, raw_data_json)
             - aggregated_data: 섹션 1-4용 집계 데이터
             - raw_data_json: 섹션 5-6용 원시 데이터 JSON
     """
     log_message("🚀 데이터 로드 및 전처리 시작")
-    
+
     # 데이터 로드 및 전처리
     df = load_excel_data()
-    df = preprocess_data_types(df)
+    df = preprocess_data_types(df, split_mode=split_mode)
     df = clean_data(df)
-    
+
     # 집계 데이터 계산 (섹션 1-4용)
     aggregated_data = calculate_aggregated_data(df)
-    
+
     # 원시 데이터 JSON 준비 (섹션 5-6용)
     raw_data_json = prepare_json_data(df)
-    
+
     log_message("✅ 데이터 처리 완료: 집계 데이터 + 원시 데이터")
     return aggregated_data, raw_data_json
 
@@ -663,17 +670,32 @@ def prepare_department_filtered_data(df, target_department):
 def build_html(aggregated_data, raw_data_json, mode='full', target_department=None, target_division=None):
     """
     개선된 구조와 번호 체계를 적용한 대화형 HTML 생성 - 집계 데이터와 원시 데이터 분리
-    
+
     Args:
         aggregated_data (dict): 집계된 통계 데이터
         raw_data_json (str): JSON 형태의 원시 데이터
         mode (str): 'full' (전체 보고서) 또는 'department' (부서별 보고서)
         target_department (str): 부서별 모드일 때 대상 부서명
         target_division (str): 부서별 모드일 때 대상 부문명
-    
+
     Returns:
         str: HTML 대시보드
     """
+    # Plotly 라이브러리 로컬 로드 (외부망 불가 환경 대응)
+    plotly_js_path = Path("src/plotly.min.js")
+    plotly_js_content = ""
+    if plotly_js_path.exists():
+        try:
+            with open(plotly_js_path, 'r', encoding='utf-8') as f:
+                plotly_js_content = f.read()
+            print(f"✅ Plotly 라이브러리 로드 완료 ({plotly_js_path.stat().st_size / (1024*1024):.1f}MB)")
+        except Exception as e:
+            print(f"⚠️  Plotly 로컬 파일 로드 실패: {e}")
+            print("   CDN을 사용합니다 (외부망 필요)")
+    else:
+        print(f"⚠️  Plotly 로컬 파일을 찾을 수 없습니다: {plotly_js_path}")
+        print("   CDN을 사용합니다 (외부망 필요)")
+
     # 제목과 설명 설정
     if mode == 'department' and target_department:
         title = f"서울아산병원 협업 평가 결과 보고 - {target_department}"
@@ -686,7 +708,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
         """
     else:
         title = "서울아산병원 협업 평가 결과 보고"
-        subtitle = "설문 데이터: 2022년 ~ 2025년 하반기(2025년 10월 1일 기준)"
+        subtitle = "설문 데이터: 2022년 ~ 2025년 상반기(2025년 7월 9일 기준)"
         data_scope_notice = ""
     
     return f"""
@@ -695,7 +717,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
 <head>
     <meta charset="utf-8">
     <title>{title}</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    {'<script>' + plotly_js_content + '</script>' if plotly_js_content else '<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>'}
     <style>
         body {{ font-family: 'Malgun Gothic', 'Segoe UI', sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; color: #343a40; font-size: 16px;}}
         .container {{ max-width: 1400px; margin: auto; padding: 20px; }}
@@ -1113,7 +1135,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
         }}
 
         function populateFilters() {{
-            const filters = {{ 'year-filter': '기간_표시', 'department-filter': '피평가부서', 'unit-filter': '피평가Unit' }};
+            const filters = {{ 'year-filter': '설문시행연도', 'department-filter': '피평가부서', 'unit-filter': '피평가Unit' }};
             for (const [elementId, dataCol] of Object.entries(filters)) {{
                 const select = document.getElementById(elementId);
                 const values = [...new Set(rawData.map(item => item[dataCol]))].sort((a, b) => String(a).localeCompare(String(b), 'ko'));
@@ -1179,7 +1201,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
 
         function getFilteredData() {{
             let filteredData = [...rawData];
-            const filters = {{ 'year-filter': '기간_표시', 'department-filter': '피평가부서', 'unit-filter': '피평가Unit' }};
+            const filters = {{ 'year-filter': '설문시행연도', 'department-filter': '피평가부서', 'unit-filter': '피평가Unit' }};
             for (const [elementId, dataCol] of Object.entries(filters)) {{
                 const selectedValue = document.getElementById(elementId).value;
                 if (selectedValue !== '전체') {{ filteredData = filteredData.filter(item => item[dataCol] == selectedValue); }}
@@ -1478,7 +1500,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             }}
             
             const reviews = filteredData.map(item => ({{ 
-                year: item['기간_표시'], 
+                year: item['설문시행연도'], 
                 review: item['정제된_텍스트'],
                 sentiment: item['감정_분류'] || '알 수 없음'
             }})).filter(r => r.review && r.review !== 'N/A')
@@ -1579,7 +1601,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             if (reviews.length > 0) {{
                 content += `<div id="keyword-reviews-table-container"><table id="keyword-reviews-table">
                     <thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody>`;
-                content += reviews.slice(0, 40000).map(r => `<tr><td>${{r['기간_표시']}}</td><td>${{r['정제된_텍스트']}}</td></tr>`).join(''); // 최대 40000개만 표시
+                content += reviews.slice(0, 40000).map(r => `<tr><td>${{r['설문시행연도']}}</td><td>${{r['정제된_텍스트']}}</td></tr>`).join(''); // 최대 40000개만 표시
                 content += `</tbody></table></div>`;
             }} else {{
                 content += '<p>관련 리뷰가 없습니다.</p>';
@@ -1649,7 +1671,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             const colors = teamRankings.map(() => '#FDC1B4');
             const hoverTexts = teamRankings.map(item => `부서: ${{item.department}}<br>부문: ${{item.division}}<br>점수: ${{item.avgScore}}<br>응답수: ${{item.count}}건`);
 
-            const allYearData = rawData.filter(item => item['기간_표시'] === selectedYear);
+            const allYearData = rawData.filter(item => item['설문시행연도'] === selectedYear);
             const yearlyOverallAverage = allYearData.length > 0 ? (allYearData.reduce((sum, item) => sum + (item['종합점수'] || 0), 0) / allYearData.length).toFixed(1) : 0;
 
             const trace = {{
@@ -1667,7 +1689,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             const layout = {{
                 title: `<b>${{selectedYear}} 팀별 종합점수</b>`, height: 600,
                 xaxis: {{ title: '부서', tickangle: -45, automargin: true }},
-                yaxis: {{ title: '점수', range: [0, 100] }},
+                yaxis: {{ title: '점수', range: [Math.min(...scores) - 5, Math.max(...scores) + 5] }},
                 font: layoutFont, hovermode: 'closest', showlegend: false,
                 legend: {{ orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 }},
                 annotations: [{{
@@ -1710,19 +1732,19 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
                 return;
             }}
 
-            const years = [...new Set(targetData.map(item => item['기간_표시']))].sort();
+            const years = [...new Set(targetData.map(item => item['설문시행연도']))].sort();
             const traces = [];
 
             const barColors = ['#FFF6F5', '#72B0AB', '#BCDDDC', '#FFEDD1', '#FDC1B4', '#FE9179'];
             selectedScores.forEach((col, index) => {{
                 const y_values = years.map(year => {{
-                    const yearData = targetData.filter(d => d['기간_표시'] === year);
+                    const yearData = targetData.filter(d => d['설문시행연도'] === year);
                     return yearData.length > 0 ? (yearData.reduce((sum, item) => sum + (item[col] || 0), 0) / yearData.length).toFixed(1) : 0;
                 }});
                 traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: barColors[index % barColors.length], line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>연도: %{{x}}<extra></extra>' }});
             }});
             
-            const yearly_counts = years.map(year => targetData.filter(d => d['기간_표시'] === year).length);
+            const yearly_counts = years.map(year => targetData.filter(d => d['설문시행연도'] === year).length);
             traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', line: {{ shape: 'spline', smoothing: 0.3, width: 3, color: '#355e58' }}, text: yearly_counts.map(count => `${{count.toLocaleString()}}건`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}건<br>연도: %{{x}}<extra></extra>' }});
 
             let titleText = '결과';
@@ -1773,7 +1795,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             }}
 
             let departmentData = rawData.filter(item => item['피평가부서'] === selectedDepartment);
-            if (selectedYear !== '전체') {{ departmentData = departmentData.filter(item => item['기간_표시'] === selectedYear); }}
+            if (selectedYear !== '전체') {{ departmentData = departmentData.filter(item => item['설문시행연도'] === selectedYear); }}
 
             const unitsInDepartment = [...new Set(departmentData.map(item => item['피평가Unit']))].filter(u => u && u !== 'N/A').sort((a, b) => String(a).localeCompare(String(b), 'ko'));
 
@@ -1969,7 +1991,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             const selectedDepartment = document.getElementById('network-department-filter').value;
             const selectedUnit = document.getElementById('network-unit-filter').value;
             
-            if (selectedYear !== '전체') {{ filteredData = filteredData.filter(item => String(item['기간_표시']) === String(selectedYear)); }}
+            if (selectedYear !== '전체') {{ filteredData = filteredData.filter(item => String(item['설문시행연도']) === String(selectedYear)); }}
             if (selectedDivision !== '전체') {{ filteredData = filteredData.filter(item => item['피평가부문'] === selectedDivision); }}
             if (selectedDepartment !== '전체') {{ filteredData = filteredData.filter(item => item['피평가부서'] === selectedDepartment); }}
             if (selectedUnit !== '전체') {{ filteredData = filteredData.filter(item => item['피평가Unit'] === selectedUnit); }}
@@ -2304,7 +2326,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             const selectedUnit = document.getElementById('network-unit-filter').value;
             
             // 전체 연도 리스트
-            const allYears = [...new Set(rawData.map(item => item['기간_표시']))].sort();
+            const allYears = [...new Set(rawData.map(item => item['설문시행연도']))].sort();
             
             // 선택된 부서들의 트렌드 라인 생성
             const traces = [];
@@ -2320,7 +2342,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
                 const relationYearlyData = allYears.map(year => {{
                     const yearRelationData = rawData.filter(item => {{
                         const evaluatedTarget = selectedUnit !== '전체' ? item['피평가Unit'] : item['피평가부서'];
-                        return item['기간_표시'] === year && 
+                        return item['설문시행연도'] === year && 
                             item['평가부서'] === dept.evaluator && 
                             evaluatedTarget === dept.evaluated &&
                             // 트렌드 차트에서는 연도 필터를 제외하고 다른 필터만 적용
@@ -2399,7 +2421,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             const reviews = reviewData
                 .filter(item => item['정제된_텍스트'] && item['정제된_텍스트'] !== 'N/A')
                 .map(item => ({{
-                    year: String(item['기간_표시']),
+                    year: String(item['설문시행연도']),
                     partner: item['평가부서'] !== item['피평가부서'] ? item['평가부서'] : '동일부서',
                     review: item['정제된_텍스트'],
                     sentiment: item['감정_분류'] || '알 수 없음'
@@ -2454,25 +2476,30 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
 # 🚀 메인 실행 함수
 # ============================================================================
 
-def main(mode='full', target_department=None, target_division=None):
+def main(mode='full', target_department=None, target_division=None, split_mode=False):
     """
     메인 실행 함수 - 전체 프로세스 조율
-    
+
     Args:
         mode (str): 'full' (전체 보고서) 또는 'department' (부서별 보고서)
         target_department (str): 부서별 모드일 때 대상 부서명
         target_division (str): 부서별 모드일 때 대상 부문명
+        split_mode (bool): True이면 2025년을 상하반기로 분리, False이면 통합
     """
     try:
         # 시작 메시지
         print("=" * 70)
         print(f"🚀 {DASHBOARD_TITLE} 생성 시작")
+        if split_mode:
+            print(f"📅 모드: 2025년 상하반기 분리")
+        else:
+            print(f"📅 모드: 전체 기간 통합")
         print(f"📅 실행 시간: {datetime.now().strftime('%Y년 %m월 %d일 %H:%M:%S')}")
         print("=" * 70)
-        
+
         # 1. 데이터 로드 및 전처리
         df = load_excel_data()
-        df = preprocess_data_types(df)
+        df = preprocess_data_types(df, split_mode=split_mode)
         df = clean_data(df)
         log_message("✅ 데이터 로드 및 전처리 완료")
         
@@ -2622,6 +2649,7 @@ if __name__ == "__main__":
     parser.add_argument('--department', type=str, help='특정 부서명 (부서별 보고서 생성 시)')
     parser.add_argument('--division', type=str, help='해당 부서의 부문명')
     parser.add_argument('--all-departments', action='store_true', help='모든 부서의 개별 보고서 생성')
+    parser.add_argument('--split', action='store_true', help='2025년을 상하반기로 분리 (기본: 통합)')
     
     args = parser.parse_args()
     
@@ -2631,10 +2659,10 @@ if __name__ == "__main__":
         success = generate_all_department_reports()
     elif args.department and args.division:
         # 특정 부서 보고서 생성
-        success = main(mode='department', target_department=args.department, target_division=args.division)
+        success = main(mode='department', target_department=args.department, target_division=args.division, split_mode=args.split)
     else:
         # 전체 보고서 생성 (기본)
-        success = main()
+        success = main(split_mode=args.split)
     
     # 종료 코드 설정 (성공: 0, 실패: 1)
     sys.exit(0 if success else 1)
