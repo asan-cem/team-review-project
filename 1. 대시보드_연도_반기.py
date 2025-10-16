@@ -373,62 +373,62 @@ def calculate_aggregated_data(df):
         }
     }
     
-    # 1. [전체] 연도별 문항 점수
-    for year in df['설문시행연도'].unique():
-        if pd.notna(year):
-            year_data = df[df['설문시행연도'] == year]
-            aggregated["hospital_yearly"][str(year)] = {
-                col: float(year_data[col].mean()) if col in year_data.columns else 0.0
+    # 1. [전체] 기간별 문항 점수 (기간_표시 컬럼 사용)
+    for period in df['기간_표시'].unique():
+        if pd.notna(period):
+            period_data = df[df['기간_표시'] == period]
+            aggregated["hospital_yearly"][str(period)] = {
+                col: float(period_data[col].mean()) if col in period_data.columns else 0.0
                 for col in SCORE_COLUMNS
             }
-            aggregated["hospital_yearly"][str(year)]["응답수"] = len(year_data)
+            aggregated["hospital_yearly"][str(period)]["응답수"] = len(period_data)
     
-    # 2. 부문별 종합 점수 (연도별 부문 비교)
-    for year in df['설문시행연도'].unique():
-        if pd.notna(year):
-            year_str = str(year)
-            year_data = df[df['설문시행연도'] == year]
-            
-            aggregated["division_comparison"][year_str] = {}
-            
+    # 2. 부문별 종합 점수 (기간별 부문 비교)
+    for period in df['기간_표시'].unique():
+        if pd.notna(period):
+            period_str = str(period)
+            period_data = df[df['기간_표시'] == period]
+
+            aggregated["division_comparison"][period_str] = {}
+
             # 모든 부문별 평균 계산
             for division in df['피평가부문'].unique():
                 if pd.notna(division) and division != 'N/A':
-                    div_year_data = year_data[year_data['피평가부문'] == division]
-                    if len(div_year_data) > 0:
-                        aggregated["division_comparison"][year_str][division] = {
-                            col: float(div_year_data[col].mean()) if col in div_year_data.columns else 0.0
+                    div_period_data = period_data[period_data['피평가부문'] == division]
+                    if len(div_period_data) > 0:
+                        aggregated["division_comparison"][period_str][division] = {
+                            col: float(div_period_data[col].mean()) if col in div_period_data.columns else 0.0
                             for col in SCORE_COLUMNS
                         }
-                        aggregated["division_comparison"][year_str][division]["응답수"] = len(div_year_data)
+                        aggregated["division_comparison"][period_str][division]["응답수"] = len(div_period_data)
     
-    # 3. 소속 부문 결과 ([부문별] 연도별 문항 점수)
+    # 3. 소속 부문 결과 ([부문별] 기간별 문항 점수)
     for division in df['피평가부문'].unique():
         if pd.notna(division) and division != 'N/A':
             div_data = df[df['피평가부문'] == division]
             aggregated["division_yearly"][division] = {}
-            for year in div_data['설문시행연도'].unique():
-                if pd.notna(year):
-                    year_data = div_data[div_data['설문시행연도'] == year]
-                    aggregated["division_yearly"][division][str(year)] = {
-                        col: float(year_data[col].mean()) if col in year_data.columns else 0.0
+            for period in div_data['기간_표시'].unique():
+                if pd.notna(period):
+                    period_data = div_data[div_data['기간_표시'] == period]
+                    aggregated["division_yearly"][division][str(period)] = {
+                        col: float(period_data[col].mean()) if col in period_data.columns else 0.0
                         for col in SCORE_COLUMNS
                     }
-                    aggregated["division_yearly"][division][str(year)]["응답수"] = len(year_data)
+                    aggregated["division_yearly"][division][str(period)]["응답수"] = len(period_data)
     
     # 4. 부문별 팀 점수 순위 - 모든 부문별로 계산
     for division in df['피평가부문'].unique():
         if pd.notna(division) and division != 'N/A':
             div_data = df[df['피평가부문'] == division]
-            for year in div_data['설문시행연도'].unique():
-                if pd.notna(year):
-                    year_str = str(year)
-                    year_data = div_data[div_data['설문시행연도'] == year]
+            for period in div_data['기간_표시'].unique():
+                if pd.notna(period):
+                    period_str = str(period)
+                    period_data = div_data[div_data['기간_표시'] == period]
                     dept_scores = []
-                    
-                    for dept in year_data['피평가부서'].unique():
+
+                    for dept in period_data['피평가부서'].unique():
                         if pd.notna(dept):
-                            dept_data = year_data[year_data['피평가부서'] == dept]
+                            dept_data = period_data[period_data['피평가부서'] == dept]
                             avg_score = dept_data['종합점수'].mean() if len(dept_data) > 0 else 0.0
                             dept_scores.append({
                                 "department": dept,
@@ -436,16 +436,16 @@ def calculate_aggregated_data(df):
                                 "score": round(float(avg_score), 1),
                                 "count": len(dept_data)
                             })
-                    
+
                     # 점수 순으로 정렬하고 순위 부여
                     dept_scores.sort(key=lambda x: x["score"], reverse=True)
                     for i, dept in enumerate(dept_scores):
                         dept["rank"] = i + 1
-                    
+
                     # 부문별로 구분하여 저장
-                    if year_str not in aggregated["team_ranking"]:
-                        aggregated["team_ranking"][year_str] = {}
-                    aggregated["team_ranking"][year_str][division] = dept_scores
+                    if period_str not in aggregated["team_ranking"]:
+                        aggregated["team_ranking"][period_str] = {}
+                    aggregated["team_ranking"][period_str][division] = dept_scores
     
     log_message(f"✅ 집계 데이터 계산 완료: {len(aggregated['hospital_yearly'])}년치 데이터")
     return aggregated
@@ -560,59 +560,59 @@ def calculate_aggregated_data_for_department(df, target_department, target_divis
         }
     }
     
-    # 1. [전체] 연도별 문항 점수 - 전체 병원 데이터 그대로 사용
-    for year in df['설문시행연도'].unique():
-        year_data = df[df['설문시행연도'] == year]
-        aggregated["hospital_yearly"][str(year)] = {
-            col: float(year_data[col].mean()) 
-            for col in SCORE_COLUMNS if col in year_data.columns
+    # 1. [전체] 기간별 문항 점수 - 전체 병원 데이터 그대로 사용
+    for period in df['기간_표시'].unique():
+        period_data = df[df['기간_표시'] == period]
+        aggregated["hospital_yearly"][str(period)] = {
+            col: float(period_data[col].mean())
+            for col in SCORE_COLUMNS if col in period_data.columns
         }
-        aggregated["hospital_yearly"][str(year)]["응답수"] = len(year_data)
+        aggregated["hospital_yearly"][str(period)]["응답수"] = len(period_data)
     
-    # 2. [부문별] 연도별 점수 - 모든 부문 데이터 포함
+    # 2. [부문별] 기간별 점수 - 모든 부문 데이터 포함
     for division in df['피평가부문'].unique():
         if pd.notna(division) and division != 'N/A':
             div_data = df[df['피평가부문'] == division]
             aggregated["division_yearly"][division] = {}
-            for year in div_data['설문시행연도'].unique():
-                if pd.notna(year):
-                    year_data = div_data[div_data['설문시행연도'] == year]
-                    aggregated["division_yearly"][division][str(year)] = {
-                        col: float(year_data[col].mean()) if col in year_data.columns else 0.0
+            for period in div_data['기간_표시'].unique():
+                if pd.notna(period):
+                    period_data = div_data[div_data['기간_표시'] == period]
+                    aggregated["division_yearly"][division][str(period)] = {
+                        col: float(period_data[col].mean()) if col in period_data.columns else 0.0
                         for col in SCORE_COLUMNS
                     }
-                    aggregated["division_yearly"][division][str(year)]["응답수"] = len(year_data)
+                    aggregated["division_yearly"][division][str(period)]["응답수"] = len(period_data)
     
-    # 3. [부문 비교] 연도별 부문 비교 - 모든 부문 포함 (섹션 2에서 사용)
-    for year in df['설문시행연도'].unique():
-        if pd.notna(year):
-            year_str = str(year)
-            year_data = df[df['설문시행연도'] == year]
-            
-            aggregated["division_comparison"][year_str] = {}
-            
+    # 3. [부문 비교] 기간별 부문 비교 - 모든 부문 포함 (섹션 2에서 사용)
+    for period in df['기간_표시'].unique():
+        if pd.notna(period):
+            period_str = str(period)
+            period_data = df[df['기간_표시'] == period]
+
+            aggregated["division_comparison"][period_str] = {}
+
             # 모든 부문별 평균 계산
             for division in df['피평가부문'].unique():
                 if pd.notna(division) and division != 'N/A':
-                    div_year_data = year_data[year_data['피평가부문'] == division]
-                    if len(div_year_data) > 0:
-                        aggregated["division_comparison"][year_str][division] = {
-                            col: float(div_year_data[col].mean()) if col in div_year_data.columns else 0.0
+                    div_period_data = period_data[period_data['피평가부문'] == division]
+                    if len(div_period_data) > 0:
+                        aggregated["division_comparison"][period_str][division] = {
+                            col: float(div_period_data[col].mean()) if col in div_period_data.columns else 0.0
                             for col in SCORE_COLUMNS
                         }
-                        aggregated["division_comparison"][year_str][division]["응답수"] = len(div_year_data)
+                        aggregated["division_comparison"][period_str][division]["응답수"] = len(div_period_data)
     
-    # 4. [팀 순위] 해당 부문 내 팀 순위 - 연도별
+    # 4. [팀 순위] 해당 부문 내 팀 순위 - 기간별
     division_data = df[df['피평가부문'] == target_division]
-    for year in division_data['설문시행연도'].unique():
-        if pd.notna(year):
-            year_str = str(year)
-            year_div_data = division_data[division_data['설문시행연도'] == year]
-            
+    for period in division_data['기간_표시'].unique():
+        if pd.notna(period):
+            period_str = str(period)
+            period_div_data = division_data[division_data['기간_표시'] == period]
+
             dept_scores = []
-            for team in year_div_data['피평가부서'].unique():
+            for team in period_div_data['피평가부서'].unique():
                 if pd.notna(team) and team != 'N/A':
-                    team_data = year_div_data[year_div_data['피평가부서'] == team]
+                    team_data = period_div_data[period_div_data['피평가부서'] == team]
                     if '종합점수' in team_data.columns and len(team_data) > 0:
                         avg_score = float(team_data['종합점수'].mean())
                         dept_scores.append({
@@ -620,16 +620,16 @@ def calculate_aggregated_data_for_department(df, target_department, target_divis
                             "score": round(avg_score, 1),
                             "count": len(team_data)
                         })
-            
+
             # 점수 순으로 정렬하고 순위 부여
             dept_scores.sort(key=lambda x: x["score"], reverse=True)
             for i, dept in enumerate(dept_scores):
                 dept["rank"] = i + 1
-            
+
             # 부문별로 구분하여 저장
-            if year_str not in aggregated["team_ranking"]:
-                aggregated["team_ranking"][year_str] = {}
-            aggregated["team_ranking"][year_str][target_division] = dept_scores
+            if period_str not in aggregated["team_ranking"]:
+                aggregated["team_ranking"][period_str] = {}
+            aggregated["team_ranking"][period_str][target_division] = dept_scores
     
     log_message(f"✅ 부서별 집계 데이터 계산 완료: {target_department}")
     return aggregated
