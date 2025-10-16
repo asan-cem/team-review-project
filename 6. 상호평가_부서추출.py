@@ -33,12 +33,12 @@ def summarize_mutual_reviews_by_period(include_half_year=False):
     상호평가 요약 분석 (연도별 또는 반기별)
 
     Args:
-        include_half_year (bool): True면 2023년과 2025년을 상반기/하반기로 세분화
+        include_half_year (bool): True면 2025년을 상반기/하반기로 세분화
     """
     if include_half_year:
-        print("🚀 연도별/반기별 상호평가 요약 분석을 시작합니다...")
+        print("🚀 상호평가 요약 분석을 시작합니다 (2025년 상하반기 구분)...")
     else:
-        print("🚀 연도별 상호평가 요약 분석을 시작합니다...")
+        print("🚀 상호평가 요약 분석을 시작합니다 (연도별 통합)...")
 
     # 1. 데이터 로드
     try:
@@ -75,13 +75,13 @@ def summarize_mutual_reviews_by_period(include_half_year=False):
 
     # 3. 분석 기간 설정
     if include_half_year:
-        # 2023년과 2025년은 상반기/하반기로 분리
+        # 2025년만 상반기/하반기로 분리
         periods = []
         for year in sorted(df['설문시행연도'].unique()):
             year_data = df[df['설문시행연도'] == year]
             half_years = sorted(year_data['반기'].unique())
 
-            if year in ['2023', '2025'] and len(half_years) > 1:
+            if year == '2025' and len(half_years) > 1:
                 periods.append(f"{year}_상반기")
                 periods.append(f"{year}_하반기")
             else:
@@ -245,7 +245,7 @@ if __name__ == "__main__":
     import sys
 
     # 기본: 연도별 분석
-    # --half-year 옵션: 반기별 분석 (2023, 2025년 상반기/하반기 구분)
+    # --half-year 옵션: 반기별 분석 (2025년만 상반기/하반기 구분)
     # --both 옵션: 연도별과 반기별 모두 실행
 
     if len(sys.argv) > 1:
