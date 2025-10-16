@@ -20,6 +20,7 @@ generated_reports/
 진단_데이터정제표.xlsx
 데이터_정제_진단_결과.xlsx
 중점개선과제_분석보고서_*.txt
+협업평가*.html
 
 # Data files
 rawdata/*.xlsx
