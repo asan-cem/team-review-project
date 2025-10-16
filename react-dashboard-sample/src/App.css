@@ -1,0 +1,289 @@
+/* 원본 대시보드 스타일 재현 */
+
+body {
+  font-family: 'Malgun Gothic', 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fa;
+  color: #343a40;
+  font-size: 16px;
+}
+
+.container {
+  max-width: 1400px;
+  margin: auto;
+  padding: 20px;
+}
+
+.header {
+  background: linear-gradient(90deg, #4a69bd, #6a89cc);
+  color: white;
+  padding: 25px;
+  text-align: center;
+  border-radius: 0 0 10px 10px;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 2em;
+  font-weight: bold;
+}
+
+.header p {
+  margin: 10px 0 0 0;
+  font-size: 1em;
+  opacity: 0.9;
+}
+
+.section {
+  background: white;
+  border-radius: 10px;
+  padding: 25px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.section h2 {
+  margin-top: 0;
+  color: #4a69bd;
+  border-bottom: 3px solid #6a89cc;
+  padding-bottom: 10px;
+  font-size: 1.5em;
+}
+
+.subsection {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #dee2e6;
+}
+
+.subsection h3 {
+  color: #495057;
+  font-size: 1.2em;
+  margin-bottom: 15px;
+}
+
+.part-divider {
+  height: 20px;
+  background: linear-gradient(to bottom, #f8f9fa, #e9ecef, #f8f9fa);
+  border-top: 1px solid #dee2e6;
+  border-bottom: 1px solid #dee2e6;
+  margin: 40px 0;
+}
+
+.part-title {
+  text-align: center;
+  color: #6c757d;
+  font-size: 1.2em;
+  font-weight: bold;
+  margin: 30px 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 5px solid #6a89cc;
+}
+
+/* 필터 스타일 */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group label {
+  margin-bottom: 5px;
+  font-weight: bold;
+  font-size: 0.9em;
+  color: #495057;
+}
+
+.filter-group select,
+.filter-group input {
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ced4da;
+  min-width: 200px;
+  font-size: 0.95em;
+  background-color: white;
+  cursor: pointer;
+}
+
+.filter-group select:hover,
+.filter-group input:hover {
+  border-color: #6a89cc;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+  outline: none;
+  border-color: #4a69bd;
+  box-shadow: 0 0 0 3px rgba(106, 137, 204, 0.1);
+}
+
+/* 차트 컨테이너 */
+.chart-container {
+  margin-top: 20px;
+  min-height: 400px;
+}
+
+/* 메트릭 카드 */
+.metrics-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.metric-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.metric-card h3 {
+  margin: 0 0 10px 0;
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
+.metric-card .value {
+  font-size: 2em;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.metric-card .count {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
+/* 테이블 스타일 */
+.table-container {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+table thead {
+  background: linear-gradient(90deg, #4a69bd, #6a89cc);
+  color: white;
+}
+
+table th,
+table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+}
+
+table th {
+  font-weight: bold;
+  font-size: 0.95em;
+}
+
+table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+table tbody tr:nth-child(even) {
+  background-color: #fafbfc;
+}
+
+/* 후기 테이블 */
+.reviews-table-container {
+  max-height: 600px;
+  overflow-y: auto;
+  margin-top: 20px;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+}
+
+.reviews-count {
+  color: #6c757d;
+  font-size: 0.95em;
+  margin-left: 10px;
+}
+
+/* 감정 필터 체크박스 */
+.sentiment-filter {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+}
+
+.sentiment-filter label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 0.95em;
+}
+
+.sentiment-filter input[type="checkbox"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+/* 로딩 상태 */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+
+  .header {
+    padding: 20px 15px;
+  }
+
+  .header h1 {
+    font-size: 1.5em;
+  }
+
+  .section {
+    padding: 15px;
+  }
+
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group select,
+  .filter-group input {
+    min-width: 100%;
+  }
+
+  .metrics-container {
+    grid-template-columns: 1fr;
+  }
+}
