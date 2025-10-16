@@ -34,6 +34,32 @@ from src.dashboard_builder import (
 )
 
 
+def get_latest_text_processor_file():
+    """
+    rawdata 폴더에서 가장 최신의 text_processor_결과 파일을 찾아 반환합니다.
+
+    Returns:
+        str: 가장 최신 파일의 경로
+    """
+    rawdata_path = Path("rawdata")
+    pattern = "2. text_processor_결과_*.xlsx"
+
+    # _partial.xlsx 파일은 제외하고 검색
+    files = [f for f in rawdata_path.glob(pattern) if not f.name.endswith('_partial.xlsx')]
+
+    if not files:
+        print(f"⚠️  '{pattern}' 패턴의 파일을 찾을 수 없습니다.")
+        return "rawdata/2. text_processor_결과_20251013_093925.xlsx"  # 기본값
+
+    # 파일명에서 타임스탬프를 추출하여 최신 파일 선택
+    if len(files) > 1:
+        latest_file = max(files, key=lambda f: f.stat().st_mtime)
+        print(f"📁 최신 데이터 파일 자동 선택: {latest_file.name}")
+        return str(latest_file)
+    else:
+        return str(files[0])
+
+
 def extract_yearly_question_scores(df):
     """
     연도별 문항별 점수 추출
@@ -176,7 +202,7 @@ def main():
     try:
         # 1. 데이터 로드 및 전처리
         print("📁 데이터 로드 중...")
-        input_file = 'rawdata/2. text_processor_결과_20251013_093925.xlsx'
+        input_file = get_latest_text_processor_file()
         df = load_data(input_file)
 
         print("🔄 데이터 전처리 중...")
