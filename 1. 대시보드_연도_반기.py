@@ -652,7 +652,7 @@ def prepare_department_filtered_data(df, target_department):
     
     # 보안을 위한 컬럼 선택 (평가부서 정보는 포함)
     safe_columns = [
-        '설문시행연도', '평가부서', '피평가부문', '피평가부서', '피평가Unit',
+        '설문시행연도', '기간_표시', '평가부서', '피평가부문', '피평가부서', '피평가Unit',
         '존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합점수',
         '정제된_텍스트', '감정_분류', '핵심_키워드'
     ]
@@ -913,7 +913,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             
             <!-- 공통 필터 -->
             <div class="filters">
-                <div class="filter-group"><label for="year-filter">연도 (전체)</label><select id="year-filter"></select></div>
+                <div class="filter-group"><label for="year-filter">연도 선택</label><select id="year-filter"></select></div>
                 <div class="filter-group"><label for="department-filter">부서</label><select id="department-filter"></select></div>
                 <div class="filter-group"><label for="unit-filter">Unit</label><select id="unit-filter"></select></div>
                 <div class="filter-group">
@@ -981,7 +981,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             <!-- 공통 필터 -->
             <div class="filters">
                 <div class="filter-group">
-                    <label for="network-division-filter">연도 (전체)</label>
+                    <label for="network-year-filter">연도 선택</label>
                     <select id="network-year-filter"></select>
                 </div>
                 <div class="filter-group">
@@ -1141,7 +1141,9 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             const filters = {{ 'year-filter': '기간_표시', 'department-filter': '피평가부서', 'unit-filter': '피평가Unit' }};
             for (const [elementId, dataCol] of Object.entries(filters)) {{
                 const select = document.getElementById(elementId);
-                const values = [...new Set(rawData.map(item => item[dataCol]))].sort((a, b) => String(a).localeCompare(String(b), 'ko'));
+                const values = [...new Set(rawData.map(item => item[dataCol]))]
+                    .filter(v => v !== undefined && v !== null && v !== '' && v !== 'N/A')
+                    .sort((a, b) => String(a).localeCompare(String(b), 'ko'));
                 const options = ['전체', ...values];
                 select.innerHTML = options.map(opt => `<option value="${{opt}}">${{opt}}</option>`).join('');
                 select.addEventListener('change', updateDashboard);
@@ -1711,6 +1713,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             const container = document.getElementById('yearly-comparison-chart-container');
             const selectedDept = document.getElementById('department-filter').value;
             const selectedUnit = document.getElementById('unit-filter').value;
+            const selectedYear = document.getElementById('year-filter').value;
             const selectedScores = Array.from(document.querySelectorAll('input[name="drilldown-score"]:checked')).map(cb => cb.value);
 
             if (selectedScores.length === 0) {{
@@ -1725,6 +1728,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             let targetData = [...rawData];
             if (selectedDept !== '전체') {{ targetData = targetData.filter(item => item['피평가부서'] === selectedDept); }}
             if (selectedUnit !== '전체') {{ targetData = targetData.filter(item => item['피평가Unit'] === selectedUnit); }}
+            if (selectedYear !== '전체') {{ targetData = targetData.filter(item => item['기간_표시'] === selectedYear); }}
 
             if (targetData.length === 0) {{
                 Plotly.react(container, [], {{
@@ -1735,7 +1739,9 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
                 return;
             }}
 
-            const years = [...new Set(targetData.map(item => item['기간_표시']))].sort();
+            const years = [...new Set(targetData.map(item => item['기간_표시']))]
+                .filter(y => y !== undefined && y !== null && y !== '')
+                .sort();
             const traces = [];
 
             const barColors = ['#FFF6F5', '#72B0AB', '#BCDDDC', '#FFEDD1', '#FDC1B4', '#FE9179'];
