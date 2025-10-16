@@ -80,7 +80,7 @@ SCORE_COLUMNS = ['존중배려', '정보공유', '명확처리', '태도개선',
 
 # 🎯 JSON 출력용 컬럼 (대시보드에 필요한 컬럼들만 선택)
 JSON_OUTPUT_COLUMNS = [
-    '설문시행연도', '평가부서', '피평가부문', '피평가부서', '피평가Unit', 
+    '설문시행연도', '기간_표시', '평가부서', '피평가부문', '피평가부서', '피평가Unit',
     '존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합점수',
     '정제된_텍스트', '감정_분류', '핵심_키워드'
 ]
@@ -1138,7 +1138,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
         }}
 
         function populateFilters() {{
-            const filters = {{ 'year-filter': '설문시행연도', 'department-filter': '피평가부서', 'unit-filter': '피평가Unit' }};
+            const filters = {{ 'year-filter': '기간_표시', 'department-filter': '피평가부서', 'unit-filter': '피평가Unit' }};
             for (const [elementId, dataCol] of Object.entries(filters)) {{
                 const select = document.getElementById(elementId);
                 const values = [...new Set(rawData.map(item => item[dataCol]))].sort((a, b) => String(a).localeCompare(String(b), 'ko'));
@@ -1204,7 +1204,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
 
         function getFilteredData() {{
             let filteredData = [...rawData];
-            const filters = {{ 'year-filter': '설문시행연도', 'department-filter': '피평가부서', 'unit-filter': '피평가Unit' }};
+            const filters = {{ 'year-filter': '기간_표시', 'department-filter': '피평가부서', 'unit-filter': '피평가Unit' }};
             for (const [elementId, dataCol] of Object.entries(filters)) {{
                 const selectedValue = document.getElementById(elementId).value;
                 if (selectedValue !== '전체') {{ filteredData = filteredData.filter(item => item[dataCol] == selectedValue); }}
@@ -1502,8 +1502,8 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
                 filteredData = data.filter(item => selectedSentiments.includes(item['감정_분류']));
             }}
             
-            const reviews = filteredData.map(item => ({{ 
-                year: item['설문시행연도'], 
+            const reviews = filteredData.map(item => ({{
+                year: item['기간_표시'],
                 review: item['정제된_텍스트'],
                 sentiment: item['감정_분류'] || '알 수 없음'
             }})).filter(r => r.review && r.review !== 'N/A')
@@ -1604,7 +1604,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             if (reviews.length > 0) {{
                 content += `<div id="keyword-reviews-table-container"><table id="keyword-reviews-table">
                     <thead><tr><th style="width: 100px;">연도</th><th>후기 내용</th></tr></thead><tbody>`;
-                content += reviews.slice(0, 40000).map(r => `<tr><td>${{r['설문시행연도']}}</td><td>${{r['정제된_텍스트']}}</td></tr>`).join(''); // 최대 40000개만 표시
+                content += reviews.slice(0, 40000).map(r => `<tr><td>${{r['기간_표시']}}</td><td>${{r['정제된_텍스트']}}</td></tr>`).join(''); // 최대 40000개만 표시
                 content += `</tbody></table></div>`;
             }} else {{
                 content += '<p>관련 리뷰가 없습니다.</p>';
@@ -1674,7 +1674,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             const colors = teamRankings.map(() => '#FDC1B4');
             const hoverTexts = teamRankings.map(item => `부서: ${{item.department}}<br>부문: ${{item.division}}<br>점수: ${{item.avgScore}}<br>응답수: ${{item.count}}건`);
 
-            const allYearData = rawData.filter(item => item['설문시행연도'] === selectedYear);
+            const allYearData = rawData.filter(item => item['기간_표시'] === selectedYear);
             const yearlyOverallAverage = allYearData.length > 0 ? (allYearData.reduce((sum, item) => sum + (item['종합점수'] || 0), 0) / allYearData.length).toFixed(1) : 0;
 
             const trace = {{
@@ -1735,19 +1735,19 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
                 return;
             }}
 
-            const years = [...new Set(targetData.map(item => item['설문시행연도']))].sort();
+            const years = [...new Set(targetData.map(item => item['기간_표시']))].sort();
             const traces = [];
 
             const barColors = ['#FFF6F5', '#72B0AB', '#BCDDDC', '#FFEDD1', '#FDC1B4', '#FE9179'];
             selectedScores.forEach((col, index) => {{
                 const y_values = years.map(year => {{
-                    const yearData = targetData.filter(d => d['설문시행연도'] === year);
+                    const yearData = targetData.filter(d => d['기간_표시'] === year);
                     return yearData.length > 0 ? (yearData.reduce((sum, item) => sum + (item[col] || 0), 0) / yearData.length).toFixed(1) : 0;
                 }});
                 traces.push({{ x: years, y: y_values, name: col, type: 'bar', text: y_values, textposition: 'outside', textfont: {{ size: 14 }}, marker: {{ color: barColors[index % barColors.length], line: {{ color: '#000000', width: 1 }} }}, hovertemplate: '%{{fullData.name}}: %{{y}}<br>연도: %{{x}}<extra></extra>' }});
             }});
-            
-            const yearly_counts = years.map(year => targetData.filter(d => d['설문시행연도'] === year).length);
+
+            const yearly_counts = years.map(year => targetData.filter(d => d['기간_표시'] === year).length);
             traces.push({{ x: years, y: yearly_counts, name: '응답수', type: 'scatter', mode: 'lines+markers+text', line: {{ shape: 'spline', smoothing: 0.3, width: 3, color: '#355e58' }}, text: yearly_counts.map(count => `${{count.toLocaleString()}}건`), textposition: 'top center', textfont: {{ size: 12 }}, yaxis: 'y2', hovertemplate: '응답수: %{{y}}건<br>연도: %{{x}}<extra></extra>' }});
 
             let titleText = '결과';
@@ -1798,7 +1798,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             }}
 
             let departmentData = rawData.filter(item => item['피평가부서'] === selectedDepartment);
-            if (selectedYear !== '전체') {{ departmentData = departmentData.filter(item => item['설문시행연도'] === selectedYear); }}
+            if (selectedYear !== '전체') {{ departmentData = departmentData.filter(item => item['기간_표시'] === selectedYear); }}
 
             const unitsInDepartment = [...new Set(departmentData.map(item => item['피평가Unit']))].filter(u => u && u !== 'N/A').sort((a, b) => String(a).localeCompare(String(b), 'ko'));
 
@@ -1994,7 +1994,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             const selectedDepartment = document.getElementById('network-department-filter').value;
             const selectedUnit = document.getElementById('network-unit-filter').value;
             
-            if (selectedYear !== '전체') {{ filteredData = filteredData.filter(item => String(item['설문시행연도']) === String(selectedYear)); }}
+            if (selectedYear !== '전체') {{ filteredData = filteredData.filter(item => String(item['기간_표시']) === String(selectedYear)); }}
             if (selectedDivision !== '전체') {{ filteredData = filteredData.filter(item => item['피평가부문'] === selectedDivision); }}
             if (selectedDepartment !== '전체') {{ filteredData = filteredData.filter(item => item['피평가부서'] === selectedDepartment); }}
             if (selectedUnit !== '전체') {{ filteredData = filteredData.filter(item => item['피평가Unit'] === selectedUnit); }}
@@ -2329,7 +2329,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             const selectedUnit = document.getElementById('network-unit-filter').value;
             
             // 전체 연도 리스트
-            const allYears = [...new Set(rawData.map(item => item['설문시행연도']))].sort();
+            const allYears = [...new Set(rawData.map(item => item['기간_표시']))].sort();
             
             // 선택된 부서들의 트렌드 라인 생성
             const traces = [];
@@ -2345,7 +2345,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
                 const relationYearlyData = allYears.map(year => {{
                     const yearRelationData = rawData.filter(item => {{
                         const evaluatedTarget = selectedUnit !== '전체' ? item['피평가Unit'] : item['피평가부서'];
-                        return item['설문시행연도'] === year && 
+                        return item['기간_표시'] === year && 
                             item['평가부서'] === dept.evaluator && 
                             evaluatedTarget === dept.evaluated &&
                             // 트렌드 차트에서는 연도 필터를 제외하고 다른 필터만 적용
@@ -2424,7 +2424,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             const reviews = reviewData
                 .filter(item => item['정제된_텍스트'] && item['정제된_텍스트'] !== 'N/A')
                 .map(item => ({{
-                    year: String(item['설문시행연도']),
+                    year: String(item['기간_표시']),
                     partner: item['평가부서'] !== item['피평가부서'] ? item['평가부서'] : '동일부서',
                     review: item['정제된_텍스트'],
                     sentiment: item['감정_분류'] || '알 수 없음'
