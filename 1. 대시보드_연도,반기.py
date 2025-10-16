@@ -92,7 +92,7 @@ EXCLUDE_TEAMS = ['내분비외과']  # 부서 기준 제외할 값들
 
 # 📊 대시보드 정보
 DASHBOARD_TITLE = "서울아산병원 협업 평가 결과 보고"
-DASHBOARD_SUBTITLE = "설문 데이터: 2022년 ~ 2025년 상반기(2025년 7월 9일 기준)"
+DASHBOARD_SUBTITLE = "설문 데이터: 2022년 ~ 2025년 하반기"
 
 # ============================================================================
 # 🛠️ 유틸리티 함수들
@@ -708,7 +708,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
         """
     else:
         title = "서울아산병원 협업 평가 결과 보고"
-        subtitle = "설문 데이터: 2022년 ~ 2025년 상반기(2025년 7월 9일 기준)"
+        subtitle = "설문 데이터: 2022년 ~ 2025년 하반기"
         data_scope_notice = ""
     
     return f"""
