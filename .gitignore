@@ -23,7 +23,7 @@ generated_reports/
 협업평가*.html
 
 # Data files
-rawdata/*.xlsx
+# rawdata/*.xlsx  # Now tracking rawdata files
 
 # API credentials
 Gemini API.json
