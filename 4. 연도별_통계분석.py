@@ -26,7 +26,7 @@ import numpy as np
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from src.dashboard_builder import (
+from src.common import (
     load_data,
     preprocess_data_types,
     clean_data,
