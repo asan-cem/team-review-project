@@ -699,7 +699,7 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
     # 제목과 설명 설정
     if mode == 'department' and target_department:
         title = f"서울아산병원 협업 평가 결과 보고 - {target_department}"
-        subtitle = "설문 데이터: 2022년 ~ 2025년 하반기(2025년 10월 16일 기준)"
+        subtitle = "설문 데이터: 2022년 ~ 2025년 하반기"
         data_scope_notice = f"""
         <div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 6px; padding: 12px; margin-bottom: 15px;">
             <strong style="color: #1565c0;">🔒 부서별 보고서</strong>
