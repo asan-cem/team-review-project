@@ -8,7 +8,7 @@
 2. 부문별 종합점수 (기간별, 표본수 포함)
 3. 부문별 부서 종합점수 (기간별, 표본수 포함)
 
-출력: 상호평가_요약_반기별.xlsx (73KB)
+출력: 반기별_통계분석.xlsx
 기간: 2022년, 2023년, 2024년, 2025년 상반기, 2025년 하반기 (5개 기간)
 
 사용법:
@@ -26,12 +26,38 @@ import numpy as np
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from src.dashboard_builder import (
+from src.common import (
     load_data,
     preprocess_data_types,
     clean_data,
     SCORE_COLUMNS
 )
+
+
+def get_latest_text_processor_file():
+    """
+    rawdata 폴더에서 가장 최신의 text_processor_결과 파일을 찾아 반환합니다.
+
+    Returns:
+        str: 가장 최신 파일의 경로
+    """
+    rawdata_path = Path("rawdata")
+    pattern = "2. text_processor_결과_*.xlsx"
+
+    # _partial.xlsx 파일은 제외하고 검색
+    files = [f for f in rawdata_path.glob(pattern) if not f.name.endswith('_partial.xlsx')]
+
+    if not files:
+        print(f"⚠️  '{pattern}' 패턴의 파일을 찾을 수 없습니다.")
+        return "rawdata/2. text_processor_결과_20251013_093925.xlsx"  # 기본값
+
+    # 파일명에서 타임스탬프를 추출하여 최신 파일 선택
+    if len(files) > 1:
+        latest_file = max(files, key=lambda f: f.stat().st_mtime)
+        print(f"📁 최신 데이터 파일 자동 선택: {latest_file.name}")
+        return str(latest_file)
+    else:
+        return str(files[0])
 
 
 def parse_period_from_response_id(response_id):
@@ -212,7 +238,7 @@ def main():
     try:
         # 1. 데이터 로드 및 전처리
         print("📁 데이터 로드 중...")
-        input_file = 'rawdata/2. text_processor_결과_20251013_093925.xlsx'
+        input_file = get_latest_text_processor_file()
         df = load_data(input_file)
 
         print("🔄 데이터 전처리 중...")
@@ -228,7 +254,7 @@ def main():
 
         # 3. Excel 저장
         print("\n💾 Excel 파일 저장 중...")
-        output_file = '상호평가_요약_반기별.xlsx'
+        output_file = '반기별_통계분석.xlsx'
         output_path = (Path(output_file)).absolute()
 
         with pd.ExcelWriter(output_file, engine='openpyxl') as writer:

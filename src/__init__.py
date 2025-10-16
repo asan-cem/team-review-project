@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-대시보드 빌더 패키지
+공통 분석 패키지
 
-리팩토링된 대시보드 생성 시스템
+리팩토링된 데이터 분석 시스템
 """
 
-from .dashboard_builder import (
+from .common import (
     load_data,
     preprocess_data_types,
     clean_data,
-    calculate_aggregated_data,
-    prepare_json_data,
-    build_dashboard
+    SCORE_COLUMNS,
+    get_latest_text_processor_file
 )
 from .config import DASHBOARD_CONFIGS, COMMON_CONFIG
 
@@ -20,9 +19,8 @@ __all__ = [
     'load_data',
     'preprocess_data_types',
     'clean_data',
-    'calculate_aggregated_data',
-    'prepare_json_data',
-    'build_dashboard',
+    'SCORE_COLUMNS',
+    'get_latest_text_processor_file',
     'DASHBOARD_CONFIGS',
     'COMMON_CONFIG'
 ]
