@@ -223,7 +223,7 @@ def analyze_data_cleaning_steps():
     # 상세 필터링 조건 저장
     print("💾 상세 분석 결과를 Excel로 저장합니다...")
 
-    output_file = '데이터_정제_진단_결과.xlsx'
+    output_file = '진단_데이터정제표.xlsx'
 
     with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
         # 요약

@@ -9,9 +9,17 @@ venv-backup/
 # Generated outputs
 outputs/
 checkpoints/
-상호평가_요약*.xlsx
 개별보고서/
 generated_reports/
+
+# Analysis output files
+상호평가_요약*.xlsx
+상호평가_부서추출*.xlsx
+연도별_통계분석.xlsx
+반기별_통계분석.xlsx
+진단_데이터정제표.xlsx
+데이터_정제_진단_결과.xlsx
+중점개선과제_분석보고서_*.txt
 
 # Data files
 rawdata/*.xlsx

@@ -216,9 +216,9 @@ def summarize_mutual_reviews_by_period(include_half_year=False):
     # 5. 엑셀 파일에 기간별 시트로 저장
     if period_results or period_unit_results:
         if include_half_year:
-            output_filename = "상호평가_요약_반기별.xlsx"
+            output_filename = "상호평가_부서추출.xlsx"
         else:
-            output_filename = "상호평가_요약_연도별.xlsx"
+            output_filename = "상호평가_부서추출.xlsx"
 
         with pd.ExcelWriter(output_filename, engine='openpyxl') as writer:
             # 부서별 결과 저장

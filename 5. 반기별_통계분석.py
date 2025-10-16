@@ -8,7 +8,7 @@
 2. 부문별 종합점수 (기간별, 표본수 포함)
 3. 부문별 부서 종합점수 (기간별, 표본수 포함)
 
-출력: 상호평가_요약_반기별.xlsx (73KB)
+출력: 반기별_통계분석.xlsx
 기간: 2022년, 2023년, 2024년, 2025년 상반기, 2025년 하반기 (5개 기간)
 
 사용법:
@@ -254,7 +254,7 @@ def main():
 
         # 3. Excel 저장
         print("\n💾 Excel 파일 저장 중...")
-        output_file = '상호평가_요약_반기별.xlsx'
+        output_file = '반기별_통계분석.xlsx'
         output_path = (Path(output_file)).absolute()
 
         with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
