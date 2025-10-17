@@ -38,11 +38,45 @@ def get_latest_text_processor_file():
         return str(files[0])
 
 
-def analyze_data_cleaning_steps():
-    """데이터 정제 단계별 분석"""
+def extract_period_from_response_id(response_id):
+    """
+    response_id에서 연도와 반기를 추출하여 기간 표시 생성
 
+    Args:
+        response_id: response_id 값 (예: '2025_1_123', '2024_1_456')
+
+    Returns:
+        str: 기간 표시 (예: '2025년 상반기', '2024년')
+    """
+    try:
+        parts = str(response_id).split('_')
+        if len(parts) >= 2:
+            year = parts[0]
+            period = parts[1]
+
+            # 2025년만 상반기/하반기로 구분
+            if year == "2025":
+                period_name = "상반기" if period == "1" else "하반기"
+                return f"{year}년 {period_name}"
+            else:
+                # 나머지 연도는 연도만 표시
+                return f"{year}년"
+        return str(response_id)
+    except:
+        return str(response_id)
+
+
+def analyze_data_cleaning_steps(split_mode=False):
+    """
+    데이터 정제 단계별 분석
+
+    Args:
+        split_mode (bool): True이면 2025년을 상하반기로 분리, False이면 연도별 통합
+    """
+
+    mode_text = "2025년 상하반기 분리" if split_mode else "연도별 통합"
     print("=" * 80)
-    print("📊 데이터 정제 과정 진단")
+    print(f"📊 데이터 정제 과정 진단 ({mode_text})")
     print("=" * 80)
     print()
 
@@ -87,14 +121,24 @@ def analyze_data_cleaning_steps():
     df_original = df_original.rename(columns=column_mapping)
     df_original['설문시행연도'] = df_original['설문시행연도'].astype(str)
 
+    # 기간_표시 컬럼 추가
+    if 'response_id' in df_original.columns:
+        df_original['기간_표시'] = df_original['response_id'].apply(extract_period_from_response_id)
+    else:
+        df_original['기간_표시'] = df_original['설문시행연도'] + '년'
+
+    # split_mode에 따라 집계 기준 결정
+    group_column = '기간_표시' if split_mode else '설문시행연도'
+
     print("🔍 STEP 0: 원본 데이터")
     print("-" * 80)
     print(f"총 행수: {len(df_original):,}행\n")
 
-    year_counts_original = df_original['설문시행연도'].value_counts().sort_index()
-    print("연도별 행수:")
-    for year, count in year_counts_original.items():
-        print(f"  {year}년: {count:,}행")
+    year_counts_original = df_original[group_column].value_counts().sort_index()
+    period_label = "기간별" if split_mode else "연도별"
+    print(f"{period_label} 행수:")
+    for period, count in year_counts_original.items():
+        print(f"  {period}: {count:,}행")
     print()
 
     # STEP 1: 부문 기준 제외
@@ -112,25 +156,25 @@ def analyze_data_cleaning_steps():
         if removed > 0:
             print(f"  '{exclude_dept}' 제외: {removed:,}행 제거")
 
-            # 연도별로 어떻게 제거되었는지 확인
+            # 기간별로 어떻게 제거되었는지 확인
             removed_data = df_original[~df_original.index.isin(df_step1.index)]
-            removed_by_year = removed_data[
+            removed_by_period = removed_data[
                 (removed_data['평가부문'] == exclude_dept) |
                 (removed_data['피평가부문'] == exclude_dept)
-            ]['설문시행연도'].value_counts().sort_index()
+            ][group_column].value_counts().sort_index()
 
-            if len(removed_by_year) > 0:
-                for year, count in removed_by_year.items():
-                    print(f"    - {year}년: {count:,}행")
+            if len(removed_by_period) > 0:
+                for period, count in removed_by_period.items():
+                    print(f"    - {period}: {count:,}행")
 
     print(f"\n총 남은 행수: {len(df_step1):,}행")
 
-    year_counts_step1 = df_step1['설문시행연도'].value_counts().sort_index()
-    print("\n연도별 행수:")
-    for year, count in year_counts_step1.items():
-        original_count = year_counts_original.get(year, 0)
+    year_counts_step1 = df_step1[group_column].value_counts().sort_index()
+    print(f"\n{period_label} 행수:")
+    for period, count in year_counts_step1.items():
+        original_count = year_counts_original.get(period, 0)
         diff = original_count - count
-        print(f"  {year}년: {count:,}행 (원본 대비 -{diff:,}행)")
+        print(f"  {period}: {count:,}행 (원본 대비 -{diff:,}행)")
     print()
 
     # STEP 2: 부서 기준 제외
@@ -148,25 +192,25 @@ def analyze_data_cleaning_steps():
         if removed > 0:
             print(f"  '{exclude_team}' 제외: {removed:,}행 제거")
 
-            # 연도별로 어떻게 제거되었는지 확인
+            # 기간별로 어떻게 제거되었는지 확인
             removed_data = df_step1[~df_step1.index.isin(df_step2.index)]
-            removed_by_year = removed_data[
+            removed_by_period = removed_data[
                 (removed_data['평가부서'] == exclude_team) |
                 (removed_data['피평가부서'] == exclude_team)
-            ]['설문시행연도'].value_counts().sort_index()
+            ][group_column].value_counts().sort_index()
 
-            if len(removed_by_year) > 0:
-                for year, count in removed_by_year.items():
-                    print(f"    - {year}년: {count:,}행")
+            if len(removed_by_period) > 0:
+                for period, count in removed_by_period.items():
+                    print(f"    - {period}: {count:,}행")
 
     print(f"\n총 남은 행수: {len(df_step2):,}행")
 
-    year_counts_step2 = df_step2['설문시행연도'].value_counts().sort_index()
-    print("\n연도별 행수:")
-    for year, count in year_counts_step2.items():
-        original_count = year_counts_original.get(year, 0)
+    year_counts_step2 = df_step2[group_column].value_counts().sort_index()
+    print(f"\n{period_label} 행수:")
+    for period, count in year_counts_step2.items():
+        original_count = year_counts_original.get(period, 0)
         diff = original_count - count
-        print(f"  {year}년: {count:,}행 (원본 대비 -{diff:,}행)")
+        print(f"  {period}: {count:,}행 (원본 대비 -{diff:,}행)")
     print()
 
     # STEP 3: 종합점수 결측값 제거
@@ -182,22 +226,22 @@ def analyze_data_cleaning_steps():
 
     print(f"  종합점수 결측값: {removed:,}행 제거")
 
-    # 연도별로 어떻게 제거되었는지 확인
+    # 기간별로 어떻게 제거되었는지 확인
     removed_data = df_step2[~df_step2.index.isin(df_step3.index)]
-    removed_by_year = removed_data['설문시행연도'].value_counts().sort_index()
+    removed_by_period = removed_data[group_column].value_counts().sort_index()
 
-    if len(removed_by_year) > 0:
-        for year, count in removed_by_year.items():
-            print(f"    - {year}년: {count:,}행")
+    if len(removed_by_period) > 0:
+        for period, count in removed_by_period.items():
+            print(f"    - {period}: {count:,}행")
 
     print(f"\n총 남은 행수: {len(df_step3):,}행")
 
-    year_counts_step3 = df_step3['설문시행연도'].value_counts().sort_index()
-    print("\n연도별 행수:")
-    for year, count in year_counts_step3.items():
-        original_count = year_counts_original.get(year, 0)
+    year_counts_step3 = df_step3[group_column].value_counts().sort_index()
+    print(f"\n{period_label} 행수:")
+    for period, count in year_counts_step3.items():
+        original_count = year_counts_original.get(period, 0)
         diff = original_count - count
-        print(f"  {year}년: {count:,}행 (원본 대비 -{diff:,}행)")
+        print(f"  {period}: {count:,}행 (원본 대비 -{diff:,}행)")
     print()
 
     # 최종 요약
@@ -206,12 +250,13 @@ def analyze_data_cleaning_steps():
     print("=" * 80)
     print()
 
+    period_column_name = '기간' if split_mode else '연도'
     summary_df = pd.DataFrame({
-        '연도': sorted(year_counts_original.index),
-        '원본': [year_counts_original.get(year, 0) for year in sorted(year_counts_original.index)],
-        'STEP1_부문필터': [year_counts_step1.get(year, 0) for year in sorted(year_counts_original.index)],
-        'STEP2_부서필터': [year_counts_step2.get(year, 0) for year in sorted(year_counts_original.index)],
-        'STEP3_종합점수': [year_counts_step3.get(year, 0) for year in sorted(year_counts_original.index)]
+        period_column_name: sorted(year_counts_original.index),
+        '원본': [year_counts_original.get(period, 0) for period in sorted(year_counts_original.index)],
+        'STEP1_부문필터': [year_counts_step1.get(period, 0) for period in sorted(year_counts_original.index)],
+        'STEP2_부서필터': [year_counts_step2.get(period, 0) for period in sorted(year_counts_original.index)],
+        'STEP3_종합점수': [year_counts_step3.get(period, 0) for period in sorted(year_counts_original.index)]
     })
 
     summary_df['총_제거'] = summary_df['원본'] - summary_df['STEP3_종합점수']
@@ -223,31 +268,35 @@ def analyze_data_cleaning_steps():
     # 상세 필터링 조건 저장
     print("💾 상세 분석 결과를 Excel로 저장합니다...")
 
-    output_file = '진단_데이터정제표.xlsx'
+    mode_suffix = '_반기별' if split_mode else '_연도별'
+    output_file = f'진단_데이터정제표{mode_suffix}.xlsx'
 
     with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
         # 요약
         summary_df.to_excel(writer, sheet_name='요약', index=False)
 
         # 부문 제외 상세
+        excluded_divisions_cols = ['기간_표시', '설문시행연도', '평가부문', '피평가부문', '평가부서', '피평가부서'] if split_mode else ['설문시행연도', '평가부문', '피평가부문', '평가부서', '피평가부서']
         excluded_divisions = df_original[
             (df_original['평가부문'].isin(EXCLUDE_DEPARTMENTS)) |
             (df_original['피평가부문'].isin(EXCLUDE_DEPARTMENTS))
-        ][['설문시행연도', '평가부문', '피평가부문', '평가부서', '피평가부서']].copy()
+        ][[col for col in excluded_divisions_cols if col in df_original.columns]].copy()
         if len(excluded_divisions) > 0:
             excluded_divisions.to_excel(writer, sheet_name='제외_부문_상세', index=False)
 
         # 부서 제외 상세
+        excluded_teams_cols = ['기간_표시', '설문시행연도', '평가부문', '피평가부문', '평가부서', '피평가부서'] if split_mode else ['설문시행연도', '평가부문', '피평가부문', '평가부서', '피평가부서']
         excluded_teams = df_step1[
             (df_step1['평가부서'].isin(EXCLUDE_TEAMS)) |
             (df_step1['피평가부서'].isin(EXCLUDE_TEAMS))
-        ][['설문시행연도', '평가부문', '피평가부문', '평가부서', '피평가부서']].copy()
+        ][[col for col in excluded_teams_cols if col in df_step1.columns]].copy()
         if len(excluded_teams) > 0:
             excluded_teams.to_excel(writer, sheet_name='제외_부서_상세', index=False)
 
         # 종합점수 결측값 상세
+        missing_scores_cols = ['기간_표시', '설문시행연도', '평가부문', '피평가부문', '평가부서', '피평가부서', '종합점수'] if split_mode else ['설문시행연도', '평가부문', '피평가부문', '평가부서', '피평가부서', '종합점수']
         missing_scores = df_step2[pd.isna(pd.to_numeric(df_step2['종합점수'], errors='coerce'))][
-            ['설문시행연도', '평가부문', '피평가부문', '평가부서', '피평가부서', '종합점수']
+            [col for col in missing_scores_cols if col in df_step2.columns]
         ].copy()
         if len(missing_scores) > 0:
             missing_scores.to_excel(writer, sheet_name='종합점수_결측_상세', index=False)
@@ -257,4 +306,11 @@ def analyze_data_cleaning_steps():
 
 
 if __name__ == "__main__":
-    analyze_data_cleaning_steps()
+    import argparse
+
+    parser = argparse.ArgumentParser(description='데이터 정제 과정 진단')
+    parser.add_argument('--split', action='store_true', help='2025년을 상하반기로 분리')
+
+    args = parser.parse_args()
+
+    analyze_data_cleaning_steps(split_mode=args.split)
