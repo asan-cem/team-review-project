@@ -596,6 +596,7 @@ def calculate_aggregated_data_for_department(df, target_department, target_divis
                         avg_score = float(team_data['종합점수'].mean())
                         dept_scores.append({
                             "department": team,
+                            "division": target_division,
                             "score": round(avg_score, 1),
                             "count": len(team_data)
                         })
@@ -1655,8 +1656,10 @@ def build_html(aggregated_data, raw_data_json, mode='full', target_department=No
             const colors = teamRankings.map(() => '#FDC1B4');
             const hoverTexts = teamRankings.map(item => `부서: ${{item.department}}<br>부문: ${{item.division}}<br>점수: ${{item.avgScore}}<br>응답수: ${{item.count}}건`);
 
-            const allYearData = rawData.filter(item => item['기간_표시'] === selectedYear);
-            const yearlyOverallAverage = allYearData.length > 0 ? (allYearData.reduce((sum, item) => sum + (item['종합점수'] || 0), 0) / allYearData.length).toFixed(1) : 0;
+            // 전체 병원 평균을 aggregatedData에서 가져오기 (개별 부서 보고서에서도 전체 병원 평균 표시)
+            const yearlyOverallAverage = aggregatedData.hospital_yearly[selectedYear] && aggregatedData.hospital_yearly[selectedYear]['종합점수']
+                ? aggregatedData.hospital_yearly[selectedYear]['종합점수'].toFixed(1)
+                : 0;
 
             const trace = {{
                 x: departments, y: scores, type: 'bar', text: scores.map(score => score.toString()),
