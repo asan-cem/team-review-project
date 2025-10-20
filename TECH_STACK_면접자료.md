@@ -45,10 +45,11 @@
 |------|-----------|----------|
 | **pandas** | 2.x | 46,654건 응답 데이터 처리, DataFrame 기반 데이터 조작 |
 | **numpy** | 1.x | 수치 연산, 통계 계산 (평균, 표준편차) |
-| **Google Vertex AI** | Latest | 부서명 자동 분류를 위한 AI 활용 |
 | **re (정규표현식)** | Built-in | 부서명 정규화 (특수문자 제거, 공백 통일) |
 | **pathlib** | Built-in | 크로스 플랫폼 파일 경로 처리 |
 | **tqdm** | Latest | 대용량 데이터 처리 진행률 시각화 |
+
+**주의:** 0. 데이터_정리.py는 vertexai import가 있지만 실제 사용하지 않음 (엑셀 매핑 테이블만 사용)
 
 #### **아키텍처 패턴**
 ```python
@@ -96,7 +97,8 @@ class LocalGoogleSheetsAnalyzer:
 
 | 기술 | 버전/용도 | 상세 설명 |
 |------|-----------|----------|
-| **Google Vertex AI** | Gemini 2.5 Pro | 대규모 언어 모델을 활용한 텍스트 분석 |
+| **Google Vertex AI** | Platform | Google Cloud ML 플랫폼 (Gemini API 호스팅) |
+| **Gemini 2.5 Pro** | LLM | Vertex AI를 통해 접근하는 대규모 언어 모델 |
 | **concurrent.futures** | ThreadPoolExecutor | 병렬 API 호출 (20개 worker) |
 | **multiprocessing** | Process, Queue | 백그라운드 작업 관리 |
 | **pickle** | Built-in | 체크포인트 저장 (장애 복구) |
@@ -328,21 +330,33 @@ def process_data_pipeline(df):
 - Python 네이티브 지원
 - 모바일 반응형 기본 제공
 
-### 3. **왜 Gemini 2.5 Pro를 선택했는가?**
+### 3. **왜 Vertex AI를 통한 Gemini 2.5 Pro를 선택했는가?**
 
 **대안 비교:**
+
+| 접근 방식 | 장점 | 단점 | 선택 |
+|----------|------|------|------|
+| **직접 Gemini API** | 설정 간단 | 기업용 SLA 없음 | ❌ |
+| **Vertex AI + Gemini** | 보안, 감사, 모니터링 | 설정 복잡 | ✅ |
+| **OpenAI API** | 성능 우수 | 비용 높음 | ❌ |
+
+**모델 비교:**
 
 | 모델 | 한국어 성능 | 비용 | API 안정성 | 선택 |
 |------|------------|------|-----------|------|
 | **GPT-4** | 우수 | 비쌈 | 높음 | ❌ |
 | **Claude** | 우수 | 중간 | 높음 | △ |
 | **Gemini 2.5 Pro** | 우수 | 저렴 | 높음 | ✅ |
-| **한국 LLM** | 최고 | 중간 | 낮음 | ❌ |
 
 **최종 선택 이유:**
-- Google Cloud 인프라 통합
-- Vertex AI의 기업용 SLA
-- 비용 효율 (GPT-4 대비 70% 저렴)
+- **Vertex AI 경유 이유:**
+  - Google Cloud 인프라 통합
+  - 기업용 SLA 및 보안 감사
+  - 통합 비용 관리 및 모니터링
+- **Gemini 2.5 Pro 선택:**
+  - 비용 효율 (GPT-4 대비 70% 저렴)
+  - 한국어 성능 우수
+  - 긴 컨텍스트 윈도우 (32K tokens)
 
 ---
 
@@ -475,23 +489,27 @@ logging.basicConfig(
    - Cohen's Kappa: 0.85 (높은 일치도)
 ```
 
-### Q3: "왜 데이터베이스 대신 엑셀을 사용했나요?"
+### Q3: "Vertex AI를 통한 Gemini 사용 vs 직접 Gemini API 사용의 차이는?"
 
 **답변:**
 ```
-1. 비즈니스 요구사항
-   - 연 1-2회 실행
-   - 비개발자 실무진 운영
-   - 엑셀 친화적 환경
+1. Vertex AI 경유 방식 (현재)
+   ✅ 기업용 SLA 및 보안 감사 제공
+   ✅ Google Cloud Console 통합 모니터링
+   ✅ IAM 기반 접근 제어
+   ✅ 프로젝트 단위 비용 관리
+   ❌ 초기 설정 복잡 (vertexai.init 필요)
 
-2. 장점
-   - 데이터 검증 용이
-   - 배포 복잡도 낮음
-   - 버전 관리 간단
+2. 직접 Gemini API (대안)
+   ✅ 설정 간단 (API 키만 필요)
+   ❌ 기업용 SLA 없음
+   ❌ 별도 모니터링 필요
+   ❌ 보안 감사 제한적
 
-3. 확장 계획
-   - 실시간 분석 필요 시 DB 전환 고려
-   - PostgreSQL + SQLAlchemy 검토 중
+3. 선택 근거
+   - 의료 데이터 → 보안 및 감사 필수
+   - 장기 운영 → SLA 보장 필요
+   - 비용 통합 관리 필요
 ```
 
 ### Q4: "대시보드 성능 최적화는 어떻게 했나요?"
