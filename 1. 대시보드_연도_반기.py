@@ -18,8 +18,8 @@
 - 각 함수는 명확한 목적과 설명을 가짐
 
 작성자: Claude AI
-버전: 3.0
-업데이트: 2025년 7월 9일
+버전: 3.1
+업데이트: 2025-10-20 (src 공통 모듈 활용 리팩토링)
 """
 
 import pandas as pd
@@ -32,51 +32,30 @@ from pathlib import Path
 from datetime import datetime
 import traceback
 
+# src 폴더를 Python 경로에 추가
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
+
+from src.common import (
+    get_latest_text_processor_file,
+    EXCEL_COLUMNS as SRC_EXCEL_COLUMNS,
+    SCORE_COLUMNS as SRC_SCORE_COLUMNS,
+    safe_literal_eval
+)
+
 # ============================================================================
 # 🔧 설정 및 상수 정의 (이 부분을 수정하여 설정 변경)
 # ============================================================================
 
-# 📁 파일 경로 설정 (자동 감지)
-def get_latest_text_processor_file():
-    """rawdata 폴더에서 가장 최근 text_processor 결과 파일 찾기"""
-    from pathlib import Path
-    import glob
-    
-    rawdata_path = Path("rawdata")
-    pattern = "2. text_processor_결과_*.xlsx"
-    
-    # _partial.xlsx 파일은 제외하고 검색
-    files = [f for f in rawdata_path.glob(pattern) if not f.name.endswith('_partial.xlsx')]
-    
-    if not files:
-        # 완료된 파일이 없으면 partial 파일도 포함하여 검색
-        files = list(rawdata_path.glob(pattern))
-    
-    if files:
-        # 가장 최근 파일 반환 (수정 시간 기준)
-        latest_file = max(files, key=lambda x: x.stat().st_mtime)
-        return str(latest_file)
-    else:
-        return "rawdata/2. text_processor_결과_20250710_153008.xlsx"  # 기본값
-
+# 📁 파일 경로 설정 (src/common.py의 함수 사용)
 INPUT_DATA_FILE = get_latest_text_processor_file()  # 입력 데이터 파일 (자동 감지)
 OUTPUT_HTML_FILE = "서울아산병원 협업평가 결과.html"  # 출력 HTML 파일
 
-# 📊 데이터 컬럼 정의 (실제 데이터 구조와 일치)
-EXCEL_COLUMNS = [
-    'response_id', '설문시행연도', '평가_부서명', '평가_부서명_원본', '평가_Unit명', '평가_부문',
-    '피평가대상 부서명', '피평가대상_부서명_원본', '피평가대상 UNIT명', '피평가대상 부문',
-    '○○은 타 부서의 입장을 존중하고 배려하여 협력해주며. 협업 관련 의견을 경청해준다.',
-    '○○은 업무상 필요한 정보에 대해 공유가 잘 이루어진다.',
-    '○○은 업무에 대한 명확한 담당자가 있고 업무를 일관성있게 처리해준다.',
-    '○○은 이전보다 업무 협력에 대한 태도나 의지가 개선되고 있다.',
-    '전반적으로 ○○과의 협업에 대해 만족한다.',
-    '종합점수', '극단값', '결측값', '협업 유형', '협업 후기', '정제된_텍스트', 
-    '비식별_처리', '감정_분류', '감정_강도_점수', '핵심_키워드', '의료_맥락', '신뢰도_점수'
-]
+# 📊 데이터 컬럼 정의 (src/common.py에서 import)
+EXCEL_COLUMNS = SRC_EXCEL_COLUMNS  # 표준 엑셀 컬럼 정의 사용
 
-# 📈 점수 항목 정의 (차트에 사용되는 점수 컬럼들)
-SCORE_COLUMNS = ['존중배려', '정보공유', '명확처리', '태도개선', '전반만족', '종합점수']
+# 📈 점수 항목 정의 (src/common.py에서 import)
+SCORE_COLUMNS = SRC_SCORE_COLUMNS  # 표준 점수 컬럼 정의 사용
 
 # 🎯 JSON 출력용 컬럼 (대시보드에 필요한 컬럼들만 선택)
 JSON_OUTPUT_COLUMNS = [

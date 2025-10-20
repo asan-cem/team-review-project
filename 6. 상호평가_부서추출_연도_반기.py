@@ -1,31 +1,31 @@
-import pandas as pd
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+상호평가 부서 추출 스크립트 (연도별/반기별)
+
+부서별, Unit별 상호평가 데이터를 추출하여 Excel 파일로 저장합니다.
+
+사용법:
+    python "6. 상호평가_부서추출_연도_반기.py"              # 연도별 분석
+    python "6. 상호평가_부서추출_연도_반기.py" --half-year  # 반기별 분석
+    python "6. 상호평가_부서추출_연도_반기.py" --both        # 연도별+반기별 모두
+
+작성일: 2025-01-15
+리팩토링: 2025-10-20 (src 공통 모듈 활용)
+"""
+
+import sys
 from pathlib import Path
+import pandas as pd
 
+# src 폴더를 Python 경로에 추가
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
 
-def get_latest_text_processor_file():
-    """
-    rawdata 폴더에서 가장 최신의 text_processor_결과 파일을 찾아 반환합니다.
-
-    Returns:
-        str: 가장 최신 파일의 경로
-    """
-    rawdata_path = Path("rawdata")
-    pattern = "2. text_processor_결과_*.xlsx"
-
-    # _partial.xlsx 파일은 제외하고 검색
-    files = [f for f in rawdata_path.glob(pattern) if not f.name.endswith('_partial.xlsx')]
-
-    if not files:
-        print(f"⚠️  '{pattern}' 패턴의 파일을 찾을 수 없습니다.")
-        return "rawdata/2. text_processor_결과_20251013_093925.xlsx"  # 기본값
-
-    # 파일명에서 타임스탬프를 추출하여 최신 파일 선택
-    if len(files) > 1:
-        latest_file = max(files, key=lambda f: f.stat().st_mtime)
-        print(f"📁 최신 데이터 파일 자동 선택: {latest_file.name}")
-        return str(latest_file)
-    else:
-        return str(files[0])
+from src.common import (
+    get_latest_text_processor_file,
+    EXCEL_COLUMNS
+)
 
 
 def summarize_mutual_reviews_by_period(include_half_year=False):
@@ -49,18 +49,8 @@ def summarize_mutual_reviews_by_period(include_half_year=False):
         print(f"❌ 파일을 찾을 수 없습니다: {input_file}")
         return
 
-    original_cols = [
-        'response_id', '설문시행연도', '평가_부서명', '평가_부서명_원본', '평가_Unit명', '평가_부문',
-        '피평가대상 부서명', '피평가대상_부서명_원본', '피평가대상 UNIT명', '피평가대상 부문',
-        '○○은 타 부서의 입장을 존중하고 배려하여 협력해주며. 협업 관련 의견을 경청해준다.',
-        '○○은 업무상 필요한 정보에 대해 공유가 잘 이루어진다.',
-        '○○은 업무에 대한 명확한 담당자가 있고 업무를 일관성있게 처리해준다.',
-        '○○은 이전보다 업무 협력에 대한 태도나 의지가 개선되고 있다.',
-        '전반적으로 ○○과의 협업에 대해 만족한다.',
-        '종합점수', '극단값', '결측값', '협업 유형', '협업 후기', '정제된_텍스트', 
-        '비식별_처리', '감정_분류', '감정_강도_점수', '핵심_키워드', '의료_맥락', '신뢰도_점수'
-    ]
-    df.columns = original_cols
+    # src/common.py의 표준 컬럼명 사용
+    df.columns = EXCEL_COLUMNS
 
     # 2. 데이터 전처리
     df['설문시행연도'] = df['설문시행연도'].astype(str)
