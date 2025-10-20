@@ -105,6 +105,29 @@ class LocalGoogleSheetsAnalyzer:
 | **logging** | Built-in | 분석 과정 추적 및 디버깅 |
 | **tqdm** | Latest | 실시간 진행률 모니터링 |
 
+#### **인증 방식**
+
+**Google Cloud Application Default Credentials (ADC)**
+```bash
+# 초기 설정 (한 번만)
+gcloud auth application-default login
+
+# 저장 위치
+~/.config/gcloud/application_default_credentials.json
+```
+
+```python
+# Python 코드에서 자동 인증
+import vertexai
+vertexai.init(project="mindmap-462708", location="us-central1")
+# ↑ ADC 파일에서 자동으로 인증 정보 읽음
+```
+
+**주의:** `Gemini API.json` 파일은 프로젝트에 있지만 **사용하지 않음**
+- 직접 Gemini API용 API 키 (다른 방식)
+- Vertex AI는 gcloud auth 사용
+- .gitignore에 포함 (보안)
+
 #### **AI/ML 아키텍처**
 
 **1. 프롬프트 엔지니어링**
@@ -489,27 +512,29 @@ logging.basicConfig(
    - Cohen's Kappa: 0.85 (높은 일치도)
 ```
 
-### Q3: "Vertex AI를 통한 Gemini 사용 vs 직접 Gemini API 사용의 차이는?"
+### Q3: "Vertex AI 인증은 어떻게 설정했나요?"
 
 **답변:**
 ```
-1. Vertex AI 경유 방식 (현재)
-   ✅ 기업용 SLA 및 보안 감사 제공
-   ✅ Google Cloud Console 통합 모니터링
-   ✅ IAM 기반 접근 제어
-   ✅ 프로젝트 단위 비용 관리
-   ❌ 초기 설정 복잡 (vertexai.init 필요)
+Google Cloud Application Default Credentials (ADC)를 사용했습니다.
 
-2. 직접 Gemini API (대안)
-   ✅ 설정 간단 (API 키만 필요)
-   ❌ 기업용 SLA 없음
-   ❌ 별도 모니터링 필요
-   ❌ 보안 감사 제한적
+1. 설정 방법
+   $ gcloud auth application-default login
+   → ~/.config/gcloud/application_default_credentials.json 생성
 
-3. 선택 근거
-   - 의료 데이터 → 보안 및 감사 필수
-   - 장기 운영 → SLA 보장 필요
-   - 비용 통합 관리 필요
+2. Python 코드
+   import vertexai
+   vertexai.init(project="mindmap-462708")
+   # ↑ ADC 파일에서 자동으로 인증
+
+3. API 키 방식과 비교
+   ✅ ADC (현재): 로컬 파일 시스템 암호화 저장, IAM 권한 관리
+   ❌ API 키: 코드 노출 위험, 권한 제어 어려움
+
+4. Gemini API.json 파일
+   - 프로젝트에 있지만 사용 안 함
+   - 직접 Gemini API용 (Vertex AI와 다른 방식)
+   - .gitignore에 포함 (보안)
 ```
 
 ### Q4: "대시보드 성능 최적화는 어떻게 했나요?"
