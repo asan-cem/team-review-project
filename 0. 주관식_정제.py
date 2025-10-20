@@ -14,9 +14,8 @@ from multiprocessing import Process, Queue  # 백그라운드 프로세싱
 from collections import Counter  # 키워드 카운팅
 warnings.filterwarnings('ignore')
 
-# Google Cloud AI 라이브러리
-import vertexai  # Google Vertex AI 플랫폼
-from vertexai.generative_models import GenerativeModel  # AI 모델
+# Google Gemini API 라이브러리
+import google.generativeai as genai  # Google Gemini API
 
 # 감정 분류 상수 정의
 EMOTION_CATEGORIES = {
@@ -276,23 +275,27 @@ class BackgroundWorker:
 class ReviewAnalyzer:
     """
     텍스트 리뷰를 AI로 분석하는 클래스
-    Google의 Vertex AI를 사용하여 텍스트의 감정, 개선된 표현, 분류 라벨 등을 분석합니다.
+    Google의 Gemini API를 사용하여 텍스트의 감정, 개선된 표현, 분류 라벨 등을 분석합니다.
     """
     
-    def __init__(self, project_id: str, location: str = "us-central1", enable_background: bool = True):
+    def __init__(self, api_key_file: str = "Gemini API.json", enable_background: bool = True):
         """
         분석기를 초기화합니다.
-        
+
         Args:
-            project_id: Google Cloud 프로젝트 ID (필수)
-            location: AI 모델이 실행될 지역 (기본값: us-central1)
+            api_key_file: Gemini API 키 JSON 파일 경로 (기본값: "Gemini API.json")
             enable_background: 백그라운드 처리 활성화 여부
         """
-        # Google Cloud AI 플랫폼 초기화
-        vertexai.init(project=project_id, location=location)
-        
-        # 사용할 AI 모델 설정 (Gemini 2.5 pro 모델)
-        self.model = GenerativeModel("gemini-2.5-pro")
+        # Gemini API 키 로드
+        with open(api_key_file, 'r') as f:
+            api_config = json.load(f)
+            api_key = api_config['apikey']
+
+        # Google Gemini API 초기화
+        genai.configure(api_key=api_key)
+
+        # 사용할 AI 모델 설정 (Gemini 2.5 Flash 모델)
+        self.model = genai.GenerativeModel("gemini-2.5-flash")
         
         # 새로운 기능들 초기화
         self.checkpoint_manager = CheckpointManager()
@@ -1137,38 +1140,47 @@ def main():
     메인 실행 함수 - 텍스트 분석을 수행합니다.
     """
     try:
-        # 특정 파일 지정
-        input_file = "rawdata/1. data_processor_결과_20251001_090316.xlsx"
+        # rawdata 폴더에서 최신 data_processor 결과 파일 찾기
+        rawdata_path = Path("rawdata")
+        pattern = "1. data_processor_결과_*.xlsx"
 
-        # 파일 존재 여부 확인
-        if not Path(input_file).exists():
-            print(f"❌ 파일을 찾을 수 없습니다: {input_file}")
+        # 패턴에 맞는 모든 파일 찾기
+        matching_files = list(rawdata_path.glob(pattern))
+
+        if not matching_files:
+            print(f"❌ '{pattern}' 패턴에 맞는 파일을 찾을 수 없습니다.")
+            print(f"rawdata 폴더를 확인하세요: {rawdata_path.absolute()}")
             sys.exit(1)
 
+        # 가장 최근에 수정된 파일 선택 (파일명의 타임스탬프 기준)
+        input_file = max(matching_files, key=lambda x: x.stat().st_mtime)
+
+        print(f"📂 최신 파일 자동 선택: {input_file.name}")
+
         # 출력 파일명 생성 (타임스탬프 추출)
-        input_filename = Path(input_file).stem
+        input_filename = input_file.stem
         timestamp = input_filename.split('_')[-2] + '_' + input_filename.split('_')[-1]
         output_file = f"rawdata/2. text_processor_결과_{timestamp}.xlsx"
         
         column_name = "협업 후기"
-        max_rows = None  # 전체 데이터 처리
-        project_id = "mindmap-462708"
-        
+        max_rows = None  # 전체 데이터 처리 (숫자로 설정하면 해당 행 수만 처리)
+        api_key_file = "Gemini API.json"
+
         print(f"\n설정 확인:")
-        print(f"- 입력 파일: {input_file}")
+        print(f"- 입력 파일: {input_file.name}")
         print(f"- 분석 컬럼: {column_name}")
         print(f"- 출력 파일: {output_file}")
         print(f"- 최대 처리 행: {max_rows or '전체'}")
-        print(f"- 프로젝트 ID: {project_id}")
+        print(f"- API 키 파일: {api_key_file}")
         print()
-        
+
         # 분석기 생성 및 실행 (백그라운드 워커 제거로 효율성 향상)
-        analyzer = ReviewAnalyzer(project_id=project_id, enable_background=False)
-        
+        analyzer = ReviewAnalyzer(api_key_file=api_key_file, enable_background=False)
+
         # 글로벌 변수로 세션 정보 저장 (KeyboardInterrupt에서 사용)
         global current_session_info
         current_session_info = {
-            'input_file': input_file,
+            'input_file': str(input_file),
             'column_name': column_name,
             'output_file': output_file
         }
@@ -1176,9 +1188,9 @@ def main():
         # 원본 텍스트 분석
         print(f"원본 텍스트 분석 모드")
         analyzer.process_xlsx_with_column(
-            input_file, 
-            column_name, 
-            output_file, 
+            str(input_file),
+            column_name,
+            output_file,
             max_rows=max_rows,
             use_batch=True,
             batch_size=10,  # 테스트용: 작은 배치 크기
@@ -1284,11 +1296,10 @@ def main():
         print(f"오류 발생: {e}")
         print(f"상세 오류: {traceback.format_exc()}")
         print("\n해결 방법:")
-        print("1. Google Cloud 프로젝트 ID 확인")
-        print("2. Vertex AI API 활성화 확인")
-        print("3. 인증 설정 확인 (gcloud auth application-default login)")
-        print("4. 엑셀 파일 존재 여부 확인")
-        print("5. 필요한 패키지 설치 확인 (pandas, openpyxl, tqdm)")
+        print("1. Gemini API 키 파일 존재 여부 확인 (Gemini API.json)")
+        print("2. API 키 유효성 확인")
+        print("3. 엑셀 파일 존재 여부 확인")
+        print("4. 필요한 패키지 설치 확인 (pandas, openpyxl, tqdm, google-generativeai)")
         sys.exit(1)
 
 # 프로그램이 직접 실행될 때만 main() 함수 호출

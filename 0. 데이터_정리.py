@@ -18,9 +18,7 @@ import unicodedata
 import os
 import logging
 
-# Google Cloud libraries (available in local environment)
-import vertexai
-from vertexai.generative_models import GenerativeModel
+# Google Gemini API library
 from tqdm.auto import tqdm
 
 # Enable tqdm integration with pandas
@@ -591,7 +589,7 @@ if __name__ == "__main__":
     # 사용 예시
     BASE_PATH = "./rawdata"  # rawdata 폴더에서 파일 검색
     PROJECT_ID = None  # Google Cloud 프로젝트 ID (옵션)
-    TARGET_FILE = "설문조사진행현황[VCRCRIC120S]_2025_2.xlsx"  # 특정 파일만 처리
+    TARGET_FILE = None  # None으로 설정하면 모든 설문조사 파일 처리
 
     result_df = main_local_analysis(BASE_PATH, PROJECT_ID, target_file=TARGET_FILE)
     if result_df is not None:

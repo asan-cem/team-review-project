@@ -24,6 +24,7 @@ generated_reports/
 
 # Data files
 # rawdata/*.xlsx  # Now tracking rawdata files
+rawdata/*_processor_결과_*.xlsx  # Exclude processing result files
 
 # API credentials
 Gemini API.json
