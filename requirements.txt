@@ -1,13 +1,20 @@
-pandas>=2.0.0
-google-cloud-aiplatform>=1.38.0
-openpyxl>=3.1.0
-tqdm
-scipy
-scikit-learn
-streamlit
-plotly
+# 협업평가 시스템 필수 패키지
+# Python 3.7 이상 필요
+# 설치: pip install -r requirements.txt
 
-# Google Colab environment synchronization
-gspread>=6.0.0
-google-auth-oauthlib
-google-auth-httplib2
+# ===== 핵심 패키지 (필수) =====
+pandas>=2.0.0                # 데이터 처리 및 분석
+openpyxl>=3.1.0              # 엑셀 파일 읽기/쓰기
+plotly>=5.0.0                # 대화형 차트 생성
+tqdm>=4.0.0                  # 진행률 표시
+
+# ===== AI/ML 패키지 (주관식 정제용) =====
+google-generativeai>=0.3.0   # Google Gemini API (주관식 정제)
+# 또는
+google-cloud-aiplatform>=1.38.0  # Google Cloud AI Platform (대체 옵션)
+
+# ===== 통계/분석 패키지 (선택) =====
+scipy>=1.9.0                 # 고급 통계 분석
+scikit-learn>=1.0.0          # 머신러닝 (감정분석 등)
+numpy>=1.20.0                # 수치 계산
+
