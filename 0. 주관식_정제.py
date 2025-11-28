@@ -289,7 +289,9 @@ class ReviewAnalyzer:
         # Gemini API 키 로드
         with open(api_key_file, 'r') as f:
             api_config = json.load(f)
-            api_key = api_config['apikey']
+            api_key = api_config.get('apikey') or api_config.get('api_key')
+            if not api_key:
+                raise KeyError("JSON 파일에 'apikey' 또는 'api_key'가 없습니다.")
 
         # Google Gemini API 초기화
         genai.configure(api_key=api_key)
